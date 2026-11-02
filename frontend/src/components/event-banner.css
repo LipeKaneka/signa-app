@@ -1,0 +1,60 @@
+/* Faixa de evento de XP (2x XP): dourada, para destacar do roxo do app. */
+.event-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 16px 0;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: linear-gradient(90deg, #ffb820 0%, #ffd56b 100%);
+  color: #2a1a00;
+  box-shadow: 0 4px 14px rgba(255, 184, 32, 0.35);
+  animation: event-banner-in 420ms ease-out both;
+}
+
+.event-banner__badge {
+  flex: none;
+  display: grid;
+  place-items: center;
+  min-width: 46px;
+  height: 46px;
+  padding: 0 6px;
+  border-radius: 50%;
+  background: #2a1a00;
+  color: #ffd56b;
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.event-banner__text {
+  display: grid;
+  gap: 2px;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+}
+
+.event-banner__text strong {
+  font-size: 0.9375rem;
+}
+
+.event-banner--compact {
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.event-banner--compact .event-banner__badge {
+  min-width: 32px;
+  height: 32px;
+  font-size: 0.85rem;
+}
+
+@keyframes event-banner-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .event-banner { animation: none; }
+}

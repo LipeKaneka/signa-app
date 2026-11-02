@@ -1,0 +1,406 @@
+/* Medidas tiradas das telas do protótipo (412px de largura): atividade 00–13 e 18–19, resultado 14–15. */
+.activity-screen {
+  position: relative;
+  /* espaço da folha de acerto/erro (medido em FeedbackSheet), para nada ficar escondido atrás dela */
+  padding-bottom: var(--feedback-sheet-height, 0px);
+}
+
+.option-button {
+  scroll-margin-bottom: calc(var(--feedback-sheet-height, 0px) + 12px);
+}
+
+.activity-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: calc(26px + env(safe-area-inset-top)) 20px 0 12px;
+}
+
+.activity-header__exit {
+  min-width: 34px;
+  min-height: 34px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--color-progress-track);
+  overflow: hidden;
+}
+
+/* Largura via scaleX: anima no compositor, sem recalcular layout a cada quadro. */
+.progress-bar__fill {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  transform-origin: left center;
+  transition: transform var(--motion-slow) var(--ease-out), background var(--motion-slow) var(--ease-out);
+}
+
+.activity-header__count {
+  min-width: 40px;
+  font-size: 1rem;
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+.activity-body {
+  display: flex;
+  flex-direction: column;
+  padding: 18px 24px 24px;
+}
+
+.activity-heading {
+  position: relative;
+  margin: 0 0 12px 4px;
+  padding-right: 40px;
+}
+
+.activity-title {
+  margin: 0;
+  font-size: 1.1875rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.activity-prompt {
+  margin: 0;
+  font-size: 1.1875rem;
+  line-height: 1.25;
+  color: var(--color-text-muted);
+}
+
+/* "Ver de novo": discreto, no canto do título (o protótipo não tem barra embaixo do quadro). */
+.activity-replay {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  min-width: 40px;
+  min-height: 40px;
+  color: var(--color-text-muted);
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 19px 21px;
+  margin-top: 12px;
+}
+
+.option-button {
+  min-height: 88px;
+  padding: 8px;
+  border: 1px solid #6c5fa6;
+  border-radius: 8px;
+  background: var(--color-primary-soft);
+  color: #1a1a1a;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.option-button:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.option-button--selected {
+  background: #fff;
+  border: 2px solid var(--color-primary-strong);
+}
+
+.option-button--correct {
+  background: var(--color-correct-bg);
+  border: 2px solid var(--color-correct-border);
+  color: var(--color-correct-text);
+}
+
+.option-button--wrong {
+  background: var(--color-wrong-bg);
+  border: 1px solid #b3262a;
+  color: #8a1418;
+}
+
+/* Acerto: o botão dá um "pulo" e solta estrelas douradas em todas as direções. */
+.option-button--hit {
+  position: relative;
+  z-index: 2;
+  overflow: visible;
+  animation: option-hit 420ms var(--ease-out);
+}
+
+.star-burst {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.star-burst__star {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin: -0.6em 0 0 -0.5em;
+  color: #ffc700;
+  font-size: 1.35rem;
+  line-height: 1;
+  text-shadow: 0 0 6px rgba(255, 199, 0, 0.7);
+  opacity: 0;
+  animation: star-fly 780ms cubic-bezier(0.15, 0.7, 0.3, 1) var(--delay) forwards;
+}
+
+.star-burst__star:nth-child(even) {
+  font-size: 0.95rem;
+  color: #fff27a;
+}
+
+@keyframes star-fly {
+  0% { opacity: 0; transform: rotate(var(--angle)) translateX(0) scale(0.3); }
+  15% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--angle)) translateX(92px) rotate(calc(-1 * var(--angle))) scale(1.1); }
+}
+
+@keyframes option-hit {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.08); }
+  70% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+/* Erro: o botão escolhido treme (a vibração do aparelho acompanha). */
+.option-button--shake {
+  animation: option-shake 460ms ease-in-out;
+}
+
+@keyframes option-shake {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-9px) rotate(-1.5deg); }
+  30% { transform: translateX(8px) rotate(1.5deg); }
+  45% { transform: translateX(-6px) rotate(-1deg); }
+  60% { transform: translateX(5px) rotate(1deg); }
+  75% { transform: translateX(-3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .option-button--hit,
+  .option-button--shake { animation: none; }
+  .star-burst { display: none; }
+}
+
+.activity-tip {
+  margin: 12px 0 0;
+  font-size: 0.9375rem;
+  color: var(--color-text-muted);
+}
+
+/* ---------- Folha de feedback (12/13 acerto, 18/19 erro) ---------- */
+.feedback-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  padding: 30px 12px calc(24px + env(safe-area-inset-bottom));
+  background: var(--color-primary);
+  border-radius: 40px 40px 0 0;
+  color: #fff;
+  animation: sheet-up var(--motion-base) var(--ease-out);
+  z-index: 30;
+}
+
+.feedback-sheet--leaving {
+  animation: sheet-down var(--motion-base) var(--ease-in) forwards;
+}
+
+@keyframes sheet-down {
+  to {
+    transform: translate(-50%, 100%);
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translate(-50%, 100%);
+  }
+}
+
+.feedback-sheet__title,
+.feedback-sheet__text {
+  margin: 0 12px;
+}
+
+.feedback-sheet__title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.feedback-sheet__text {
+  font-size: 1.1875rem;
+  line-height: 1.2;
+}
+
+.feedback-sheet--correct .feedback-sheet__title,
+.feedback-sheet--correct .feedback-sheet__text {
+  color: var(--color-sheet-title-correct);
+}
+
+.feedback-sheet--wrong .feedback-sheet__title {
+  color: var(--color-sheet-title-wrong);
+}
+
+.feedback-sheet--wrong .feedback-sheet__text {
+  color: #fff;
+}
+
+.xp-pill {
+  display: inline-block;
+  margin: 2px 12px 0;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: var(--color-xp);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.3);
+}
+
+.feedback-sheet__next {
+  min-height: 60px;
+  margin-top: 18px;
+  border-radius: 14px;
+  font-size: 1.75rem;
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.35);
+}
+
+.feedback-sheet--correct .feedback-sheet__next {
+  background: var(--color-next-correct);
+}
+
+.feedback-sheet--wrong .feedback-sheet__next {
+  background: var(--color-next-wrong);
+}
+
+/* ---------- Resultado (14/15) ---------- */
+.activity-result {
+  position: relative;
+  padding: calc(60px + env(safe-area-inset-top)) 24px calc(56px + env(safe-area-inset-bottom));
+}
+
+.activity-result__back {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  left: 14px;
+}
+
+.activity-result__title,
+.activity-result__subtitle {
+  margin-left: 10px;
+}
+
+.activity-result__title {
+  margin-top: 0;
+  margin-bottom: 0;
+  font-size: 1.875rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.activity-result__subtitle {
+  margin-top: 2px;
+  margin-bottom: 16px;
+  font-size: 1.1875rem;
+  line-height: 1.3;
+  color: var(--color-text-muted);
+}
+
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 70px);
+  gap: 19px 17px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.review-tile {
+  display: grid;
+  place-items: center;
+  width: 70px;
+  height: 68px;
+  padding: 0;
+  border-radius: 16px;
+}
+
+.review-tile--mastered {
+  border: 0;
+  background: var(--color-primary);
+  color: #1a1238;
+}
+
+.review-tile--review {
+  border: 1.5px dashed #e6b800;
+  background: transparent;
+  color: #e08a00;
+}
+
+.review-legend {
+  display: flex;
+  gap: 16px;
+  margin: 24px 0 26px;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.review-legend i {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+
+.review-legend__mastered {
+  background: var(--color-primary);
+}
+
+.review-legend__review {
+  border: 1px dashed #e6b800;
+}
+
+.result-pill {
+  display: inline-block;
+  align-self: flex-start;
+  margin: 0 0 0 -9px;
+  padding: 9px 14px;
+  border-radius: 12px;
+  background: #0c0620;
+  color: #fff;
+  font-size: 0.875rem;
+}
+
+.result-pill strong {
+  font-weight: 400;
+  color: var(--color-xp);
+}
+
+.activity-result__notice,
+.activity-result__achievement {
+  margin: 14px 0 0;
+  font-size: 0.9375rem;
+}
+
+.activity-result__continue {
+  width: 322px;
+  max-width: 100%;
+  min-height: 66px;
+  margin: auto auto 0;
+  border-radius: 16px;
+  font-size: 2rem;
+}
+
+.result-pill__event {
+  color: var(--color-xp);
+  font-weight: 700;
+}

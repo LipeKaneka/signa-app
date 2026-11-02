@@ -1,0 +1,158 @@
+/* Medidas das configurações do protótipo (28 claro, 29 escuro). */
+.settings-content {
+  flex: 1;
+}
+
+:root:not([data-theme="dark"]) .settings-content {
+  background: #fff;
+}
+
+.settings-icon {
+  display: flex;
+  justify-content: center;
+  padding: 46px 0 58px;
+}
+
+:root[data-theme="dark"] .settings-icon {
+  padding-top: 8px;
+}
+
+.app-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+}
+
+.settings-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid #999;
+}
+
+.settings-list > li {
+  border-bottom: 1px solid #999;
+}
+
+:root[data-theme="dark"] .settings-list,
+:root[data-theme="dark"] .settings-list > li {
+  border-color: #4b3a9a;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 39px;
+  padding: 0 32px 0 36px;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.settings-row--button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+}
+
+.settings-row--danger {
+  color: var(--color-wrong-border);
+}
+
+.settings-row .toggle {
+  width: 44px;
+  height: 22px;
+}
+
+.settings-row .toggle[aria-checked="true"]::after {
+  transform: translateX(22px);
+}
+
+.theme-switch {
+  display: flex;
+  gap: 0;
+  margin-right: -6px;
+}
+
+.theme-switch__option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #111;
+}
+
+/* Como no protótipo: sol sempre roxo, lua na cor do texto; a opção que não está ativa fica mais apagada. */
+.theme-switch__option:first-child {
+  color: var(--color-primary);
+}
+
+:root[data-theme="dark"] .theme-switch__option {
+  color: #fff;
+}
+
+:root[data-theme="dark"] .theme-switch__option:first-child {
+  color: #8f74ff;
+}
+
+.theme-switch__option[aria-checked="false"] {
+  opacity: 0.55;
+}
+
+.font-slider {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: -10px;
+}
+
+.font-slider input {
+  width: 56px;
+  accent-color: var(--color-primary);
+}
+
+.font-slider__small {
+  font-size: 0.75rem;
+}
+
+.font-slider__large {
+  font-size: 1.25rem;
+}
+
+.settings-help {
+  margin: 0;
+  padding: 0 32px 12px 36px;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.danger-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 32px 12px 36px;
+  font-size: 0.9375rem;
+}
+
+.danger-form p {
+  margin: 0;
+}
+
+.danger-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.danger-form__confirm {
+  width: auto;
+  background: var(--color-wrong-border);
+}

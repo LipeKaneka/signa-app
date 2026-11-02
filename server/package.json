@@ -1,0 +1,31 @@
+{
+  "name": "signa-ludus-server",
+  "version": "1.0.0",
+  "description": "Servidor de gerenciamento do Signa Ludus: banco, regras de dados, API interna e painel administrativo",
+  "type": "module",
+  "main": "index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "db:local": "node scripts/local-database.js",
+    "seed": "node src/seeds/seed-content.js",
+    "test": "node --test --test-concurrency=1 \"tests/**/*.test.js\"",
+    "admin:create-owner": "node scripts/create-owner.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "mongoose": "^9.0.0"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^11.0.0",
+    "supertest": "^7.1.0"
+  },
+  "author": "Signa Authors",
+  "license": "ISC"
+}

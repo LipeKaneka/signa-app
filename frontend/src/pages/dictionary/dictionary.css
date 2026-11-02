@@ -1,0 +1,144 @@
+/* Medidas do dicionário do protótipo (26 claro, 27 escuro). A busca fica dentro do cabeçalho. */
+.top-bar.dictionary-header {
+  min-height: calc(118px + env(safe-area-inset-top));
+  padding-bottom: 18px;
+}
+
+.dictionary-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  margin: 0 -4px 0 4px;
+  padding: 0 10px;
+  border: 1px solid #333;
+  border-radius: 999px;
+  background: #fff;
+  color: #222;
+}
+
+.dictionary-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #111;
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.dictionary-search input::placeholder {
+  color: #555;
+}
+
+.dictionary-content {
+  flex: 1;
+}
+
+.dictionary-featured {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 50px 28px 72px 26px;
+}
+
+.dictionary-featured > svg {
+  flex-shrink: 0;
+}
+
+.dictionary-featured__title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.dictionary-featured__text {
+  margin: 2px 0 0 4px;
+  font-size: 1.0625rem;
+  line-height: 1.15;
+}
+
+.dictionary-featured__source {
+  margin: 2px 0 0 4px;
+  font-size: 0.4rem;
+  color: var(--color-text-muted);
+}
+
+.category-list,
+.sign-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.category {
+  border-top: 1px solid #555;
+}
+
+.category:last-child {
+  border-bottom: 1px solid #555;
+}
+
+:root[data-theme="dark"] .category {
+  border-color: #6b5ca5;
+}
+
+.category__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 60px;
+  padding: 0 20px 0 40px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 1rem;
+  text-align: left;
+}
+
+.category__header svg {
+  width: 24px;
+  height: 24px;
+  transition: transform var(--motion-fast) var(--ease-out);
+}
+
+.category__header[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.category__content {
+  padding: 0 20px 12px 40px;
+}
+
+.sign-list {
+  padding: 8px 20px;
+}
+
+.category__content .sign-list {
+  padding: 0;
+}
+
+.sign-list__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 4px;
+  border: 0;
+  border-bottom: 1px solid var(--color-divider);
+  background: transparent;
+  color: var(--color-text);
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.dictionary-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--color-text-muted);
+}

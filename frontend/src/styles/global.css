@@ -1,0 +1,412 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: calc(16px * var(--font-scale));
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background: #1e0a65;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  max-width: 480px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  background: var(--background);
+  position: relative;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-xp);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- Estrutura de tela ---------- */
+.screen {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen--with-nav {
+  padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom));
+}
+
+.page-content {
+  flex: 1;
+  padding: 16px;
+}
+
+/* Cabeçalho: reto e baixo no tema claro; alto e arredondado no escuro (protótipo 16/17, 22/23, 28/29).
+   --rounded: arredondado nos dois temas (Assistente e Dicionário). */
+.top-bar {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  min-height: calc(68px + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) 18px 0 14px;
+  background: var(--color-primary);
+  color: #fff;
+  /* Protótipo: todos os cabeçalhos roxos têm a base arredondada. */
+  border-radius: 0 0 40px 40px;
+}
+
+.top-bar__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.top-bar--rounded {
+  border-radius: 0 0 40px 40px;
+}
+
+:root[data-theme="dark"] .top-bar {
+  justify-content: flex-start;
+  min-height: calc(92px + env(safe-area-inset-top));
+  padding-top: calc(7px + env(safe-area-inset-top));
+  border-radius: 0 0 40px 40px;
+}
+
+/* Perfil: voltar à esquerda e "Signa" + mão centralizados. */
+.top-bar--brand-center .top-bar__row > div {
+  flex: 1;
+  margin-right: 36px;
+  text-align: center;
+}
+
+.top-bar--brand-center .top-bar__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 1.5rem;
+}
+
+.top-bar__title {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+
+.top-bar__subtitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 0;
+  font-size: 1rem;
+  color: var(--color-online);
+}
+
+.top-bar__subtitle::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  border-radius: 50%;
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  height: calc(var(--nav-height) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: var(--color-primary);
+  border-radius: 40px 40px 0 0;
+  z-index: 20;
+}
+
+.bottom-nav__link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.8125rem;
+}
+
+.bottom-nav__link--active {
+  font-weight: 700;
+}
+
+/* ---------- Botões e campos ---------- */
+.button-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: var(--radius-small);
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+}
+
+.button-large {
+  min-height: 56px;
+  font-size: 1.35rem;
+  border-radius: var(--radius-medium);
+}
+
+.button-link {
+  border: 0;
+  background: none;
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: underline;
+  padding: 8px;
+}
+
+:root[data-theme="dark"] .button-link {
+  color: var(--color-primary-soft);
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  background: #fff;
+  color: var(--color-card-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+}
+
+.field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-card-text);
+  min-height: 42px;
+}
+
+.field input::placeholder {
+  color: #777;
+}
+
+.field svg {
+  color: #555;
+  flex-shrink: 0;
+}
+
+.form-error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-small);
+  background: var(--color-wrong-bg);
+  color: var(--color-wrong-text);
+  font-size: 0.9rem;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+/* ---------- Estados ---------- */
+.state-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 4px solid var(--color-primary-soft);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- Interruptor (Configurações) ---------- */
+.toggle {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 11px;
+  background: #111;
+  padding: 0;
+}
+
+.toggle::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform var(--motion-fast) var(--ease-out);
+}
+
+.toggle[aria-checked="true"] {
+  background: var(--color-primary);
+}
+
+.toggle[aria-checked="true"]::after {
+  transform: translateX(18px);
+}
+
+:root[data-theme="dark"] .toggle {
+  background: #fff;
+}
+
+:root[data-theme="dark"] .toggle::after {
+  background: #111;
+}
+
+:root[data-theme="dark"] .toggle[aria-checked="true"] {
+  background: var(--color-primary);
+}
+
+:root[data-theme="dark"] .toggle[aria-checked="true"]::after {
+  background: #1e0a65;
+}
+
+/* ---------- Toque: resposta imediata ao pressionar ---------- */
+.button-primary,
+.option-button,
+.icon-button,
+.trail-node__button,
+.profile-shortcut,
+.ranking-tabs__tab,
+.sign-list__item,
+.category__header,
+.chat-composer__button,
+.chat-sign-chip,
+.review-tile,
+.camera-flip,
+.tool-actions button,
+.translator-drawer__actions button,
+.translator-drawer__links a {
+  transition: transform var(--motion-fast) var(--ease-out), filter var(--motion-fast) var(--ease-out);
+}
+
+.button-primary:active:not(:disabled),
+.option-button:active:not(:disabled),
+.icon-button:active,
+.trail-node__button:active:not(:disabled),
+.profile-shortcut:active,
+.ranking-tabs__tab:active,
+.sign-list__item:active,
+.category__header:active,
+.chat-composer__button:active:not(:disabled),
+.chat-sign-chip:active,
+.review-tile:active,
+.camera-flip:active,
+.tool-actions button:active:not(:disabled),
+.translator-drawer__actions button:active:not(:disabled),
+.translator-drawer__links a:active {
+  transform: scale(var(--press-scale));
+  filter: brightness(0.95);
+}
+
+/* O nó da trilha pulsa: o toque reduz a partir da escala atual sem brigar com a animação. */
+.trail-node__button--available:active {
+  animation-play-state: paused;
+}
+
+/* ---------- Reduzir movimento (configuração de acessibilidade do aparelho) ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Loops decorativos param de vez (com duração mínima eles piscariam). */
+  .trail-node__button--available {
+    animation: none !important;
+  }
+
+  .spinner {
+    animation: spin 1.5s linear infinite !important;
+  }
+
+  .button-primary:active,
+  .option-button:active,
+  .trail-node__button:active {
+    transform: none;
+  }
+}

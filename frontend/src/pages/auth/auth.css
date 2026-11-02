@@ -1,0 +1,430 @@
+/* Medidas do cadastro do protótipo (24 claro, 25 escuro); o login segue o mesmo desenho. */
+.auth-screen {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: calc(24px + env(safe-area-inset-top)) 29px 32px;
+}
+
+:root:not([data-theme="dark"]) .auth-screen {
+  background: #fff;
+}
+
+.auth-screen__back {
+  position: absolute;
+  top: calc(16px + env(safe-area-inset-top));
+  left: 16px;
+  color: var(--color-text);
+}
+
+.auth-screen__logo {
+  margin: 82px 0 54px;
+}
+
+/* Logo nova: mão em degradê + nome; no tema escuro o nome fica branco. */
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo img {
+  display: block;
+  width: auto;
+}
+
+.brand-logo__name--white,
+:root[data-theme="dark"] .brand-logo__name--color {
+  display: none !important;
+}
+
+:root[data-theme="dark"] .brand-logo__name--white {
+  display: block !important;
+}
+
+.auth-screen__title {
+  margin: 0;
+  font-size: 1.625rem;
+  font-weight: 800;
+}
+
+.auth-screen__subtitle {
+  margin: 0 0 14px;
+  font-size: 0.9375rem;
+  color: var(--color-text-muted);
+}
+
+.auth-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 23px;
+}
+
+.auth-form .field {
+  min-height: 40px;
+  padding: 0 10px;
+  gap: 14px;
+  border-color: #777;
+  border-radius: 8px;
+}
+
+.auth-form .field input {
+  min-height: 38px;
+  font-size: 0.9375rem;
+}
+
+.auth-form .field svg {
+  color: #222;
+}
+
+.auth-form .button-primary {
+  width: 275px;
+  max-width: 80%;
+  margin: -2px auto 0;
+  border-radius: 4px;
+  font-size: 0.9375rem;
+}
+
+.auth-screen__switch {
+  margin-top: 24px;
+  font-size: 0.9375rem;
+}
+
+.auth-screen__switch a {
+  color: var(--color-primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+:root[data-theme="dark"] .auth-screen__switch a {
+  color: var(--color-primary-soft);
+}
+
+/* Protótipo "login alta 2/3/4": título à esquerda, olho na senha, "Esqueci minha senha", Google, código. */
+.auth-screen__heading {
+  width: 100%;
+  text-align: center;
+}
+
+.auth-screen__heading--left {
+  text-align: left;
+}
+
+.auth-screen__heading--left .auth-screen__subtitle {
+  color: var(--color-text);
+}
+
+.field__toggle {
+  display: grid;
+  place-items: center;
+  margin-right: -4px;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: #444;
+  cursor: pointer;
+}
+
+.auth-form__password {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.auth-form__forgot {
+  align-self: flex-end;
+  color: var(--color-primary-strong);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  text-decoration: none;
+}
+
+:root[data-theme="dark"] .auth-form__forgot {
+  color: var(--color-primary-soft);
+}
+
+.auth-form__submit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.auth-form__submit .button-primary {
+  margin: 0;
+  min-height: 48px;
+  border-radius: 6px;
+}
+
+.auth-form__submit .auth-screen__switch {
+  margin-top: 4px;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  color: #555;
+}
+
+:root[data-theme="dark"] .auth-form__submit .auth-screen__switch {
+  color: var(--color-text-muted);
+}
+
+.auth-screen__switch--light {
+  font-weight: 400 !important;
+  font-size: 0.875rem !important;
+  color: var(--color-text) !important;
+}
+
+.auth-link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+:root[data-theme="dark"] .auth-link-button {
+  color: var(--color-primary-soft);
+}
+
+.auth-google {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 47px;
+  margin-top: 28px;
+  border: 1px solid #c8c8c8;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.auth-form + .auth-google {
+  margin-top: 14px;
+}
+
+.auth-form--recovery {
+  gap: 30px;
+}
+
+.auth-form--recovery > .button-primary {
+  min-height: 48px;
+  border-radius: 6px;
+}
+
+.auth-form__hint {
+  margin: 6px 0 0 4px;
+  font-size: 0.875rem;
+  line-height: 1.3;
+}
+
+.code-boxes {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 5px;
+  margin-top: 18px;
+}
+
+.code-boxes__digit {
+  width: 100%;
+  height: 80px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid #222;
+  border-radius: 4px 4px 0 0;
+  background: #d9d9d9;
+  color: #111;
+  text-align: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.code-boxes__digit:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 0;
+}
+
+.form-success {
+  margin: 0;
+  color: var(--color-correct-text);
+  font-size: 0.875rem;
+}
+
+/* Caixa "Li e estou de acordo com o Termo de Uso" (protótipo "Cadastro alta 2"). */
+.auth-terms {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: -6px;
+  font-size: 0.9375rem;
+  color: var(--color-text-muted);
+}
+
+.auth-terms input {
+  width: 16px;
+  height: 16px;
+  margin: 0 4px 0 0;
+  accent-color: var(--color-primary);
+}
+
+.auth-terms .auth-link-button {
+  font-weight: 700;
+}
+
+/* Boas-vindas (protótipo "login alta 10/9/8"). */
+.onboarding {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: calc(16px + env(safe-area-inset-top)) 24px calc(110px + env(safe-area-inset-bottom));
+  text-align: center;
+}
+
+:root:not([data-theme="dark"]) .onboarding,
+:root:not([data-theme="dark"]) .terms-screen {
+  background: #fff;
+}
+
+.onboarding__top {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.onboarding__skip {
+  margin-left: auto;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  color: var(--color-primary-strong);
+  font: inherit;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+:root[data-theme="dark"] .onboarding__skip {
+  color: var(--color-primary-soft);
+}
+
+.onboarding__slide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 66px;
+  animation: onboarding-in var(--motion-slow, 260ms) ease-out;
+}
+
+.onboarding__art {
+  color: var(--color-primary);
+}
+
+:root[data-theme="dark"] .onboarding__art {
+  color: var(--color-primary-soft);
+}
+
+.onboarding__title {
+  margin: 34px 0 0;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.onboarding__text {
+  max-width: 300px;
+  margin: 38px 0 0;
+  font-size: 0.9375rem;
+  line-height: 1.3;
+}
+
+.onboarding__dots {
+  display: flex;
+  gap: 7px;
+  margin-top: auto;
+  padding-top: 32px;
+}
+
+.onboarding__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  background: #bdbdbd;
+  transition: width var(--motion-fast, 160ms) ease-out, background var(--motion-fast, 160ms) ease-out;
+}
+
+.onboarding__dot--active {
+  width: 29px;
+  background: var(--color-primary);
+}
+
+.onboarding__next {
+  width: 275px;
+  max-width: 80%;
+  margin-top: 24px;
+  border-radius: 6px;
+}
+
+@keyframes onboarding-in {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding__slide { animation: none; }
+}
+
+/* Termo de Uso (protótipo "termos de autorização alta"). */
+.terms-screen {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: calc(44px + env(safe-area-inset-top)) 10px calc(32px + env(safe-area-inset-bottom));
+}
+
+.terms-screen__title {
+  margin: 10px 0 22px;
+  font-size: 1.625rem;
+  font-weight: 800;
+}
+
+.terms-screen__text {
+  width: 100%;
+  height: min(440px, 52dvh);
+  overflow-y: auto;
+  padding: 6px 4px;
+  border: 1px solid var(--color-text);
+  font-size: 0.9375rem;
+  font-weight: 300;
+  line-height: 1.2;
+  text-align: justify;
+}
+
+.terms-screen__text ol {
+  margin: 0;
+  padding-left: 14px;
+}
+
+.terms-screen__text ul {
+  margin: 0 0 4px;
+  padding-left: 22px;
+}
+
+.terms-screen__version {
+  margin: 10px 0 2px;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.terms-screen__back {
+  width: 275px;
+  max-width: 80%;
+  margin-top: auto;
+  border-radius: 6px;
+}

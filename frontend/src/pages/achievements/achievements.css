@@ -1,0 +1,20 @@
+/* Tela "Conquistas" (protótipo: cabeçalho arredondado, seções Desbloqueadas e Bloqueadas). */
+.achievements-content {
+  padding: 18px 28px 32px 24px;
+}
+
+.achievements-section-title {
+  margin: 4px 0 6px 18px;
+  font-size: 1.4375rem;
+  font-weight: 700;
+}
+
+.achievement-list--dated {
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.achievement-list--locked {
+  gap: 18px;
+  margin-left: -9px;
+}

@@ -1,0 +1,323 @@
+[
+    {
+        "slug": "alfabetizacao",
+        "title": "Alfabetização",
+        "description": "Alfabeto manual, vogais, consoantes e números",
+        "icon": "🔤",
+        "level": 1,
+        "activities": [
+            {
+                "title": "Alfabeto",
+                "description": "O alfabeto manual completo, de A a Z, mais o Ç. Soletrar serve para nomes e palavras sem sinal",
+                "prompt": "Qual letra é essa?",
+                "note": "O alfabeto manual soletra palavras do português: é um apoio, a Libras tem sinais próprios.",
+                "signs": [
+                    "a",
+                    "b",
+                    "c",
+                    "d",
+                    "e",
+                    "f",
+                    "g",
+                    "h",
+                    "i",
+                    "j",
+                    "k",
+                    "l",
+                    "m",
+                    "n",
+                    "o",
+                    "p",
+                    "q",
+                    "r",
+                    "s",
+                    "t",
+                    "u",
+                    "v",
+                    "w",
+                    "x",
+                    "y",
+                    "z",
+                    "c-ce-cedilha"
+                ],
+                "tips": {
+                    "h": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "j": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "k": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "x": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "y": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "z": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "c-ce-cedilha": "O Ç costuma ter movimento: repare no gesto do avatar, não só no formato da mão."
+                }
+            },
+            {
+                "title": "Letras aleatórias: A a M",
+                "description": "10 letras sorteadas de A a M, em ordem diferente a cada vez",
+                "prompt": "Qual letra é essa?",
+                "questionsPerAttempt": 10,
+                "signs": [
+                    "a",
+                    "b",
+                    "c",
+                    "d",
+                    "e",
+                    "f",
+                    "g",
+                    "h",
+                    "i",
+                    "j",
+                    "k",
+                    "l",
+                    "m"
+                ],
+                "tips": {
+                    "h": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "j": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "k": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão."
+                }
+            },
+            {
+                "title": "Letras aleatórias: N a Z",
+                "description": "10 letras sorteadas de N a Z e Ç, em ordem diferente a cada vez",
+                "prompt": "Qual letra é essa?",
+                "questionsPerAttempt": 10,
+                "signs": [
+                    "n",
+                    "o",
+                    "p",
+                    "q",
+                    "r",
+                    "s",
+                    "t",
+                    "u",
+                    "v",
+                    "w",
+                    "x",
+                    "y",
+                    "z",
+                    "c-ce-cedilha"
+                ],
+                "tips": {
+                    "x": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "y": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "z": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "c-ce-cedilha": "O Ç costuma ter movimento: repare no gesto do avatar, não só no formato da mão."
+                }
+            },
+            {
+                "title": "Vogais",
+                "description": "A, E, I, O e U. Atenção: E e O são parecidos",
+                "prompt": "Qual vogal é essa?",
+                "signs": [
+                    "a",
+                    "e",
+                    "i",
+                    "o",
+                    "u",
+                    "e",
+                    "o"
+                ],
+                "tips": {
+                    "e": "O E e o O são parecidos: preste atenção no formato da mão.",
+                    "o": "O E e o O são parecidos: preste atenção no formato da mão."
+                },
+                "distractorPool": [
+                    "a",
+                    "e",
+                    "i",
+                    "o",
+                    "u"
+                ]
+            },
+            {
+                "title": "Consoantes",
+                "description": "As outras letras do alfabeto manual, incluindo o Ç",
+                "prompt": "Qual letra é essa?",
+                "signs": [
+                    "b",
+                    "c",
+                    "d",
+                    "f",
+                    "g",
+                    "h",
+                    "j",
+                    "k",
+                    "l",
+                    "m",
+                    "n",
+                    "p",
+                    "q",
+                    "r",
+                    "s",
+                    "t",
+                    "v",
+                    "w",
+                    "x",
+                    "y",
+                    "z",
+                    "c-ce-cedilha"
+                ],
+                "tips": {
+                    "h": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "j": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "k": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "x": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "y": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "z": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "c-ce-cedilha": "O Ç costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "f": "F e T são parecidos: compare com cuidado.",
+                    "t": "F e T são parecidos: compare com cuidado.",
+                    "u": "U e V são parecidos: compare com cuidado.",
+                    "v": "U e V são parecidos: compare com cuidado."
+                }
+            },
+            {
+                "title": "Números",
+                "description": "De zero a dez, na forma usada para contar",
+                "prompt": "Qual número é esse?",
+                "note": "Esta é a forma usada para contar. Para quantidade e para ordem (1º, 2º) a forma pode mudar.",
+                "signs": [
+                    "zero",
+                    "um",
+                    "dois",
+                    "tres",
+                    "quatro",
+                    "cinco",
+                    "seis",
+                    "sete",
+                    "oito",
+                    "nove",
+                    "dez"
+                ]
+            },
+            {
+                "title": "Revisão",
+                "description": "Letras parecidas, letras com movimento e números misturados",
+                "prompt": "Qual é esse sinal?",
+                "signs": [
+                    "e",
+                    "o",
+                    "f",
+                    "t",
+                    "u",
+                    "v",
+                    "j",
+                    "z",
+                    "a",
+                    "s",
+                    "dois",
+                    "cinco",
+                    "sete",
+                    "dez"
+                ],
+                "tips": {
+                    "j": "Esta letra costuma ter movimento: repare no gesto do avatar.",
+                    "z": "Esta letra costuma ter movimento: repare no gesto do avatar."
+                }
+            }
+        ]
+    },
+    {
+        "slug": "algumas-palavrinhas",
+        "title": "Algumas palavrinhas",
+        "description": "Cores, animais e cumprimentos do dia a dia",
+        "icon": "💬",
+        "level": 1,
+        "activities": [
+            {
+                "title": "Cores",
+                "description": "As cores mais usadas, com cinza e marrom",
+                "prompt": "Qual cor é essa?",
+                "note": "Os sinais de cores mudam de região para região: este é um deles.",
+                "signs": [
+                    "azul",
+                    "vermelho",
+                    "amarelo",
+                    "verde",
+                    "branco",
+                    "preto",
+                    "rosa",
+                    "laranja",
+                    "roxo",
+                    "cinza",
+                    "marrom"
+                ]
+            },
+            {
+                "title": "Animais",
+                "description": "Bichos de casa, da fazenda e da natureza",
+                "prompt": "Qual animal é esse?",
+                "signs": [
+                    "cachorro",
+                    "gato",
+                    "passaro",
+                    "peixe",
+                    "coelho",
+                    "cavalo",
+                    "vaca",
+                    "porco",
+                    "galinha",
+                    "pato",
+                    "macaco",
+                    "elefante",
+                    "girafa",
+                    "leao"
+                ]
+            },
+            {
+                "title": "Cumprimentos",
+                "description": "Oi, tchau, bom dia e boas maneiras. Para chamar a atenção, acene no campo de visão",
+                "prompt": "Qual cumprimento é esse?",
+                "signs": [
+                    "oi",
+                    "ola",
+                    "tchau",
+                    "bom-dia",
+                    "boa-tarde",
+                    "boa-noite",
+                    "tudo-bem",
+                    "obrigado",
+                    "por-favor",
+                    "desculpa",
+                    "com-licenca",
+                    "prazer",
+                    "bem-vindo"
+                ],
+                "tips": {
+                    "oi": "Para chamar a atenção de uma pessoa surda, acene no campo de visão dela ou toque de leve no ombro.",
+                    "ola": "Comece a sinalizar só depois de ter o contato visual da pessoa.",
+                    "boa-tarde": "Boa tarde é feito com dois sinais: BOA + TARDE.",
+                    "tudo-bem": "Na pergunta, a expressão do rosto faz parte do sinal.",
+                    "prazer": "Ao se apresentar, use o seu sinal de nome: ele é dado pela comunidade surda, não inventado por você."
+                }
+            },
+            {
+                "title": "Revisão",
+                "description": "Cores, animais e cumprimentos misturados",
+                "prompt": "Qual é esse sinal?",
+                "signs": [
+                    "oi",
+                    "azul",
+                    "gato",
+                    "bom-dia",
+                    "vermelho",
+                    "cavalo",
+                    "obrigado",
+                    "verde",
+                    "pato",
+                    "tchau",
+                    "amarelo",
+                    "elefante"
+                ]
+            }
+        ]
+    },
+    {
+        "slug": "treino-com-a-camera",
+        "title": "Treino com a câmera",
+        "description": "Pratique os sinais na frente da câmera",
+        "icon": "📷",
+        "level": 1,
+        "activities": []
+    }
+]

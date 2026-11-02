@@ -1,0 +1,304 @@
+/* Medidas da tela de perfil do protótipo (22 claro, 23 escuro). */
+.profile-content {
+  flex: 1;
+  padding: 14px 36px 24px 20px;
+}
+
+.profile-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 22px 12px;
+}
+
+.profile-identity__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 22px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 1.1875rem;
+  font-weight: 700;
+}
+
+/* Foto de perfil: botão (abre a galeria/câmera) com selo de câmera; a foto cobre o quadrado. */
+.profile-avatar {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+button.profile-identity__avatar {
+  position: relative;
+  padding: 0;
+  border: 0;
+  overflow: visible;
+  cursor: pointer;
+}
+
+.profile-identity__avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+.profile-identity__avatar--busy {
+  opacity: 0.6;
+}
+
+.profile-avatar__badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--color-surface, #fff);
+  border-radius: 50%;
+  background: var(--color-primary-strong);
+  color: #fff;
+}
+
+.profile-avatar__remove {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.profile-avatar__error {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 2;
+  width: 220px;
+  margin-top: 4px;
+}
+
+:root[data-theme="dark"] .profile-identity__avatar {
+  border-radius: 16px;
+}
+
+.profile-identity__name {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+
+.profile-identity__edit {
+  min-width: 30px;
+  min-height: 30px;
+  color: var(--color-primary);
+}
+
+:root[data-theme="dark"] .profile-identity__edit {
+  color: var(--color-primary-soft);
+}
+
+.profile-identity__city {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: -4px 0 0;
+  font-size: 0.9375rem;
+  color: var(--color-text-muted);
+}
+
+.profile-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.profile-edit__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.profile-edit__actions .button-primary {
+  width: auto;
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.stat-card,
+.profile-shortcut {
+  background: var(--color-card);
+  color: var(--color-card-text);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 88px;
+}
+
+.stat-card strong {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 2.125rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.stat-card span {
+  font-size: 0.6875rem;
+  color: var(--color-card-muted);
+}
+
+.profile-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 12px 0 44px;
+}
+
+/* Atalhos: largura fixa no tamanho normal; com fonte grande crescem e o texto pode hifenizar ("Configu-ração"). */
+.profile-shortcut {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+  min-height: 80px;
+  padding: 8px 4px 10px;
+  text-decoration: none;
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+:root[data-font-size="large"] .profile-shortcuts {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+:root[data-font-size="large"] .profile-shortcut {
+  white-space: normal;
+  hyphens: auto;
+  overflow-wrap: anywhere;
+}
+
+.profile-section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 4px;
+}
+
+.profile-section-link {
+  color: var(--color-primary);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+:root[data-theme="dark"] .profile-section-link {
+  color: var(--color-primary-soft);
+}
+
+.achievement-list--recent {
+  gap: 14px;
+}
+
+.profile-section-title {
+  margin: 0 0 4px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* Nível (tabela editada no painel; o servidor calcula pelo XP). */
+.level-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 16px 0 0;
+  padding: 14px 16px;
+  border-radius: var(--radius-large);
+  background: var(--color-card);
+  color: var(--color-card-text);
+  box-shadow: 0 2px 10px rgba(63, 44, 136, 0.12);
+}
+
+.level-card__badge {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 800;
+  box-shadow: inset 0 0 0 4px var(--color-primary-soft);
+}
+
+.level-card__body {
+  flex: 1;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.level-card__title {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.level-card__title span {
+  color: var(--color-primary);
+  margin-right: 4px;
+}
+
+.level-card__track {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--color-progress-track);
+  overflow: hidden;
+}
+
+.level-card__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-xp) 100%);
+  transition: width 600ms ease-out;
+}
+
+.level-card__hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--color-card-muted);
+}

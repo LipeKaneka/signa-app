@@ -1,0 +1,257 @@
+/* Medidas da tela de ranking do protótipo (16 claro, 17 escuro). */
+.position-card {
+  margin: 10px -10px 0;
+  padding: 18px 18px 12px;
+  border-radius: 20px;
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.position-card__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.position-card__label {
+  margin: 0;
+  font-size: 0.875rem;
+  opacity: 0.85;
+}
+
+.position-card__position {
+  display: block;
+  font-size: 2.125rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.position-card__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.position-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.position-pill--up {
+  background: var(--color-ranking-podium);
+  color: #10340a;
+}
+
+.position-pill--down {
+  background: #ffbdbe;
+  color: #8a1418;
+}
+
+.position-pill--best {
+  background: #fff;
+  color: var(--color-primary);
+}
+
+.position-card__bar {
+  width: 92%;
+  height: 8px;
+  margin-top: 16px;
+  border-radius: 4px;
+  background: #e2e2e2;
+  overflow: hidden;
+}
+
+.position-card__bar div {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--color-ranking-podium);
+  transform-origin: left center;
+  transition: transform var(--motion-slow) var(--ease-out);
+}
+
+.position-card__hint {
+  margin: 8px 0 0;
+  font-size: 0.6875rem;
+  opacity: 0.85;
+}
+
+.ranking-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: center;
+  margin: 20px -6px 10px;
+  padding: 6px 8px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: var(--color-card);
+}
+
+.ranking-tabs__tab {
+  justify-self: center;
+  min-height: 26px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #b3b3b3;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* Todas centralizadas: trocar de aba não desloca o texto (antes a ativa ia para a esquerda e as outras pulavam). */
+.ranking-tabs__tab--active {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 -7px;
+  padding: 0;
+  list-style: none;
+}
+
+/* Mais de 10 pessoas: a lista rola por dentro (altura das 10 primeiras, medida em RankingPage). */
+.ranking-list--scroll {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary) transparent;
+}
+
+.ranking-row {
+  display: grid;
+  grid-template-columns: 52px 46px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 2px 12px 2px 8px;
+  border: 1px solid #333;
+  border-radius: 14px;
+  background: var(--color-card);
+  color: var(--color-card-text);
+}
+
+.ranking-row__position {
+  display: flex;
+  justify-content: center;
+  font-size: 1.1875rem;
+  font-weight: 800;
+  color: #b3b3b3;
+}
+
+.ranking-row__avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.ranking-row__avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Nome em até 2 linhas (com fonte grande o espaço encolhe); o valor pode quebrar ("1" / "Atividade"). */
+.ranking-row__name {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: break-word;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.ranking-row__value {
+  font-size: 1.1875rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: right;
+  color: #9a9a9a;
+}
+
+.ranking-row--me {
+  background: var(--color-ranking-me);
+}
+
+.ranking-row--me .ranking-row__position,
+.ranking-row--me .ranking-row__value,
+.ranking-row--me .ranking-row__name {
+  color: #1d4012;
+}
+
+/* A própria pessoa repetida no fim, separada da lista. */
+.ranking-list--me {
+  margin-top: 26px;
+  padding-bottom: 8px;
+}
+
+.ranking-results {
+  transition: opacity var(--motion-fast) ease-out;
+}
+
+.ranking-results--loading {
+  opacity: 0.45;
+}
+
+/* ---------- Tema escuro (protótipo 17): linhas transparentes com borda e texto brancos ---------- */
+:root[data-theme="dark"] .position-card {
+  margin-top: -12px;
+}
+
+:root[data-theme="dark"] .ranking-tabs,
+:root[data-theme="dark"] .ranking-row {
+  border-color: #fff;
+  background: transparent;
+  color: #fff;
+}
+
+:root[data-theme="dark"] .ranking-tabs__tab {
+  color: #fff;
+}
+
+:root[data-theme="dark"] .ranking-row__position,
+:root[data-theme="dark"] .ranking-row__value {
+  color: #fff;
+}
+
+:root[data-theme="dark"] .ranking-row--me {
+  border-color: #6fcf52;
+  background: #6fcf52;
+}
+
+:root[data-theme="dark"] .ranking-row--me .ranking-row__position,
+:root[data-theme="dark"] .ranking-row--me .ranking-row__value,
+:root[data-theme="dark"] .ranking-row--me .ranking-row__name {
+  color: #2f6b1f;
+}
+
+/* Fonte grande: colunas mais estreitas e o valor em duas linhas ("2" / "Atividades"), sobrando espaço para o nome. */
+:root[data-font-size="large"] .ranking-row {
+  grid-template-columns: 34px 38px minmax(0, 1fr) auto;
+  gap: 8px;
+  padding-right: 10px;
+}
+
+:root[data-font-size="large"] .ranking-row__avatar {
+  width: 38px;
+  height: 38px;
+}
+
+:root[data-font-size="large"] .ranking-row__value {
+  max-width: 6.2em;
+  font-size: 1rem;
+}

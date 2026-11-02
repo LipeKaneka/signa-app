@@ -1,0 +1,456 @@
+.camera-screen {
+  position: fixed;
+  inset: 0;
+  max-width: 480px;
+  margin: 0 auto;
+  background: #000;
+  color: #fff;
+  overflow: hidden;
+}
+
+.camera-header {
+  position: relative;
+  /* Acima da capa de carregamento (3), para o voltar funcionar sempre. */
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: calc(8px + env(safe-area-inset-top)) 12px 8px;
+}
+
+.camera-header__title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.camera-view {
+  position: absolute;
+  inset: 0;
+}
+
+.camera-view video,
+.camera-view canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.camera-view--mirrored video,
+.camera-view--mirrored canvas {
+  transform: scaleX(-1);
+}
+
+.camera-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 60px 24px 90px;
+  pointer-events: none;
+}
+
+.camera-stage__heading {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-shadow: 0 1px 3px #000;
+}
+
+.camera-brackets {
+  position: relative;
+  width: min(64vw, 258px);
+  aspect-ratio: 1 / 1.06;
+}
+
+.camera-brackets span {
+  position: absolute;
+  width: 29%;
+  height: 27%;
+  border: 0 solid #fff;
+}
+
+.camera-brackets span:nth-child(1) {
+  top: 0;
+  left: 0;
+  border-top-width: 2px;
+  border-left-width: 2px;
+  border-top-left-radius: 14px;
+}
+
+.camera-brackets span:nth-child(2) {
+  top: 0;
+  right: 0;
+  border-top-width: 2px;
+  border-right-width: 2px;
+  border-top-right-radius: 14px;
+}
+
+.camera-brackets span:nth-child(3) {
+  bottom: 0;
+  left: 0;
+  border-bottom-width: 2px;
+  border-left-width: 2px;
+  border-bottom-left-radius: 14px;
+}
+
+.camera-brackets span:nth-child(4) {
+  bottom: 0;
+  right: 0;
+  border-bottom-width: 2px;
+  border-right-width: 2px;
+  border-bottom-right-radius: 14px;
+}
+
+.camera-status,
+.camera-text {
+  margin: 0;
+  max-width: 90%;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.camera-status strong {
+  font-size: 1.6rem;
+}
+
+.camera-text {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.practice-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 174px;
+  height: 164px;
+  border-radius: 16px;
+  background: #fff;
+  color: #111;
+  transition: transform var(--motion-base) var(--ease-out);
+}
+
+.practice-card strong {
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: #fff;
+  -webkit-text-stroke: 1.5px #333;
+}
+
+.practice-card--success {
+  background: var(--color-correct-bg);
+  transform: scale(1.08);
+}
+
+.practice-card__success {
+  position: absolute;
+  top: -26px;
+  color: var(--color-next-correct);
+  font-weight: 800;
+}
+
+.camera-drawer-toggle {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 60px;
+  border: 0;
+  background: transparent;
+}
+
+.camera-flip {
+  position: absolute;
+  z-index: 3;
+  right: 16px;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(85, 85, 85, 0.85);
+  color: #fff;
+}
+
+.drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.translator-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(88%, 360px);
+  padding: calc(16px + env(safe-area-inset-top)) 16px 24px;
+  overflow-y: auto;
+  background: #17094d;
+  color: #fff;
+  animation: drawer-in var(--motion-base) var(--ease-out);
+}
+
+.drawer-backdrop {
+  animation: fade-in var(--motion-base) var(--ease-out);
+}
+
+.drawer-backdrop--leaving {
+  animation: fade-out var(--motion-base) var(--ease-in) forwards;
+}
+
+.drawer-backdrop--leaving .translator-drawer {
+  animation: drawer-out var(--motion-base) var(--ease-in) forwards;
+}
+
+@keyframes drawer-out {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+.translator-drawer h2 {
+  margin: 18px 0 8px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #cfc6f5;
+}
+
+.translator-drawer__close {
+  position: absolute;
+  top: calc(6px + env(safe-area-inset-top));
+  right: 6px;
+}
+
+.drawer-segmented {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.drawer-segmented button {
+  flex: 1;
+  min-height: 34px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #fff;
+  font-size: 0.8rem;
+}
+
+.drawer-segmented .drawer-segmented__option--active {
+  background: var(--color-primary);
+  font-weight: 700;
+}
+
+.translator-drawer__text {
+  min-height: 48px;
+  margin: 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: #fff;
+  color: #111;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.translator-drawer__text.muted {
+  color: #777;
+  font-weight: 400;
+}
+
+.translator-drawer__actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.translator-drawer__actions button {
+  min-height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  background: transparent;
+  color: #fff;
+  font-size: 0.75rem;
+}
+
+.translator-drawer__info {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.translator-drawer__note {
+  margin-top: 18px;
+  font-size: 0.65rem;
+  line-height: 1.4;
+  color: #cfc6f5;
+}
+
+.translator-drawer__links {
+  display: flex;
+  gap: 8px;
+}
+
+.translator-drawer__links a {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* ---------- Capa enquanto a câmera abre ou quando falha ---------- */
+.camera-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  background: radial-gradient(circle at 50% 40%, #2a1680 0%, #0c0620 70%);
+  color: #fff;
+  text-align: center;
+}
+
+.camera-tool__view .camera-cover {
+  z-index: 1;
+}
+
+.camera-cover__badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  animation: camera-cover-pulse 1.6s var(--ease-in-out) infinite;
+}
+
+.camera-cover--error .camera-cover__badge {
+  background: rgba(255, 255, 255, 0.12);
+  animation: none;
+}
+
+.camera-cover__title {
+  margin: 6px 0 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.camera-cover__text {
+  max-width: 300px;
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.35;
+  color: #cfc6f5;
+}
+
+.camera-cover__dots {
+  display: flex;
+  gap: 6px;
+}
+
+.camera-cover__dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.35;
+  animation: camera-cover-dot 1.2s var(--ease-in-out) infinite;
+}
+
+.camera-cover__dots i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.camera-cover__dots i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.camera-cover__retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  margin-top: 6px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+@keyframes camera-cover-pulse {
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes camera-cover-dot {
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .camera-cover__badge,
+  .camera-cover__dots i {
+    animation: none !important;
+  }
+}

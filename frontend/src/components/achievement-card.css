@@ -1,0 +1,89 @@
+/* Cartão de conquista (protótipo do perfil e tela "Conquistas"). */
+.achievement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  margin: 0 0 0 -5px;
+  padding: 0;
+  list-style: none;
+}
+
+.achievement-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 86px;
+  padding: 10px 12px;
+  border: 1px solid #777;
+  border-radius: 16px;
+  background: var(--color-card);
+  color: var(--color-card-text);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.28);
+}
+
+.achievement-card__medal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  background: var(--color-primary);
+}
+
+
+.achievement-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.achievement-card__description {
+  margin: 4px 0 0;
+  font-size: 0.6875rem;
+  color: var(--color-card-muted);
+}
+
+/* Bloqueada: tudo mais claro (protótipo da tela Conquistas). */
+.achievement-card--locked {
+  border-color: #b9b6c4;
+  background: #f7f5fd;
+  color: #8c8a99;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.12);
+}
+
+.achievement-card--locked .achievement-card__medal {
+  background: #9e8ee0;
+}
+
+.achievement-card--locked .achievement-card__description {
+  color: #8c8a99;
+}
+
+:root[data-theme="dark"] .achievement-card--locked {
+  background: rgba(255, 255, 255, 0.06);
+  color: #a9a5bf;
+}
+
+.achievement-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.achievement-item__date {
+  margin: 6px 0 0;
+  text-align: center;
+  font-size: 0.6875rem;
+  color: var(--color-text);
+}
+
+.achievement-empty {
+  margin: 4px 0 0;
+  padding: 16px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-medium, 16px);
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  text-align: center;
+}

@@ -1,0 +1,12 @@
+{
+  "appId": "br.signa.ludus",
+  "appName": "Signa Ludus",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#1e0a65"
+  }
+}

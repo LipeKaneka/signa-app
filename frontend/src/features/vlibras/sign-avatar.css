@@ -1,0 +1,181 @@
+.sign-frame {
+  width: 100%;
+  aspect-ratio: 1 / 0.94;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-card-muted);
+  text-align: center;
+}
+
+.sign-frame--unavailable {
+  gap: 10px;
+  padding: 20px;
+}
+
+.sign-frame__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--color-primary-faint);
+  color: var(--color-primary);
+}
+
+.sign-frame__message {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-card-text);
+}
+
+.sign-frame__retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+/* ---------- Capa de carregamento (fica acima do painel do VLibras, z-index 45) ---------- */
+.sign-loading {
+  position: fixed;
+  z-index: 46;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 6px;
+  background: linear-gradient(160deg, #6a4ee0 0%, var(--color-primary) 55%, var(--color-primary-strong) 100%);
+  color: #fff;
+  text-align: center;
+  transition: opacity var(--motion-base) var(--ease-out), visibility 0s linear 0s;
+}
+
+.sign-loading--done {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--motion-base) var(--ease-out), visibility 0s linear var(--motion-base);
+}
+
+.sign-loading__hand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  animation: sign-loading-pulse 1.6s var(--ease-in-out) infinite;
+}
+
+.sign-loading__title {
+  margin: 4px 0 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.sign-loading__dots {
+  display: flex;
+  gap: 6px;
+}
+
+.sign-loading__dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.35;
+  animation: sign-loading-dot 1.2s var(--ease-in-out) infinite;
+}
+
+.sign-loading__dots i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.sign-loading__dots i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.sign-loading__hint {
+  margin: 6px 0 0;
+  font-size: 0.875rem;
+  opacity: 0.85;
+}
+
+.sign-loading__skip {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+@keyframes sign-loading-pulse {
+  50% {
+    transform: scale(1.08);
+    background: rgba(255, 255, 255, 0.22);
+  }
+}
+
+@keyframes sign-loading-dot {
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sign-loading__hand,
+  .sign-loading__dots i {
+    animation: none !important;
+  }
+
+  .sign-loading__dots i {
+    opacity: 0.8;
+  }
+}
+
+.sign-avatar__bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-height: 28px;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.sign-avatar__warning {
+  margin-right: auto;
+}
+
+.sign-avatar__replay {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid var(--color-surface-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 0.72rem;
+}

@@ -1,0 +1,264 @@
+.camera-tool {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  color: #fff;
+}
+
+.camera-tool__view {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3.4;
+  overflow: hidden;
+  background: #111;
+}
+
+.camera-tool__view video,
+.camera-tool__view canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.camera-tool__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px;
+  pointer-events: none;
+  text-align: center;
+}
+
+.recording-badge {
+  padding: 8px 16px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.recording-badge strong {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.camera-hint {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  font-size: 0.85rem;
+}
+
+.camera-tool__panel {
+  flex: 1;
+  padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+  background: #17094d;
+  border-radius: var(--radius-large) var(--radius-large) 0 0;
+  margin-top: -16px;
+  position: relative;
+}
+
+.camera-tool__panel h2 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+}
+
+.camera-tool__panel h3 {
+  margin: 18px 0 6px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #cfc6f5;
+}
+
+.tool-text {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: #cfc6f5;
+}
+
+.tool-row {
+  display: flex;
+  gap: 8px;
+}
+
+.tool-row .field {
+  flex: 1;
+}
+
+.tool-row .button-primary {
+  width: auto;
+}
+
+.tool-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.tool-actions button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  background: transparent;
+  color: #fff;
+  font-size: 0.8rem;
+}
+
+.tool-actions .tool-actions__primary {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  font-weight: 700;
+}
+
+.tool-message {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 0.85rem;
+}
+
+.tool-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tool-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.85rem;
+}
+
+.tool-list b {
+  min-width: 28px;
+  font-size: 1rem;
+}
+
+.tool-list span {
+  flex: 1;
+  color: #cfc6f5;
+}
+
+.tool-list button {
+  color: #fff;
+}
+
+.tool-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  font-size: 0.7rem;
+  text-align: center;
+  color: #8f84b8;
+}
+
+.tool-steps li {
+  padding-top: 6px;
+  border-top: 3px solid #3a2a80;
+}
+
+.tool-steps .tool-steps__done {
+  color: #cfc6f5;
+  border-color: var(--color-ranking-podium);
+}
+
+.tool-steps .tool-steps__current {
+  color: #fff;
+  font-weight: 700;
+  border-color: var(--color-primary-soft);
+}
+
+.check-list {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.check-list li {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  column-gap: 6px;
+  padding: 6px 0;
+  font-size: 0.85rem;
+}
+
+.check-list small {
+  grid-column: 2;
+  color: #cfc6f5;
+}
+
+.tool-progress {
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+
+.tool-progress div {
+  width: 100%;
+  height: 100%;
+  background: var(--color-ranking-podium);
+  transform-origin: left center;
+  transition: transform var(--motion-base) var(--ease-out);
+}
+
+.big-letter {
+  padding: 4px 18px;
+  border-radius: 10px;
+  background: #fff;
+  color: #111;
+  font-size: 2.4rem;
+  font-weight: 800;
+}
+
+.camera-tool__panel .button-primary + .button-link {
+  display: block;
+  margin: 8px auto 0;
+  color: var(--color-primary-soft);
+}
+
+.segmented-dark {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+  padding: 3px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.segmented-dark button {
+  flex: 1;
+  min-height: 34px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #fff;
+  font-size: 0.8rem;
+}
+
+.segmented-dark button[aria-checked="true"] {
+  background: var(--color-primary);
+  font-weight: 700;
+}

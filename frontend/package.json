@@ -1,0 +1,28 @@
+{
+  "name": "signa-ludus-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "dev:https": "vite --host --mode https",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "build:android": "vite build --mode android && cap sync android",
+    "apk:debug": "npm run build:android && cd android && gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
+    "@mediapipe/tasks-vision": "^1.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.1.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.3",
+    "@vitejs/plugin-basic-ssl": "^1.2.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.11"
+  }
+}

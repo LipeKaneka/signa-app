@@ -1,0 +1,72 @@
+/* Cores medidas nas telas do protótipo. O tema escuro troca só o fundo e o texto sobre ele;
+   cartões, alternativas e o quadro do sinal continuam claros, como no protótipo. */
+:root {
+  --font-scale: 1;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --color-primary: #4f31bb;
+  --color-primary-strong: #3f2c88;
+  --color-primary-soft: #cebdff;
+  --color-primary-faint: #ede8ff;
+
+  --color-card: #ffffff;
+  --color-card-text: #111111;
+  --color-card-muted: #555555;
+  --color-border: #808080;
+  --color-divider: #d7d2e6;
+
+  --color-progress-track: #e2e2e2;
+  --color-correct-bg: #d4ffd8;
+  --color-correct-border: #35a405;
+  --color-correct-text: #368816;
+  --color-wrong-bg: #ffbdbe;
+  --color-wrong-border: #d93a3d;
+  --color-wrong-text: #a51d20;
+  --color-sheet-title-correct: #d4ffd9;
+  --color-sheet-title-wrong: #ffc78a;
+  --color-next-correct: #3bdd00;
+  --color-next-wrong: #dd8800;
+  --color-xp: #ffb820;
+  --color-ranking-podium: #75d262;
+  --color-ranking-me: #97f971;
+  --color-online: #0cea13;
+
+  --background: linear-gradient(180deg, #faf9fe 0%, #e7e0ff 100%);
+  --color-text: #111111;
+  --color-text-muted: #555555;
+  --color-surface-line: #cfc8e6;
+
+  /* Movimento: todas as animações usam estes tokens (mesmo ritmo em todas as telas). */
+  --motion-fast: 150ms; /* toques, interruptores */
+  --motion-base: 220ms; /* folhas, gavetas, barras */
+  --motion-slow: 320ms; /* progresso */
+  --motion-pulse: 1.8s; /* destaque contínuo (atividade liberada) */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1); /* entradas */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1); /* saídas */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --press-scale: 0.97;
+
+  --radius-small: 6px;
+  --radius-medium: 10px;
+  --radius-large: 24px;
+  --nav-height: 88px;
+}
+
+:root[data-theme="dark"] {
+  --background: linear-gradient(180deg, #120739 0%, #1e0a65 45%, #250c82 100%);
+  --color-text: #ffffff;
+  --color-text-muted: #cfc6f5;
+  --color-surface-line: #4b3a9a;
+  --color-divider: #4b3a9a;
+}
+
+/* Contraste alto: texto mais escuro/claro e bordas mais fortes. */
+:root[data-contrast="high"] {
+  --color-border: #000000;
+  --color-card-muted: #222222;
+  --color-text-muted: #222222;
+  --color-primary-soft: #b39cff;
+}
+:root[data-theme="dark"][data-contrast="high"] {
+  --color-text-muted: #ffffff;
+}
