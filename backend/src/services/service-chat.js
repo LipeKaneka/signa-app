@@ -127,6 +127,29 @@ async function extractSearchTerms(question, deadline) {
 }
 
 /**
+ * Deixa o histórico no formato que Gemini e Claude aceitam: começa pela pessoa, alterna pessoa/IA e termina na IA
+ * (a pergunta nova entra depois). Sem isso, um histórico "fora de passo" (pergunta que ficou sem resposta porque o
+ * app fechou ou caiu a internet) fazia toda pergunta seguinte daquela pessoa falhar e cair no dicionário.
+ * Mensagens seguidas do mesmo lado viram uma só.
+ * @param {{role: "user"|"assistant", content: string}[]} history
+ * @returns {{role: "user"|"assistant", content: string}[]}
+ */
+export function normalizeHistory(history) {
+  const merged = [];
+  for (const message of history) {
+    const content = String(message.content ?? "").trim();
+    if (!content) continue;
+    const role = message.role === "assistant" ? "assistant" : "user";
+    const last = merged.at(-1);
+    if (last && last.role === role) last.content = `${last.content}\n${content}`;
+    else merged.push({ role, content });
+  }
+  while (merged.length && merged[0].role !== "user") merged.shift();
+  while (merged.length && merged.at(-1).role !== "assistant") merged.pop();
+  return merged;
+}
+
+/**
  * Resposta sem IA: lista os sinais encontrados no dicionário.
  * @param {object[]} signs
  * @returns {string}
@@ -169,7 +192,7 @@ export async function askAssistant(question, history) {
   try {
     const answer = await askAi({
       system: SYSTEM_PROMPT + describeSignsForPrompt(signs),
-      messages: [...history, { role: "user", content: question }],
+      messages: [...normalizeHistory(history), { role: "user", content: question }],
       deadline,
     });
     return { answer: answer || answerFromDictionary(signs), signs, source: "ai" };

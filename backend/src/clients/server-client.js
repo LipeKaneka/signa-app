@@ -1,8 +1,15 @@
 import { getEnvironment } from "../config/env.js";
 import { HttpError } from "../utils/util-http-error.js";
 
-/** Tempo máximo esperando o servidor de gerenciamento antes de responder "indisponível" ao app. */
-const REQUEST_TIMEOUT_MS = 10000;
+/**
+ * Tempo máximo esperando o servidor de gerenciamento antes de responder "indisponível" ao app.
+ * Longo de propósito: em hospedagens grátis (Render) o servidor "dorme" sem uso e leva até ~50 s para acordar.
+ */
+const REQUEST_TIMEOUT_MS = 55000;
+/** Respostas do proxy da hospedagem enquanto o servidor acorda ou reinicia: vale tentar de novo. */
+const WAKING_STATUSES = new Set([502, 503, 504]);
+const WAKING_RETRIES = 3;
+const WAKING_RETRY_DELAY_MS = 3000;
 const UNAVAILABLE_MESSAGE = "Serviço temporariamente indisponível. Tente de novo em instantes.";
 /** Mensagem do servidor quando a chave de serviço não confere (server/src/middlewares/service-auth-middleware.js). */
 const SERVICE_KEY_REJECTED_MESSAGE = "Chave de serviço inválida.";
@@ -59,17 +66,24 @@ export async function callServer(path, { method = "GET", body, query } = {}) {
   const headers = { "X-Service-Key": serverServiceKey };
   if (body !== undefined) headers["Content-Type"] = "application/json";
 
+  // Um só prazo para a chamada inteira (com as novas tentativas dentro dele).
+  const signal = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
   let response;
-  try {
-    response = await fetch(buildUrl(path, query), {
-      method,
-      headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    });
-  } catch (error) {
-    console.error(`Servidor de gerenciamento inacessível (${method} ${path}):`, error.message);
-    throw new HttpError(503, UNAVAILABLE_MESSAGE);
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      response = await fetch(buildUrl(path, query), {
+        method,
+        headers,
+        body: body === undefined ? undefined : JSON.stringify(body),
+        signal,
+      });
+    } catch (error) {
+      console.error(`Servidor de gerenciamento inacessível (${method} ${path}):`, error.message);
+      throw new HttpError(503, UNAVAILABLE_MESSAGE);
+    }
+    // Servidor acordando: só repete leituras (GET), que não mudam nada se chegarem duas vezes.
+    if (method !== "GET" || !WAKING_STATUSES.has(response.status) || attempt >= WAKING_RETRIES || signal.aborted) break;
+    await new Promise((resolve) => setTimeout(resolve, WAKING_RETRY_DELAY_MS));
   }
 
   const data = await readJsonSafely(response);

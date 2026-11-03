@@ -5,6 +5,10 @@ import { readStoredToken, storeToken, clearStoredToken } from "../utils/session-
 
 const AuthContext = createContext(null);
 
+/** Novas tentativas ao abrir o app antes de mostrar "sem conexão" (o servidor grátis pode estar acordando). */
+const OFFLINE_RETRIES = 2;
+const OFFLINE_RETRY_DELAY_MS = 4000;
+
 /**
  * Guarda a sessão (token + perfil). status: loading | signedOut | signedIn | offline.
  * offline = havia sessão salva, mas o servidor não respondeu: o token é mantido para tentar de novo.
@@ -29,9 +33,27 @@ export function AuthProvider({ children }) {
   useEffect(() => onUnauthorized(signOut), [signOut]);
 
   // Só sai da conta se o servidor recusar o token (401); queda de rede não desloga ninguém.
+  // Antes de mostrar "sem conexão", tenta de novo algumas vezes: na hospedagem grátis o servidor pode estar acordando.
   useEffect(() => {
-    if (status !== "loading") return;
-    refreshProfile().catch((error) => (error.status === 401 ? signOut() : setStatus("offline")));
+    if (status !== "loading") return undefined;
+    let cancelled = false;
+    (async () => {
+      for (let attempt = 0; attempt <= OFFLINE_RETRIES; attempt += 1) {
+        try {
+          await refreshProfile();
+          return;
+        } catch (error) {
+          if (cancelled) return;
+          if (error.status === 401) return signOut();
+          if (attempt < OFFLINE_RETRIES) await new Promise((resolve) => setTimeout(resolve, OFFLINE_RETRY_DELAY_MS));
+          if (cancelled) return;
+        }
+      }
+      setStatus("offline");
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [status, refreshProfile, signOut]);
 
   const retryConnection = useCallback(() => setStatus("loading"), []);

@@ -58,3 +58,11 @@
   font-size: 1rem;
   font-weight: 700;
 }
+
+/* Explicação de demora (servidor grátis acordando), mais discreta que a mensagem principal. */
+.splash__hint {
+  max-width: 280px;
+  margin-top: 4px;
+  font-size: 0.8125rem;
+  opacity: 0.8;
+}

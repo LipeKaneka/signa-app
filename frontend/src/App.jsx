@@ -79,9 +79,9 @@ function PrivateRoutes() {
 
 export function App() {
   const { status, retryConnection } = useAuth();
-  if (status === "loading") return <SplashScreen />;
+  if (status === "loading") return <SplashScreen slowHint="Conectando ao servidor… na primeira vez do dia isso pode levar até 1 minuto." />;
   if (status === "offline") {
-    return <SplashScreen message="Sem conexão com o servidor agora." onRetry={retryConnection} />;
+    return <SplashScreen message="Sem conexão com o servidor agora. Confira a internet e tente de novo." onRetry={retryConnection} />;
   }
 
   return (
