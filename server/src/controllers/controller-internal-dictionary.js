@@ -27,5 +27,6 @@ export async function getSign(req, res) {
 export async function findMentioned(req, res) {
   const text = readOptionalString(req.query.text, "Texto", 2000) ?? "";
   const limit = readPositiveInteger(req.query.limit, { fallback: 5, max: 20 });
-  res.json({ signs: await DictionaryService.findSignsMentionedIn(text, limit) });
+  const prefix = req.query.prefix !== "false";
+  res.json({ signs: await DictionaryService.findSignsMentionedIn(text, limit, { prefix }) });
 }

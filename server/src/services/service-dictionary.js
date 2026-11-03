@@ -67,16 +67,42 @@ export async function getSignBySlug(slug) {
   return toPublicSign(sign);
 }
 
+/** Palavras curtas comuns que não viram busca por "começa com" (achariam verbetes demais). */
+const PREFIX_STOPWORDS = new Set(["como", "para", "qual", "quais", "onde", "quando", "porque", "fala", "falar", "fazer", "sinal", "libras"]);
+
 /**
- * Verbetes cujas palavras aparecem num texto livre.
- * @param {string} text
+ * Verbetes citados num texto livre. Acha a palavra exata ("amor"), expressões de 2–3 palavras ("bom dia" → bom-dia),
+ * plural simples ("cores" → cor) e palavras do mesmo começo com 3+ letras ("amo" → amor). Exatos vêm primeiro.
+ * @param {string} text - pergunta do usuário ou termos que a IA escolheu (separados por vírgula ou espaço).
  * @param {number} [maxResults=5]
+ * @param {{prefix?: boolean}} [options] - prefix: false = só palavras/expressões exatas (termos já escolhidos pela IA).
  * @returns {Promise<object[]>}
  * Usado por: GET /internal/v1/dictionary/mentioned (o assistente do backend cita esses sinais).
  */
-export async function findSignsMentionedIn(text, maxResults = 5) {
-  const words = new Set(normalizeText(text).split(/[^a-z0-9]+/).filter((word) => word.length >= 3));
-  if (words.size === 0) return [];
-  const signs = await SignModel.find({ slug: { $in: [...words] }, active: { $ne: false } }).limit(maxResults).lean();
+export async function findSignsMentionedIn(text, maxResults = 5, { prefix = true } = {}) {
+  const words = normalizeText(text).split(/[^a-z0-9]+/).filter(Boolean);
+  const exact = new Set();
+  words.forEach((word, index) => {
+    if (word.length >= 3) exact.add(word);
+    if (word.length >= 4 && word.endsWith("s")) exact.add(word.slice(0, -1));
+    if (word.length >= 5 && word.endsWith("es")) exact.add(word.slice(0, -2));
+    if (index + 1 < words.length) exact.add(`${word}-${words[index + 1]}`);
+    if (index + 2 < words.length) exact.add(`${word}-${words[index + 1]}-${words[index + 2]}`);
+  });
+  if (exact.size === 0) return [];
+  const prefixes = prefix ? [...new Set(words.filter((word) => word.length >= 3 && !PREFIX_STOPWORDS.has(word)))] : [];
+
+  const active = { active: { $ne: false } };
+  const exactSigns = await SignModel.find({ ...active, slug: { $in: [...exact] } }).limit(maxResults).lean();
+  let signs = exactSigns;
+  if (signs.length < maxResults && prefixes.length > 0) {
+    const pattern = `^(${prefixes.map(escapeRegExp).join("|")})`;
+    const found = new Set(signs.map((sign) => sign.slug));
+    const similar = await SignModel.find({ ...active, slug: { $regex: pattern, $nin: [...found] } })
+      .sort({ word: 1 })
+      .limit(maxResults - signs.length)
+      .lean();
+    signs = [...signs, ...similar];
+  }
   return signs.map(toPublicSign);
 }

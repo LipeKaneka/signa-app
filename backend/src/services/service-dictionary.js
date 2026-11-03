@@ -43,7 +43,7 @@ export async function getSignBySlug(slug) {
  * @returns {Promise<object[]>}
  * Usado por: service-chat.js (cita sinais na resposta do assistente).
  */
-export async function findSignsMentionedIn(text, maxResults = 5) {
-  const { signs } = await callServer("/dictionary/mentioned", { query: { text, limit: maxResults } });
+export async function findSignsMentionedIn(text, maxResults = 5, { prefix = true } = {}) {
+  const { signs } = await callServer("/dictionary/mentioned", { query: { text, limit: maxResults, prefix } });
   return signs;
 }

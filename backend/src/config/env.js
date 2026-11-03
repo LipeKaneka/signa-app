@@ -111,22 +111,25 @@ export function loadEnvironment() {
 
 /** Modelo padrão de cada provedor de IA (AI_MODEL troca). "gemini-flash-latest" acompanha o Flash mais novo. */
 const DEFAULT_AI_MODELS = Object.freeze({ gemini: "gemini-flash-latest", anthropic: "claude-opus-5-5" });
+/** Modelos reserva, tentados quando o principal está sobrecarregado (AI_FALLBACK_MODELS troca; separados por vírgula). */
+const DEFAULT_AI_FALLBACK_MODELS = Object.freeze({ gemini: "gemini-flash-lite-latest", anthropic: "claude-haiku-5-5" });
 
 /**
  * Provedor de IA do assistente: Gemini se houver GEMINI_API_KEY, senão Claude se houver ANTHROPIC_API_KEY,
  * senão nenhum (o assistente responde só pelo dicionário).
- * @returns {{aiProvider: "gemini"|"anthropic"|null, geminiApiKey: string, anthropicApiKey: string, aiModel: string}}
+ * @returns {{aiProvider: "gemini"|"anthropic"|null, geminiApiKey: string, anthropicApiKey: string, aiModel: string,
+ *   aiFallbackModels: string[]}}
  */
 function readAiSettings() {
   const geminiApiKey = readOptional("GEMINI_API_KEY", "");
   const anthropicApiKey = readOptional("ANTHROPIC_API_KEY", "");
   const aiProvider = geminiApiKey ? "gemini" : anthropicApiKey ? "anthropic" : null;
-  return {
-    aiProvider,
-    geminiApiKey,
-    anthropicApiKey,
-    aiModel: readOptional("AI_MODEL", aiProvider ? DEFAULT_AI_MODELS[aiProvider] : ""),
-  };
+  const aiModel = readOptional("AI_MODEL", aiProvider ? DEFAULT_AI_MODELS[aiProvider] : "");
+  const aiFallbackModels = readOptional("AI_FALLBACK_MODELS", aiProvider ? DEFAULT_AI_FALLBACK_MODELS[aiProvider] : "")
+    .split(",")
+    .map((model) => model.trim())
+    .filter((model) => model && model !== aiModel);
+  return { aiProvider, geminiApiKey, anthropicApiKey, aiModel, aiFallbackModels };
 }
 
 let cachedEnvironment = null;
