@@ -57,8 +57,10 @@ function readAdminSessionHours() {
  * HOST padrão 127.0.0.1: na mesma máquina do backend, o servidor fica inacessível de fora.
  * Ao mover para outra máquina, troque HOST para o endereço da rede privada.
  * adminCookieSecure: cookie do painel só por HTTPS (padrão: ligado em produção; em 127.0.0.1 via HTTP fica desligado).
+ * trustProxy: confiar no proxy da hospedagem (Render etc.), que recebe em HTTPS e repassa em HTTP. Padrão: 1 salto em
+ * produção. Sem isso o painel achava que estava em "http" e recusava o login ("Origem não permitida").
  * @returns {Readonly<{nodeEnv: string, host: string, port: number, databaseUrl: string, serviceKey: string,
- *   adminSessionHours: number, adminCookieSecure: boolean}>}
+ *   adminSessionHours: number, adminCookieSecure: boolean, trustProxy: number|false}>}
  */
 export function loadEnvironment() {
   return Object.freeze({
@@ -69,7 +71,20 @@ export function loadEnvironment() {
     serviceKey: readServiceKey(),
     adminSessionHours: readAdminSessionHours(),
     adminCookieSecure: readOptional("ADMIN_COOKIE_SECURE", readOptional("NODE_ENV", "development") === "production" ? "true" : "false") === "true",
+    trustProxy: readTrustProxy(),
   });
+}
+
+/**
+ * TRUST_PROXY = quantos proxies confiáveis há na frente do servidor (ex.: 1 no Render) ou "false".
+ * @returns {number|false}
+ */
+function readTrustProxy() {
+  const value = readOptional("TRUST_PROXY", readOptional("NODE_ENV", "development") === "production" ? "1" : "false");
+  if (value === "false" || value === "0") return false;
+  const hops = Number.parseInt(value, 10);
+  if (!Number.isInteger(hops) || hops < 1 || hops > 5) throw new Error("TRUST_PROXY deve ser false ou um número de 1 a 5");
+  return hops;
 }
 
 let cachedEnvironment = null;

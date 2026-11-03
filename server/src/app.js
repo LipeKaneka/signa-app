@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import helmet from "helmet";
+import { getEnvironment } from "./config/env.js";
 import { internalRouter } from "./routes/route-internal.js";
 import { adminRouter } from "./routes/route-admin.js";
 import { notFoundHandler, errorHandler } from "./middlewares/error-middleware.js";
@@ -46,6 +47,8 @@ export function createApp() {
   const app = express();
 
   app.disable("x-powered-by");
+  // Atrás do proxy HTTPS da hospedagem: req.protocol vira "https" e req.ip o IP real (usados no painel e na auditoria).
+  app.set("trust proxy", getEnvironment().trustProxy);
   app.use(helmet());
   app.use(express.json({ limit: "200kb" }));
   app.use("/internal/v1", internalRouter);
