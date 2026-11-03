@@ -1,7 +1,7 @@
 /* Medidas da tela de perfil do protótipo (22 claro, 23 escuro). */
 .profile-content {
   flex: 1;
-  padding: 14px 36px 24px 20px;
+  padding: 14px 20px 24px;
 }
 
 .profile-identity {

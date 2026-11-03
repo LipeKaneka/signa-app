@@ -68,22 +68,27 @@ button:disabled {
 
 .page-content {
   flex: 1;
-  padding: 16px;
+  padding: 16px 20px;
 }
 
 /* Cabeçalho: reto e baixo no tema claro; alto e arredondado no escuro (protótipo 16/17, 22/23, 28/29).
    --rounded: arredondado nos dois temas (Assistente e Dicionário). */
 .top-bar {
+  /* Fica preso no topo ao rolar a tela (não some com o conteúdo). */
+  position: sticky;
+  top: 0;
+  z-index: 30;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 10px;
   min-height: calc(68px + env(safe-area-inset-top));
-  padding: env(safe-area-inset-top) 18px 0 14px;
+  padding: env(safe-area-inset-top) 20px 0;
   background: var(--color-primary);
   color: #fff;
   /* Protótipo: todos os cabeçalhos roxos têm a base arredondada. */
   border-radius: 0 0 40px 40px;
+  box-shadow: 0 4px 12px rgba(20, 8, 70, 0.18);
 }
 
 .top-bar__row {
@@ -96,17 +101,25 @@ button:disabled {
   border-radius: 0 0 40px 40px;
 }
 
+/* Tema escuro: cabeçalho um pouco mais alto, com título e voltar centralizados na altura (antes ficavam no topo). */
 :root[data-theme="dark"] .top-bar {
-  justify-content: flex-start;
-  min-height: calc(92px + env(safe-area-inset-top));
-  padding-top: calc(7px + env(safe-area-inset-top));
-  border-radius: 0 0 40px 40px;
+  min-height: calc(80px + env(safe-area-inset-top));
 }
 
 /* Perfil: voltar à esquerda e "Signa" + mão centralizados. */
+/* Perfil: título no centro exato do cabeçalho (o voltar fica por cima, à esquerda). */
+.top-bar--brand-center .top-bar__row {
+  position: relative;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.top-bar--brand-center .top-bar__row > .icon-button {
+  position: absolute;
+  left: 0;
+}
+
 .top-bar--brand-center .top-bar__row > div {
-  flex: 1;
-  margin-right: 36px;
   text-align: center;
 }
 

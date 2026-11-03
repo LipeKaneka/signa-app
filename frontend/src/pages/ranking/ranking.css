@@ -1,6 +1,7 @@
 /* Medidas da tela de ranking do protótipo (16 claro, 17 escuro). */
+/* Sem margens negativas: cartão, abas e lista respeitam o espaço da tela (nada encostado na borda). */
 .position-card {
-  margin: 10px -10px 0;
+  margin: 12px 0 0;
   padding: 18px 18px 12px;
   border-radius: 20px;
   background: var(--color-primary);
@@ -87,7 +88,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   align-items: center;
-  margin: 20px -6px 10px;
+  margin: 20px 0 10px;
   padding: 6px 8px;
   border: 1px solid #333;
   border-radius: 8px;
@@ -116,7 +117,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin: 0 -7px;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
@@ -208,10 +209,6 @@
 }
 
 /* ---------- Tema escuro (protótipo 17): linhas transparentes com borda e texto brancos ---------- */
-:root[data-theme="dark"] .position-card {
-  margin-top: -12px;
-}
-
 :root[data-theme="dark"] .ranking-tabs,
 :root[data-theme="dark"] .ranking-row {
   border-color: #fff;

@@ -65,12 +65,32 @@ export function AssistantPage() {
   const [question, setQuestion] = useState("");
   const [sending, setSending] = useState(false);
   const [openSign, setOpenSign] = useState(null);
-  const listEndRef = useRef(null);
+  // Digitando: a barra de baixo some para o teclado não espremer a conversa.
+  const [typing, setTyping] = useState(false);
+  const chatBodyRef = useRef(null);
+
+  /** Rola só a área da conversa até a última mensagem (o cabeçalho e a caixa de texto ficam parados). */
+  const scrollToLatest = (smooth = true) => {
+    const body = chatBodyRef.current;
+    if (body) body.scrollTo({ top: body.scrollHeight, behavior: smooth && !prefersReducedMotion() ? "smooth" : "auto" });
+  };
 
   useEffect(() => {
     storePreference(historyKey, messages.slice(-MAX_STORED_MESSAGES));
-    listEndRef.current?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth" });
   }, [messages, historyKey]);
+
+  useEffect(() => {
+    scrollToLatest();
+  }, [messages, sending, typing]);
+
+  // O teclado do celular encolhe a tela: ao mudar a altura, mantém a última mensagem visível.
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return undefined;
+    const keepLatestVisible = () => scrollToLatest(false);
+    viewport.addEventListener("resize", keepLatestVisible);
+    return () => viewport.removeEventListener("resize", keepLatestVisible);
+  }, []);
 
   async function sendQuestion(event) {
     event.preventDefault();
@@ -94,7 +114,7 @@ export function AssistantPage() {
   const firstName = user.nickname.split(" ")[0];
 
   return (
-    <div className="screen screen--with-nav assistant-screen">
+    <div className={`screen screen--with-nav assistant-screen${typing ? " assistant-screen--typing" : ""}`}>
       <TopBar
         title="Assistente Signa"
         subtitle="Online"
@@ -106,7 +126,7 @@ export function AssistantPage() {
           </span>
         }
       />
-      <main className="chat-body">
+      <main className="chat-body" ref={chatBodyRef}>
         <ul className="chat-list" aria-live="polite">
           {messages.length === 0 && (
             <ChatMessage
@@ -118,23 +138,37 @@ export function AssistantPage() {
             <ChatMessage key={message.id} message={message} onOpenSign={setOpenSign} />
           ))}
           {sending && <li className="chat-typing">Assistente está digitando…</li>}
-          <li ref={listEndRef} aria-hidden="true" />
         </ul>
       </main>
 
       <form className="chat-composer" onSubmit={sendQuestion}>
         <label className="chat-composer__input">
           <span className="visually-hidden">Sua pergunta</span>
-          <input value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Escreva a sua Pergunta...." maxLength={1000} />
+          <input
+            value={question}
+            onChange={(event) => setQuestion(event.target.value)}
+            onFocus={() => setTyping(true)}
+            onBlur={() => setTyping(false)}
+            placeholder="Escreva a sua Pergunta...."
+            maxLength={1000}
+            enterKeyHint="send"
+          />
         </label>
         <Link to="/camera" className="chat-composer__button chat-composer__button--outline" aria-label="Abrir o tradutor pela câmera">
           <Icon name="camera" size={32} strokeWidth={1.3} />
         </Link>
-        <button type="submit" className="chat-composer__button" disabled={sending || !question.trim()} aria-label="Enviar">
+        {/* Sem tirar o foco do campo: o teclado continua aberto e o toque não "escapa" com a tela mudando de altura. */}
+        <button
+          type="submit"
+          className="chat-composer__button"
+          disabled={sending || !question.trim()}
+          aria-label="Enviar"
+          onPointerDown={(event) => event.preventDefault()}
+        >
           <Icon name="send" size={26} strokeWidth={1.5} />
         </button>
       </form>
-      <BottomNav />
+      {!typing && <BottomNav />}
 
       {openSign && <SignDialog word={openSign.word} avatar={openSign.avatar} onClose={() => setOpenSign(null)} />}
     </div>
