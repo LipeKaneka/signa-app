@@ -105,9 +105,28 @@ export function loadEnvironment() {
     apiRateLimitPerMinute: readApiRateLimit(),
     jwtSecret: readJwtSecret(),
     jwtExpiresIn: readOptional("JWT_EXPIRES_IN", "7d"),
-    anthropicApiKey: readOptional("ANTHROPIC_API_KEY", ""),
-    aiModel: readOptional("AI_MODEL", "claude-opus-5-5"),
+    ...readAiSettings(),
   });
+}
+
+/** Modelo padrão de cada provedor de IA (AI_MODEL troca). "gemini-flash-latest" acompanha o Flash mais novo. */
+const DEFAULT_AI_MODELS = Object.freeze({ gemini: "gemini-flash-latest", anthropic: "claude-opus-5-5" });
+
+/**
+ * Provedor de IA do assistente: Gemini se houver GEMINI_API_KEY, senão Claude se houver ANTHROPIC_API_KEY,
+ * senão nenhum (o assistente responde só pelo dicionário).
+ * @returns {{aiProvider: "gemini"|"anthropic"|null, geminiApiKey: string, anthropicApiKey: string, aiModel: string}}
+ */
+function readAiSettings() {
+  const geminiApiKey = readOptional("GEMINI_API_KEY", "");
+  const anthropicApiKey = readOptional("ANTHROPIC_API_KEY", "");
+  const aiProvider = geminiApiKey ? "gemini" : anthropicApiKey ? "anthropic" : null;
+  return {
+    aiProvider,
+    geminiApiKey,
+    anthropicApiKey,
+    aiModel: readOptional("AI_MODEL", aiProvider ? DEFAULT_AI_MODELS[aiProvider] : ""),
+  };
 }
 
 let cachedEnvironment = null;

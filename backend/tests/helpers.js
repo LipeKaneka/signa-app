@@ -25,6 +25,7 @@ export async function startTestApp() {
     JWT_SECRET: randomBytes(64).toString("hex"),
     FRONTEND_URL: "http://localhost:5173",
     ANTHROPIC_API_KEY: "",
+    GEMINI_API_KEY: "",
     CONTENT_VERSION_TTL_MS: "0",
     // Os testes fazem centenas de chamadas seguidas do mesmo IP (atividades inteiras).
     API_RATE_LIMIT_PER_MINUTE: "5000",

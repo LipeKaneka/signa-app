@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 import { getEnvironment } from "../config/env.js";
 import { findSignsMentionedIn } from "./service-dictionary.js";
 
@@ -9,18 +10,11 @@ Ao descrever um sinal, cite configuração de mão, ponto de articulação e mov
 se não tiver certeza de como é um sinal, diga isso e sugira consultar o dicionário do app.
 Não invente sinais. Recuse com educação assuntos sem relação com Libras ou com o app.`;
 
-let cachedClient = null;
+/** Limite de tamanho da resposta da IA (as respostas pedidas são curtas). */
+const MAX_OUTPUT_TOKENS = 1024;
 
-/**
- * Cliente da API da Anthropic (criado uma vez). null quando não há ANTHROPIC_API_KEY.
- * @returns {import("@anthropic-ai/sdk").default|null}
- */
-function getAnthropicClient() {
-  const { anthropicApiKey } = getEnvironment();
-  if (!anthropicApiKey) return null;
-  cachedClient ??= new Anthropic({ apiKey: anthropicApiKey });
-  return cachedClient;
-}
+let cachedAnthropic = null;
+let cachedGemini = null;
 
 /**
  * Texto com os verbetes relacionados, anexado ao prompt de sistema para a IA usar o dicionário do app.
@@ -34,14 +28,15 @@ function describeSignsForPrompt(signs) {
 }
 
 /**
- * Pergunta à IA (modelo de AI_MODEL) com o histórico recente.
+ * Pergunta ao Claude (API da Anthropic, modelo de AI_MODEL) com o histórico recente.
  * @returns {Promise<string>} texto da resposta.
  */
-async function askClaude(client, question, history, signs) {
-  const { aiModel } = getEnvironment();
-  const response = await client.messages.create({
+async function askClaude(question, history, signs) {
+  const { anthropicApiKey, aiModel } = getEnvironment();
+  cachedAnthropic ??= new Anthropic({ apiKey: anthropicApiKey });
+  const response = await cachedAnthropic.messages.create({
     model: aiModel,
-    max_tokens: 1024,
+    max_tokens: MAX_OUTPUT_TOKENS,
     system: SYSTEM_PROMPT + describeSignsForPrompt(signs),
     messages: [...history, { role: "user", content: question }],
   });
@@ -50,6 +45,26 @@ async function askClaude(client, question, history, signs) {
     .map((block) => block.text)
     .join("\n")
     .trim();
+}
+
+/**
+ * Pergunta ao Gemini (Google, modelo de AI_MODEL) com o histórico recente.
+ * No Gemini a fala da IA tem o papel "model" (no app é "assistant").
+ * @returns {Promise<string>} texto da resposta.
+ */
+async function askGemini(question, history, signs) {
+  const { geminiApiKey, aiModel } = getEnvironment();
+  cachedGemini ??= new GoogleGenAI({ apiKey: geminiApiKey });
+  const contents = [...history, { role: "user", content: question }].map((message) => ({
+    role: message.role === "assistant" ? "model" : "user",
+    parts: [{ text: message.content }],
+  }));
+  const response = await cachedGemini.models.generateContent({
+    model: aiModel,
+    contents,
+    config: { systemInstruction: SYSTEM_PROMPT + describeSignsForPrompt(signs), maxOutputTokens: MAX_OUTPUT_TOKENS },
+  });
+  return (response.text ?? "").trim();
 }
 
 /**
@@ -66,7 +81,8 @@ function answerFromDictionary(signs) {
 }
 
 /**
- * Responde o assistente: usa a IA se houver chave, senão (ou se a IA falhar) responde pelo dicionário.
+ * Responde o assistente: usa a IA configurada (Gemini ou Claude, veja readAiSettings em config/env.js);
+ * sem chave, ou se a IA falhar, responde pelo dicionário.
  * @param {string} question
  * @param {{role: "user"|"assistant", content: string}[]} history - últimas mensagens (o app guarda o chat).
  * @returns {Promise<{answer: string, signs: object[], source: "ai"|"dictionary"}>}
@@ -74,14 +90,15 @@ function answerFromDictionary(signs) {
  */
 export async function askAssistant(question, history) {
   const signs = await findSignsMentionedIn(question);
-  const client = getAnthropicClient();
-  if (!client) return { answer: answerFromDictionary(signs), signs, source: "dictionary" };
+  const { aiProvider } = getEnvironment();
+  if (!aiProvider) return { answer: answerFromDictionary(signs), signs, source: "dictionary" };
 
   try {
-    const answer = await askClaude(client, question, history, signs);
+    const ask = aiProvider === "gemini" ? askGemini : askClaude;
+    const answer = await ask(question, history, signs);
     return { answer: answer || answerFromDictionary(signs), signs, source: "ai" };
   } catch (error) {
-    console.error("Falha ao consultar a IA:", error.message);
+    console.error(`Falha ao consultar a IA (${aiProvider}):`, error.message);
     return { answer: answerFromDictionary(signs), signs, source: "dictionary" };
   }
 }
