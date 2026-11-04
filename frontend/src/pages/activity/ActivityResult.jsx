@@ -44,7 +44,8 @@ export function ActivityResult({ result, levelUp, reviewItems, onContinue, onBac
       <button type="button" className="icon-button activity-result__back" onClick={onBack} aria-label="Voltar para a trilha">
         <Icon name="back" size={22} />
       </button>
-      <h1 className="activity-result__title">Você viu {result.totalQuestions} sinais nessa atividade</h1>
+      {/* Conta também as perguntas de câmera puladas (elas foram vistas, só não entram na nota). */}
+      <h1 className="activity-result__title">Você viu {reviewItems.length || result.totalQuestions} sinais nessa atividade</h1>
       <p className="activity-result__subtitle">
         Você acertou {result.correctAnswers}. Toque em um sinal para rever.
       </p>
@@ -73,7 +74,12 @@ export function ActivityResult({ result, levelUp, reviewItems, onContinue, onBac
         <strong>+{result.xpEarned}XP</strong>
         {multiplier > 1 && result.xpEarned > 0 && <span className="result-pill__event"> ({formatMultiplier(multiplier)} evento)</span>} • {result.score}% de precisão
       </p>
-      {!result.passed && <p className="activity-result__notice">Acerte pelo menos {minScoreToPass}% para liberar a próxima atividade.</p>}
+      {/* Todas as perguntas eram de câmera e foram puladas por falta de câmera: não há nota para mostrar. */}
+      {result.totalQuestions === 0 ? (
+        <p className="activity-result__notice">Esta atividade precisa da câmera. Permita o acesso à câmera nas configurações do celular e tente de novo.</p>
+      ) : (
+        !result.passed && <p className="activity-result__notice">Acerte pelo menos {minScoreToPass}% para liberar a próxima atividade.</p>
+      )}
       {levelUp && <p className="activity-result__achievement">⬆ Você subiu para o nível {levelUp.level}: {levelUp.title}</p>}
       {result.newAchievements.map((achievement) => (
         <p key={achievement.id} className="activity-result__achievement">🏅 Conquista desbloqueada: {achievement.title}</p>

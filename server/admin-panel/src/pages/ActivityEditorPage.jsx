@@ -8,11 +8,16 @@ const TYPE_LABELS = {
   sign_choice: "Qual sinal é esse? (avatar faz o sinal)",
   single_choice: "Múltipla escolha (texto)",
   true_false: "Verdadeiro ou falso",
+  camera_sign: "Faça o sinal pela câmera (o app confere)",
 };
 const OPTION_IDS = ["a", "b", "c", "d", "e", "f"];
 
 /** Pergunta nova no formato que o editor usa. */
 function blankQuestion(type = "sign_choice") {
+  if (type === "camera_sign") {
+    // Alternativas e gabarito são fixos no servidor ("Fiz o sinal" / "Pular").
+    return { type, prompt: "Faça o sinal para a câmera", signSlug: "", target: "", options: [], correctOptionId: "done", explanation: "" };
+  }
   if (type === "true_false") {
     return { type, prompt: "", signSlug: "", options: [{ id: "a", text: "Verdadeiro" }, { id: "b", text: "Falso" }], correctOptionId: "a", explanation: "" };
   }
@@ -36,6 +41,45 @@ function useSignOptions(search) {
     return () => clearTimeout(timer);
   }, [search]);
   return signs;
+}
+
+/** Sinais que o app reconhece pela câmera (letras paradas e palavras), carregados uma vez. */
+let cameraTargetsPromise = null;
+function useCameraTargets() {
+  const [targets, setTargets] = useState([]);
+  useEffect(() => {
+    cameraTargetsPromise ??= api("/camera-targets").then((data) => data.targets).catch(() => {
+      cameraTargetsPromise = null;
+      return [];
+    });
+    cameraTargetsPromise.then(setTargets);
+  }, []);
+  return targets;
+}
+
+/** Campo do sinal-alvo de uma pergunta de câmera: só aparecem os sinais que o reconhecedor do app sabe conferir. */
+function CameraTargetField({ question, set }) {
+  const targets = useCameraTargets();
+  const letters = targets.filter((target) => target.kind === "letter");
+  const words = targets.filter((target) => target.kind === "word");
+  const chooseTarget = (label) => {
+    const target = targets.find((item) => item.label === label);
+    const prompt = !target ? question.prompt : target.kind === "letter" ? `Faça a letra ${label} para a câmera` : `Faça o sinal de "${label}" para a câmera`;
+    set({ target: label, prompt });
+  };
+  return (
+    <Field label="Sinal que a pessoa deve fazer" hint="Só sinais que o app reconhece. Letras: mão parada. Palavras: começar e terminar com as mãos abaixadas. Se o dicionário tiver o mesmo sinal, o app mostra o avatar em “Ver o sinal”.">
+      <select value={question.target ?? ""} onChange={(e) => chooseTarget(e.target.value)} required>
+        <option value="" disabled>Escolha o sinal</option>
+        <optgroup label="Letras (mão parada)">
+          {letters.map((target) => <option key={target.label} value={target.label}>{target.label}</option>)}
+        </optgroup>
+        <optgroup label="Palavras (com movimento)">
+          {words.map((target) => <option key={target.label} value={target.label}>{target.label}</option>)}
+        </optgroup>
+      </select>
+    </Field>
+  );
 }
 
 /** Editor de uma pergunta. */
@@ -64,6 +108,7 @@ function QuestionEditor({ question, index, total, onChange, onRemove, onMove }) 
         </span>
       </div>
       <Field label="Enunciado"><input value={question.prompt} onChange={(e) => set({ prompt: e.target.value })} maxLength={500} required /></Field>
+      {question.type === "camera_sign" && <CameraTargetField question={question} set={set} />}
       {question.type === "sign_choice" && (
         <Field label="Sinal (identificador do dicionário)" hint="Digite para buscar; o avatar VLibras faz este sinal.">
           <input list={listId} value={question.signSlug} onChange={(e) => set({ signSlug: e.target.value })} required />
@@ -72,7 +117,7 @@ function QuestionEditor({ question, index, total, onChange, onRemove, onMove }) 
           </datalist>
         </Field>
       )}
-      <div className="options">
+      {question.type !== "camera_sign" && <div className="options">
         <span className="field__label">Alternativas (marque a correta)</span>
         {question.options.map((option, optionIndex) => (
           <div className="option" key={option.id}>
@@ -86,7 +131,7 @@ function QuestionEditor({ question, index, total, onChange, onRemove, onMove }) 
         {question.type !== "true_false" && question.options.length < OPTION_IDS.length && (
           <button type="button" className="link" onClick={addOption}>+ alternativa</button>
         )}
-      </div>
+      </div>}
       <Field label="Explicação (aparece depois da resposta)">
         <input value={question.explanation} onChange={(e) => set({ explanation: e.target.value })} maxLength={1000} />
       </Field>
@@ -125,8 +170,8 @@ export function ActivityEditorPage() {
 
   const submit = (event) => {
     event.preventDefault();
-    const questions = activity.questions.map(({ key, type, prompt, signSlug, options, correctOptionId, explanation }) => ({
-      key, type, prompt, signSlug, options, correctOptionId, explanation,
+    const questions = activity.questions.map(({ key, type, prompt, signSlug, options, correctOptionId, explanation, target }) => ({
+      key, type, prompt, signSlug, options, correctOptionId, explanation, ...(type === "camera_sign" ? { target } : {}),
     }));
     run(async () => {
       if (id) {

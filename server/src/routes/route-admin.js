@@ -9,6 +9,7 @@ import * as OverviewController from "../controllers/admin/controller-admin-overv
 import { requireAdminRequest, requireAdmin, requireRole } from "../middlewares/admin-auth-middleware.js";
 import { PERMISSIONS } from "../config/admin-permissions.js";
 import { asyncHandler } from "../utils/util-async-handler.js";
+import { CAMERA_TARGETS } from "../config/camera-targets.js";
 
 /**
  * API administrativa (/admin/api/v1): usada SOMENTE pelo painel web, servido pelo próprio servidor em /admin.
@@ -44,6 +45,8 @@ adminRouter.post("/activities", content, asyncHandler(TrailController.createActi
 adminRouter.patch("/activities/:id", content, asyncHandler(TrailController.updateActivity));
 adminRouter.delete("/activities/:id", manage, asyncHandler(TrailController.deleteActivity));
 
+// Sinais que o app confere pela câmera (alvos das perguntas "Faça o sinal").
+adminRouter.get("/camera-targets", read, (_req, res) => res.json({ targets: CAMERA_TARGETS }));
 adminRouter.get("/signs", read, asyncHandler(DictionaryController.list));
 adminRouter.post("/signs", content, asyncHandler(DictionaryController.create));
 adminRouter.patch("/signs/:slug", content, asyncHandler(DictionaryController.update));

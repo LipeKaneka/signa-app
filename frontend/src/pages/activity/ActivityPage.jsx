@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { lazy, Suspense, useCallback, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import * as TrailApi from "../../api/api-trail.js";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -14,11 +14,17 @@ import { ActivityResult } from "./ActivityResult.jsx";
 import { EventBanner } from "../../components/EventBanner.jsx";
 import "./activity.css";
 
+// A pergunta de câmera carrega o MediaPipe (pesado): só baixa quando a atividade tem uma.
+const CameraSignQuestion = lazy(() => import("./CameraSignQuestion.jsx"));
+
 /**
  * Item da tela de resultado (para rever o sinal): resposta certa, se acertou e o avatar.
  */
 function buildReviewItem(question, feedback) {
-  const answer = question.options.find((option) => option.id === feedback.correctOptionId)?.text ?? "";
+  // Pergunta de câmera: o que se revê é o sinal-alvo, não o texto do botão.
+  const answer = question.type === "camera_sign"
+    ? question.target
+    : question.options.find((option) => option.id === feedback.correctOptionId)?.text ?? "";
   return { key: question.key, correct: feedback.correct, answer, avatar: question.avatar };
 }
 
@@ -62,19 +68,23 @@ export function ActivityPage() {
     return <ActivityResult result={result} levelUp={levelUp} reviewItems={reviewItems} onContinue={goToTrail} onBack={goToTrail} />;
   }
 
+  /** Envia a resposta. @returns {Promise<boolean>} false se falhou (a pergunta de câmera libera nova tentativa). */
   async function selectOption(optionId) {
-    if (feedback || busy) return;
+    if (feedback || busy) return false;
     setSelectedOptionId(optionId);
     setBusy(true);
     setActionError("");
     try {
       const answer = await TrailApi.answerQuestion(attempt.attemptId, question.key, optionId);
-      playAnswerFeedback(answer.correct, settings.soundsAndVibration);
+      // Pergunta pulada por falta de câmera: sem som de erro (não conta na nota).
+      if (!answer.skipped) playAnswerFeedback(answer.correct, settings.soundsAndVibration);
       setFeedback(answer);
       setReviewItems((items) => [...items, buildReviewItem(question, answer)]);
+      return true;
     } catch (answerError) {
       setSelectedOptionId(null);
       setActionError(answerError.message);
+      return false;
     } finally {
       setBusy(false);
     }
@@ -119,26 +129,33 @@ export function ActivityPage() {
             <p className="activity-prompt">{question.prompt}</p>
             <EventBanner compact />
           </div>
-          {question.avatar && (
+          {question.avatar && question.type !== "camera_sign" && (
             <button type="button" className="icon-button activity-replay" onClick={replayLastSign} aria-label="Ver o sinal de novo">
               <Icon name="replay" size={22} strokeWidth={1.8} />
             </button>
           )}
         </div>
 
-        {question.avatar ? (
-          <SignAvatar key={question.key} avatar={question.avatar} compact />
+        {question.type === "camera_sign" ? (
+          <Suspense fallback={<LoadingState message="Abrindo a câmera…" />}>
+            <CameraSignQuestion key={question.key} question={question} answered={Boolean(feedback)} onAnswer={selectOption} />
+          </Suspense>
         ) : (
-          <div className="sign-frame" />
+          <>
+            {question.avatar ? (
+              <SignAvatar key={question.key} avatar={question.avatar} compact />
+            ) : (
+              <div className="sign-frame" />
+            )}
+            <OptionsGrid
+              options={question.options}
+              selectedOptionId={selectedOptionId}
+              feedback={feedback}
+              disabled={Boolean(feedback) || busy}
+              onSelect={selectOption}
+            />
+          </>
         )}
-
-        <OptionsGrid
-          options={question.options}
-          selectedOptionId={selectedOptionId}
-          feedback={feedback}
-          disabled={Boolean(feedback) || busy}
-          onSelect={selectOption}
-        />
         {actionError && <p className="form-error" role="alert">{actionError}</p>}
         {settings.tipsDuringLessons && !feedback && (
           <p className="activity-tip">Dica: toque em ↻ para ver o sinal de novo quantas vezes quiser antes de responder.</p>

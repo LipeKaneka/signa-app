@@ -13,6 +13,7 @@ import { clearLevelsCache } from "../services/service-level.js";
 import { clearSettingsCache } from "../services/service-settings.js";
 import { clearEventsCache } from "../services/service-event.js";
 import { slugify } from "../utils/util-text.js";
+import { CAMERA_CORRECT_OPTION, CAMERA_OPTIONS, findCameraTarget } from "../config/camera-targets.js";
 import { VLIBRAS_SOURCE } from "../config/sign-source.js";
 
 const OPTIONS_PER_QUESTION = 4;
@@ -124,7 +125,31 @@ function buildSignChoiceQuestion(sign, allSigns, random, questionIndex, { prompt
 }
 
 /**
+ * Pergunta "Faça o sinal" (câmera): o app confere o gesto; o avatar aparece se o dicionário tiver o mesmo sinal.
+ * @param {string} label - alvo de config/camera-targets.js (ex.: "A", "Banheiro").
+ * @param {Map<string, object>} signsBySlug
+ * @param {number} questionIndex
+ * @param {{prompt?: string, note?: string}} [extras]
+ * @returns {object} pergunta no formato do ActivityModel.
+ */
+function buildCameraQuestion(label, signsBySlug, questionIndex, { prompt, note } = {}) {
+  const target = findCameraTarget(label);
+  if (!target) throw new Error(`"${label}" não está na lista de sinais que a câmera reconhece (config/camera-targets.js)`);
+  return {
+    key: `q${questionIndex + 1}`,
+    type: "camera_sign",
+    prompt: prompt ?? (target.kind === "letter" ? `Faça a letra ${target.label} para a câmera` : `Faça o sinal de "${target.label}" para a câmera`),
+    sign: signsBySlug.get(slugify(target.label))?._id ?? null,
+    target: target.label,
+    options: CAMERA_OPTIONS.map((option) => ({ ...option })),
+    correctOptionId: CAMERA_CORRECT_OPTION,
+    explanation: [`Esse é o sinal de "${target.label}".`, note].filter(Boolean).join(" "),
+  };
+}
+
+/**
  * Cria a atividade do módulo (uma pergunta por sinal listado) se ela ainda não existir.
+ * Atividade de câmera em trail.json: {"type": "camera", "targets": ["A", "E", ...]} em vez de "signs".
  * Campos opcionais da atividade em trail.json: prompt (enunciado), note (vai em toda explicação),
  * tips ({slug: dica} para sinais específicos), distractorPool (slugs de onde saem as alternativas erradas) e
  * questionsPerAttempt (sorteia essa quantidade de perguntas a cada tentativa, em ordem aleatória).
@@ -138,14 +163,16 @@ async function upsertActivity(module, activityData, order, signsBySlug) {
   };
   const activityPool = activityData.distractorPool ? activityData.distractorPool.map(findSign) : null;
   const random = createSeededRandom(order * 7919 + module.order * 104729);
-  const questions = activityData.signs.map((slug, index) =>
-    buildSignChoiceQuestion(findSign(slug), allSigns, random, index, {
-      prompt: activityData.prompt,
-      tip: activityData.tips?.[slug],
-      note: activityData.note,
-      activityPool,
-    }),
-  );
+  const questions = activityData.type === "camera"
+    ? activityData.targets.map((label, index) => buildCameraQuestion(label, signsBySlug, index, { prompt: activityData.prompt, note: activityData.note }))
+    : activityData.signs.map((slug, index) =>
+        buildSignChoiceQuestion(findSign(slug), allSigns, random, index, {
+          prompt: activityData.prompt,
+          tip: activityData.tips?.[slug],
+          note: activityData.note,
+          activityPool,
+        }),
+      );
 
   await ActivityModel.findOneAndUpdate(
     { module: module._id, order },

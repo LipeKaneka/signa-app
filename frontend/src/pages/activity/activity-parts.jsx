@@ -104,8 +104,11 @@ export function FeedbackSheet({ feedback, onNext, isLast }) {
   const { pickFeedbackPhrase, xpEvent } = useAppConfig();
   const sheetRef = useRef(null);
   const correct = feedback.correct;
-  // Sorteada uma vez por resposta (a folha é montada de novo a cada pergunta).
-  const [phrase] = useState(() => pickFeedbackPhrase(correct));
+  // Sorteada uma vez por resposta (a folha é montada de novo a cada pergunta). Pergunta de câmera pulada por falta de
+  // câmera tem frase própria (não é erro).
+  const [phrase] = useState(() =>
+    feedback.skipped ? { title: "Pergunta pulada", text: "sem câmera, ela não conta na sua nota" } : pickFeedbackPhrase(correct),
+  );
 
   // A folha cobre o rodapé da tela (e fica mais alta com a fonte grande): reserva esse espaço embaixo e rola
   // até as alternativas marcadas, para a pessoa ver a resposta certa e a que escolheu.
@@ -123,7 +126,7 @@ export function FeedbackSheet({ feedback, onNext, isLast }) {
       root.style.removeProperty("--feedback-sheet-height");
     };
   }, []);
-  const classes = ["feedback-sheet", correct ? "feedback-sheet--correct" : "feedback-sheet--wrong"];
+  const classes = ["feedback-sheet", feedback.skipped ? "feedback-sheet--skipped" : correct ? "feedback-sheet--correct" : "feedback-sheet--wrong"];
   if (leaving) classes.push("feedback-sheet--leaving");
 
   return (

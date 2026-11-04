@@ -1,14 +1,17 @@
 import mongoose from "mongoose";
 
 /**
- * Tipos de pergunta aceitos. Hoje o app só desenha "sign_choice"; os outros já existem no modelo.
+ * Tipos de pergunta aceitos. O app desenha "sign_choice" (escolher a palavra do sinal) e "camera_sign" (fazer o sinal
+ * na frente da câmera); os outros já existem no modelo.
  */
-export const QUESTION_TYPES = Object.freeze(["sign_choice", "single_choice", "true_false"]);
+export const QUESTION_TYPES = Object.freeze(["sign_choice", "single_choice", "true_false", "camera_sign"]);
 
 /**
  * Pergunta de uma atividade. sign_choice = "Qual sinal é esse?": o avatar faz o sinal (Sign.vlibrasGloss)
  * e o aluno escolhe a palavra. correctOptionId (gabarito) nunca vai para o app antes da resposta
  * (veja toPublicQuestion em service-attempt.js).
+ * camera_sign = "Faça o sinal": target é o rótulo que o reconhecedor do app devolve (config/camera-targets.js);
+ * as alternativas são fixas ("done"/"skip") e sign é opcional (avatar para a pessoa ver o sinal antes).
  */
 const questionSchema = new mongoose.Schema(
   {
@@ -22,6 +25,7 @@ const questionSchema = new mongoose.Schema(
     },
     correctOptionId: { type: String, required: true },
     explanation: { type: String, default: "", maxlength: 1000 },
+    target: { type: String, default: null, maxlength: 40 },
   },
   { _id: false },
 );

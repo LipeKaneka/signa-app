@@ -404,3 +404,130 @@
   color: var(--color-xp);
   font-weight: 700;
 }
+
+/* Pergunta pulada por falta de câmera: folha neutra (não é erro). */
+.feedback-sheet--skipped .feedback-sheet__title,
+.feedback-sheet--skipped .feedback-sheet__text {
+  color: #fff;
+}
+
+/* ---------- Pergunta "Faça o sinal" (câmera dentro da atividade) ---------- */
+.camera-question {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.camera-question__target {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border, #c9c3e3);
+  border-radius: 14px;
+  background: var(--color-card);
+  color: var(--color-card-text);
+}
+
+.camera-question__label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-card-muted, #6b6880);
+}
+
+.camera-question__word {
+  font-size: 1.5rem;
+  line-height: 1.1;
+}
+
+.camera-question__see {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 6px 10px;
+  border: 1px solid var(--color-primary);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+:root[data-theme="dark"] .camera-question__see {
+  border-color: var(--color-primary-soft);
+  color: var(--color-primary-soft);
+}
+
+/* Quadro da câmera: proporção de foto (4:3) e cantos arredondados; o vídeo fica espelhado como num espelho. */
+.camera-question__frame {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 16px;
+  background: #0c0620;
+  overflow: hidden;
+}
+
+.camera-question__cover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  color: #fff;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.camera-question__cover p {
+  margin: 0;
+}
+
+.camera-question__cover--error {
+  background: rgba(12, 6, 32, 0.92);
+}
+
+.camera-question__done {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(47, 174, 37, 0.35);
+  color: #fff;
+  animation: camera-question-done 360ms var(--ease-out);
+}
+
+@keyframes camera-question-done {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: none; }
+}
+
+.camera-question__status {
+  min-height: 2.6em;
+  margin: 0;
+  font-size: 0.9375rem;
+  text-align: center;
+}
+
+.camera-question__actions {
+  display: flex;
+  justify-content: center;
+}
+
+.camera-question__skip {
+  padding: 8px 18px;
+  border: 1px solid var(--color-text-muted);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .camera-question__done { animation: none; }
+}

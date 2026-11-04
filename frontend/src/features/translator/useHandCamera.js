@@ -35,7 +35,7 @@ export function describeCameraError(error) {
   switch (error?.name) {
     case "NotAllowedError":
     case "SecurityError":
-      return "Permita o acesso à câmera nas configurações do navegador para usar o tradutor.";
+      return "Permita o acesso à câmera nas configurações do aparelho.";
     case "NotReadableError":
     case "AbortError":
       return "A câmera está sendo usada por outro programa ou aba. Feche-o e tente de novo.";

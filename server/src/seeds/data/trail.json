@@ -315,9 +315,75 @@
     {
         "slug": "treino-com-a-camera",
         "title": "Treino com a câmera",
-        "description": "Pratique os sinais na frente da câmera",
+        "description": "Faça os sinais na frente da câmera e o app confere",
         "icon": "📷",
         "level": 1,
-        "activities": []
+        "activities": [
+            {
+                "title": "Vogais na câmera",
+                "description": "Faça A, E, I, O e U com a mão parada",
+                "type": "camera",
+                "targets": [
+                    "A",
+                    "E",
+                    "I",
+                    "O",
+                    "U"
+                ]
+            },
+            {
+                "title": "Letras na câmera: A a I",
+                "description": "As primeiras letras do alfabeto manual",
+                "type": "camera",
+                "targets": [
+                    "A",
+                    "B",
+                    "C",
+                    "D",
+                    "E",
+                    "F",
+                    "G",
+                    "I"
+                ]
+            },
+            {
+                "title": "Letras na câmera: L a Y",
+                "description": "Sorteio de 8 letras de L a Y a cada tentativa",
+                "type": "camera",
+                "targets": [
+                    "L",
+                    "M",
+                    "N",
+                    "O",
+                    "P",
+                    "Q",
+                    "R",
+                    "S",
+                    "T",
+                    "U",
+                    "V",
+                    "W",
+                    "Y"
+                ],
+                "questionsPerAttempt": 8
+            },
+            {
+                "title": "Palavras na câmera",
+                "description": "Sinais com movimento: comece com as mãos abaixadas",
+                "type": "camera",
+                "targets": [
+                    "Amarelo",
+                    "Cinco",
+                    "Banheiro",
+                    "Sapo",
+                    "Maçã",
+                    "Medo",
+                    "Filho",
+                    "Aluno"
+                ],
+                "questionsPerAttempt": 5,
+                "note": "Comece com as mãos abaixadas, faça o sinal inteiro e abaixe as mãos no fim."
+            }
+        ]
     }
 ]

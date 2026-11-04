@@ -5,6 +5,7 @@ import { slugify } from "../utils/util-text.js";
 import { badRequest, notFound } from "../utils/util-http-error.js";
 import { recordAudit } from "./service-audit.js";
 import { publishContentChange } from "./service-admin-publish.js";
+import { CAMERA_CORRECT_OPTION, CAMERA_OPTIONS, findCameraTarget } from "../config/camera-targets.js";
 
 const MAX_QUESTIONS = 30;
 const MIN_OPTIONS = 2;
@@ -214,6 +215,7 @@ function toAdminActivity(activity, withQuestions = true) {
       options: question.options,
       correctOptionId: question.correctOptionId,
       explanation: question.explanation,
+      target: question.target ?? null,
     })),
   };
 }
@@ -246,6 +248,8 @@ export async function getActivity(activityId) {
 /**
  * Valida e monta as perguntas enviadas pelo painel.
  * Formato de cada uma: {key?, type, prompt, signSlug?, options: [{id, text}], correctOptionId, explanation?}.
+ * camera_sign: {type, prompt, target, signSlug?, explanation?}; target tem que estar em CAMERA_TARGETS e as
+ * alternativas são fixas (o painel não precisa mandá-las).
  * @param {unknown} questions
  * @returns {Promise<object[]>} perguntas no formato do ActivityModel.
  * @throws {HttpError} 400 com a pergunta e o problema.
@@ -265,6 +269,27 @@ export async function readQuestions(questions) {
     if (!QUESTION_TYPES.includes(question.type)) throw badRequest(`${label}: tipo inválido.`);
     const prompt = typeof question.prompt === "string" ? question.prompt.trim() : "";
     if (!prompt || prompt.length > 500) throw badRequest(`${label}: enunciado de 1 a 500 caracteres.`);
+
+    const explanationText = typeof question.explanation === "string" ? question.explanation.trim() : "";
+    if (explanationText.length > 1000) throw badRequest(`${label}: explicação de até 1000 caracteres.`);
+    if (question.type === "camera_sign") {
+      const target = findCameraTarget(question.target);
+      if (!target) throw badRequest(`${label}: escolha um sinal que a câmera reconhece.`);
+      // Avatar opcional: o sinal escolhido no painel ou, se não vier, o verbete do dicionário com o mesmo nome.
+      const slug = question.signSlug ? String(question.signSlug) : slugify(target.label);
+      const found = await SignModel.findOne({ slug }).select("_id").lean();
+      result.push({
+        key,
+        type: "camera_sign",
+        prompt,
+        sign: found?._id ?? null,
+        target: target.label,
+        options: CAMERA_OPTIONS.map((option) => ({ ...option })),
+        correctOptionId: CAMERA_CORRECT_OPTION,
+        explanation: explanationText,
+      });
+      continue;
+    }
 
     let sign = null;
     if (question.type === "sign_choice") {

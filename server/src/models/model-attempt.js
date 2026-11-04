@@ -8,6 +8,8 @@ const answerSchema = new mongoose.Schema(
     questionKey: { type: String, required: true },
     optionId: { type: String, required: true },
     correct: { type: Boolean, required: true },
+    // Pergunta de câmera pulada porque o aparelho não tinha câmera/permissão: não entra na nota.
+    skipped: { type: Boolean, default: false },
     answeredAt: { type: Date, default: Date.now },
   },
   { _id: false },

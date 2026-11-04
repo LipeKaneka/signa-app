@@ -8,6 +8,7 @@ import { findUnlockedActivity, countCompletedModules } from "./service-trail.js"
 import { registerActivityDay } from "./service-streak.js";
 import { readAchievementMetrics, findNewlyUnlocked, listAchievementsWithProgress, recordUnlockDates } from "./service-achievement.js";
 import { toPublicProfile } from "./service-user.js";
+import { CAMERA_UNAVAILABLE_OPTION, findCameraTarget } from "../config/camera-targets.js";
 
 /**
  * Versão da pergunta que pode ir para o app: SEM gabarito e, em "sign_choice", só com a glosa
@@ -23,6 +24,8 @@ function toPublicQuestion(question) {
     prompt: question.prompt,
     options: question.options.map(({ id, text }) => ({ id, text })),
     avatar: sign?.vlibrasGloss ? { gloss: sign.vlibrasGloss, reviewed: sign.glossReviewed } : null,
+    // "Faça o sinal": o alvo não é segredo (a pessoa precisa saber qual sinal fazer).
+    ...(question.type === "camera_sign" ? { target: question.target, targetKind: findCameraTarget(question.target)?.kind ?? "letter" } : {}),
   };
 }
 
@@ -132,12 +135,14 @@ export async function answerQuestion(user, attemptId, questionKey, optionId) {
   if (attempt.questionKeys?.length && !attempt.questionKeys.includes(questionKey)) {
     throw badRequest("Esta pergunta não faz parte desta tentativa.");
   }
-  if (!question.options.some((option) => option.id === optionId)) throw badRequest("Alternativa inválida.");
+  // Pergunta de câmera sem câmera no aparelho: registra como pulada (fora da nota), sem contar como erro.
+  const skipped = question.type === "camera_sign" && optionId === CAMERA_UNAVAILABLE_OPTION;
+  if (!skipped && !question.options.some((option) => option.id === optionId)) throw badRequest("Alternativa inválida.");
 
-  const correct = question.correctOptionId === optionId;
+  const correct = !skipped && question.correctOptionId === optionId;
   const updated = await AttemptModel.findOneAndUpdate(
     { _id: attempt._id, status: "in_progress", "answers.questionKey": { $ne: questionKey } },
-    { $push: { answers: { questionKey, optionId, correct } } },
+    { $push: { answers: { questionKey, optionId, correct, skipped } } },
   );
   if (!updated) throw conflict("Esta pergunta já foi respondida.");
 
@@ -145,6 +150,7 @@ export async function answerQuestion(user, attemptId, questionKey, optionId) {
   const { multiplier } = await getXpMultiplier();
   return {
     correct,
+    skipped,
     correctOptionId: question.correctOptionId,
     explanation: question.explanation,
     xpForQuestion: correct ? Math.round(rules.XP_PER_CORRECT_ANSWER * multiplier) : 0,
@@ -206,9 +212,11 @@ export async function finishAttempt(user, attemptId) {
 
   const activity = await ActivityModel.findById(closed.activity).select("questions.key").lean();
   // Tentativas antigas (antes do sorteio) não têm questionKeys: valem todas as perguntas da atividade.
-  const totalQuestions = closed.questionKeys?.length || activity.questions.length;
+  // Perguntas de câmera puladas por falta de câmera não contam na nota.
+  const skippedAnswers = closed.answers.filter((answer) => answer.skipped).length;
+  const totalQuestions = Math.max((closed.questionKeys?.length || activity.questions.length) - skippedAnswers, 0);
   const correctAnswers = closed.answers.filter((answer) => answer.correct).length;
-  const score = Math.round((correctAnswers / totalQuestions) * 100);
+  const score = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
   const rules = await getProgressRules();
   const { multiplier } = await getXpMultiplier();
   const passed = score >= rules.MIN_SCORE_TO_PASS;
