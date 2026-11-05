@@ -6,6 +6,7 @@ import * as DictionaryController from "../controllers/admin/controller-admin-dic
 import * as GamificationController from "../controllers/admin/controller-admin-gamification.js";
 import * as UsersController from "../controllers/admin/controller-admin-users.js";
 import * as OverviewController from "../controllers/admin/controller-admin-overview.js";
+import * as DatabaseController from "../controllers/admin/controller-admin-database.js";
 import { requireAdminRequest, requireAdmin, requireRole } from "../middlewares/admin-auth-middleware.js";
 import { PERMISSIONS } from "../config/admin-permissions.js";
 import { asyncHandler } from "../utils/util-async-handler.js";
@@ -80,6 +81,15 @@ adminRouter.post("/users/:id/reset-progress", manage, asyncHandler(UsersControll
 adminRouter.get("/audit-log", manage, asyncHandler(OverviewController.auditLog));
 adminRouter.get("/database/export", manage, asyncHandler(OverviewController.exportDatabase));
 adminRouter.post("/database/seed", manage, asyncHandler(OverviewController.runSeed));
+
+// Explorador do banco: SÓ o dono (owner). Campos sensíveis nunca saem; toda escrita valida pelo modelo e vai para a auditoria.
+adminRouter.get("/database/collections", admins, asyncHandler(DatabaseController.listCollections));
+adminRouter.get("/database/collections/:key/documents", admins, asyncHandler(DatabaseController.listDocuments));
+adminRouter.post("/database/collections/:key/documents", admins, asyncHandler(DatabaseController.createDocument));
+adminRouter.get("/database/collections/:key/documents/:id", admins, asyncHandler(DatabaseController.getDocument));
+adminRouter.patch("/database/collections/:key/documents/:id", admins, asyncHandler(DatabaseController.updateDocument));
+adminRouter.delete("/database/collections/:key/documents/:id", admins, asyncHandler(DatabaseController.deleteDocument));
+adminRouter.get("/database/collections/:key/export", admins, asyncHandler(DatabaseController.exportCollection));
 
 adminRouter.get("/admins", admins, asyncHandler(AccountsController.list));
 adminRouter.post("/admins", admins, asyncHandler(AccountsController.create));

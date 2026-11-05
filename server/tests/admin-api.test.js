@@ -254,3 +254,77 @@ test("dashboard: /analytics devolve indicadores, série diária do período e fu
   const fallback = await viewer.get("/admin/api/v1/analytics?days=999").set(PANEL);
   assert.equal(fallback.body.days, 30);
 });
+
+test("banco de dados: só o dono acessa o explorador", async () => {
+  for (const role of ["admin", "editor", "viewer"]) {
+    const agent = await signIn(role);
+    const response = await agent.get("/admin/api/v1/database/collections").set(PANEL);
+    assert.equal(response.status, 403, role);
+  }
+  const owner = await signIn("owner");
+  const response = await owner.get("/admin/api/v1/database/collections").set(PANEL);
+  assert.equal(response.status, 200);
+  assert.ok(response.body.collections.some((collection) => collection.key === "users"));
+});
+
+test("banco de dados: campos sensíveis nunca saem e não podem ser escritos", async () => {
+  const account = await request(app).post("/internal/v1/auth/register").set(withKey())
+    .send({ nickname: "Explorador", email: `explorador_${randomBytes(3).toString("hex")}@exemplo.test`, password: `${randomBytes(6).toString("hex")}A1` });
+  const owner = await signIn("owner");
+  const base = `/admin/api/v1/database/collections/users/documents/${account.body.id}`;
+
+  const opened = await owner.get(base).set(PANEL);
+  assert.equal(opened.status, 200);
+  assert.equal(opened.body.document.passwordHash, undefined);
+  assert.equal(opened.body.document.passwordReset, undefined);
+  const listed = await owner.get("/admin/api/v1/database/collections/users/documents").query({ search: "Explorador" }).set(PANEL);
+  assert.ok(listed.body.documents.every((document) => document.passwordHash === undefined));
+
+  for (const changes of [{ passwordHash: "x" }, { $set: { xp: 1 } }, { "passwordReset.codeHash": "x" }, { publicId: "outro" }, {}]) {
+    const refused = await owner.patch(base).set(PANEL).send({ changes });
+    assert.equal(refused.status, 400, JSON.stringify(changes));
+  }
+
+  const updated = await owner.patch(base).set(PANEL).send({ changes: { nickname: "Explorador Editado", xp: 77 } });
+  assert.equal(updated.status, 200, updated.body.error);
+  assert.equal(updated.body.document.nickname, "Explorador Editado");
+  assert.equal(updated.body.document.xp, 77);
+
+  // Regras do modelo continuam valendo (xp não pode ser negativo).
+  const invalid = await owner.patch(base).set(PANEL).send({ changes: { xp: -5 } });
+  assert.equal(invalid.status, 400);
+
+  const audit = await owner.get("/admin/api/v1/audit-log").query({ entity: "database:users" }).set(PANEL);
+  assert.ok(audit.body.logs.some((log) => log.summary.includes("nickname")));
+});
+
+test("banco de dados: coleções só leitura recusam escrita; criar e excluir exigem as regras", async () => {
+  const owner = await signIn("owner");
+  const settings = await owner.get("/admin/api/v1/database/collections/settings/documents").set(PANEL);
+  const anySetting = settings.body.documents[0];
+  if (anySetting) {
+    const refused = await owner.patch(`/admin/api/v1/database/collections/settings/documents/${anySetting._id}`).set(PANEL).send({ changes: { key: "x" } });
+    assert.equal(refused.status, 400);
+  }
+  const auditDelete = await owner.delete("/admin/api/v1/database/collections/auditLogs/documents/0123456789abcdef01234567").set(PANEL).send({ confirm: "EXCLUIR" });
+  assert.equal(auditDelete.status, 400);
+  const unknown = await owner.get("/admin/api/v1/database/collections/segredos/documents").set(PANEL);
+  assert.equal(unknown.status, 404);
+
+  const missingWord = await owner.post("/admin/api/v1/database/collections/signs/documents").set(PANEL).send({ document: { category: "Teste" } });
+  assert.equal(missingWord.status, 400);
+  const created = await owner.post("/admin/api/v1/database/collections/signs/documents").set(PANEL)
+    .send({ document: { slug: `sinal-teste-${randomBytes(2).toString("hex")}`, word: "Sinal teste", category: "Teste", source: { name: "Teste", license: "CC-BY", attribution: "Equipe" } } });
+  assert.equal(created.status, 201, created.body.error);
+
+  const path = `/admin/api/v1/database/collections/signs/documents/${created.body.document._id}`;
+  const withoutConfirm = await owner.delete(path).set(PANEL).send({});
+  assert.equal(withoutConfirm.status, 400);
+  const deleted = await owner.delete(path).set(PANEL).send({ confirm: "EXCLUIR" });
+  assert.equal(deleted.status, 200);
+  assert.equal((await owner.get(path).set(PANEL)).status, 404);
+
+  const csv = await owner.get("/admin/api/v1/database/collections/levels/export").query({ format: "csv" }).set(PANEL);
+  assert.equal(csv.status, 200);
+  assert.match(csv.headers["content-type"], /text\/csv/);
+});

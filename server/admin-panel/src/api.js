@@ -67,3 +67,27 @@ export async function downloadExport() {
   link.click();
   URL.revokeObjectURL(link.href);
 }
+
+/**
+ * Baixa um arquivo gerado pela API (ex.: exportação de uma coleção), com o nome que o servidor mandar.
+ * @param {string} path
+ * @param {Record<string, unknown>} [query]
+ * @returns {Promise<void>}
+ * @throws {ApiError}
+ */
+export async function downloadFile(path, query = {}) {
+  const url = new URL(BASE + path, window.location.origin);
+  Object.entries(query).forEach(([key, value]) => url.searchParams.set(key, String(value)));
+  const response = await fetch(url, { credentials: "same-origin", headers: { "X-Signa-Admin": "1" } });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    if (response.status === 401) onUnauthorized();
+    throw new ApiError(response.status, data.error ?? "Não foi possível baixar o arquivo.");
+  }
+  const filename = /filename="([^"]+)"/.exec(response.headers.get("Content-Disposition") ?? "")?.[1] ?? "exportacao";
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(await response.blob());
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
