@@ -23,6 +23,24 @@ export function formatMultiplier(multiplier) {
 }
 
 /**
+ * Variáveis CSS da faixa a partir da aparência escolhida no painel (estilo, cores e ícone).
+ * Sem aparência (evento antigo ou servidor desatualizado), vale o padrão do CSS (roxo da marca).
+ * @param {object|undefined} appearance
+ * @returns {Record<string, string>}
+ */
+function appearanceStyle(appearance) {
+  if (!appearance) return {};
+  const { style, colorFrom, colorTo, textColor, accentColor, accentTextColor } = appearance;
+  return {
+    "--event-background": style === "gradient" ? `linear-gradient(90deg, ${colorFrom} 0%, ${colorTo} 100%)` : style === "solid" ? colorFrom : "#ffffff",
+    "--event-border": style === "outline" ? colorFrom : "transparent",
+    "--event-text": textColor,
+    "--event-accent": accentColor,
+    "--event-accent-text": accentTextColor,
+  };
+}
+
+/**
  * Faixa "2x XP" exibida enquanto um evento de XP estiver valendo (criado no painel; some sozinha no fim).
  * compact: versão de uma linha (dentro da atividade).
  * Usado por: TrailPage e ActivityPage.
@@ -33,10 +51,10 @@ export function EventBanner({ compact = false }) {
   const multiplier = formatMultiplier(xpEvent.multiplier);
 
   return (
-    <aside className={`event-banner${compact ? " event-banner--compact" : ""}`} aria-label={`Evento: ${multiplier} XP`}>
+    <aside className={`event-banner${compact ? " event-banner--compact" : ""}`} style={appearanceStyle(xpEvent.appearance)} aria-label={`Evento: ${multiplier} XP`}>
       <span className="event-banner__badge" aria-hidden="true">{multiplier}</span>
       <div className="event-banner__text">
-        <strong>{xpEvent.title}</strong>
+        <strong>{xpEvent.appearance?.icon ? `${xpEvent.appearance.icon} ` : ""}{xpEvent.title}</strong>
         <span>
           {compact ? `XP ${multiplier} ` : `Todo XP vale ${multiplier} `}
           {describeEventEnd(xpEvent.endsAt)}

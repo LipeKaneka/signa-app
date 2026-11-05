@@ -3,6 +3,7 @@ import { listLevels as readLevels } from "../../services/service-level.js";
 import { readActor } from "../../middlewares/admin-auth-middleware.js";
 import { readRequiredString, readOptionalString, readBoolean, readInteger, readDate } from "../../utils/util-validators.js";
 import { badRequest } from "../../utils/util-http-error.js";
+import { readEventAppearance } from "../../config/event-appearance.js";
 
 /**
  * Campos de conquista. A chave só é lida ao criar (minúsculas, números e _).
@@ -52,15 +53,25 @@ export async function deleteAchievement(req, res) {
 }
 
 /**
- * Campos de evento (multiplicador de 1 a 10, aceita decimais como 1.5).
+ * Campos de evento (multiplicador a partir de 1, sem teto, aceita decimais como 1.5; aparência da faixa no app).
  * @param {object} body
  * @param {boolean} creating
  * @returns {object}
  */
 function readEventFields(body, creating) {
   const multiplier = body?.multiplier;
-  if ((creating || multiplier !== undefined) && (typeof multiplier !== "number" || !(multiplier >= 1 && multiplier <= 10))) {
-    throw badRequest("Multiplicador: número de 1 a 10.");
+  if ((creating || multiplier !== undefined) && (typeof multiplier !== "number" || !Number.isFinite(multiplier) || multiplier < 1)) {
+    throw badRequest("Multiplicador: um número a partir de 1 (ex.: 2, 1.5 ou 50).");
+  }
+  let appearance;
+  if (creating || body?.appearance !== undefined) {
+    try {
+      // Ao editar, os campos que não vierem são completados no serviço com a aparência atual.
+      appearance = creating ? readEventAppearance(body?.appearance) : body.appearance;
+      if (!creating) readEventAppearance(body.appearance);
+    } catch (error) {
+      throw badRequest(error.message);
+    }
   }
   const fields = {
     title: creating ? readRequiredString(body?.title, "o título", 80) : readOptionalString(body?.title, "Título", 80) || undefined,
@@ -68,6 +79,7 @@ function readEventFields(body, creating) {
     multiplier,
     startsAt: body?.startsAt === undefined && !creating ? undefined : readDate(body?.startsAt, "Início"),
     endsAt: body?.endsAt === undefined && !creating ? undefined : readDate(body?.endsAt, "Fim"),
+    appearance,
   };
   if (creating) fields.type = "xp_multiplier";
   else fields.active = readBoolean(body?.active, "Ativo");

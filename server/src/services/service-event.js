@@ -1,4 +1,5 @@
 import { EventModel } from "../models/model-event.js";
+import { toPublicAppearance } from "../config/event-appearance.js";
 import { createTimedCache } from "../utils/util-timed-cache.js";
 
 /** Curto: um evento que começa ou termina passa a valer em no máximo este tempo. */
@@ -8,7 +9,8 @@ const cache = createTimedCache(EVENTS_CACHE_MS);
 /**
  * Formato do evento que sai da API (para a faixa "2x XP" no app).
  * @param {object} event
- * @returns {{id: string, title: string, description: string, type: string, multiplier: number, startsAt: Date, endsAt: Date}}
+ * @returns {{id: string, title: string, description: string, type: string, multiplier: number, startsAt: Date, endsAt: Date,
+ *   appearance: object}}
  */
 function toPublicEvent(event) {
   return {
@@ -19,6 +21,7 @@ function toPublicEvent(event) {
     multiplier: event.multiplier,
     startsAt: event.startsAt,
     endsAt: event.endsAt,
+    appearance: toPublicAppearance(event.appearance),
   };
 }
 

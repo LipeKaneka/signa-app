@@ -115,9 +115,14 @@ function useScrollAfterTenthRow(rowCount) {
   return { listRef, scrollStyle: maxHeight ? { maxHeight, overflowY: "auto" } : undefined };
 }
 
-/** Todas as pessoas do ranking (pódio com medalha) e, separada no fim, a linha da própria pessoa. */
+/**
+ * Todas as pessoas do ranking (pódio com medalha) e, separada no fim, a linha da própria pessoa, só quando ela
+ * não aparece entre as 10 primeiras (as que ficam visíveis sem rolar): assim não há linha repetida.
+ */
 function RankingList({ ranking, metric }) {
   const me = ranking.me && (ranking.neighbors.find((row) => row.isMe) ?? ranking.top.find((row) => row.isMe));
+  const meVisibleInList = ranking.top.slice(0, VISIBLE_ROWS).some((row) => row.isMe);
+  const showMeSeparately = me && !meVisibleInList;
   const { listRef, scrollStyle } = useScrollAfterTenthRow(ranking.top.length);
   return (
     <>
@@ -130,7 +135,7 @@ function RankingList({ ranking, metric }) {
       >
         {ranking.top.map((row) => <RankingRow key={row.publicId} row={row} metric={metric} podium={row.position <= 3} />)}
       </ol>
-      {me && (
+      {showMeSeparately && (
         <ol className="ranking-list ranking-list--me" aria-label="Sua posição no ranking" start={me.position}>
           <RankingRow row={me} metric={metric} podium={me.position <= 3} />
         </ol>

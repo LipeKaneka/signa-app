@@ -328,3 +328,33 @@ test("banco de dados: coleções só leitura recusam escrita; criar e excluir ex
   assert.equal(csv.status, 200);
   assert.match(csv.headers["content-type"], /text\/csv/);
 });
+
+test("eventos: multiplicador sem teto e aparência da faixa (salva, valida e vai para o app)", async () => {
+  const admin = await signIn("admin");
+  const now = Date.now();
+  const base = { title: "Mega evento", startsAt: new Date(now - 60_000).toISOString(), endsAt: new Date(now + 3_600_000).toISOString() };
+
+  const badColor = await admin.post("/admin/api/v1/events").set(PANEL).send({ ...base, multiplier: 2, appearance: { colorFrom: "amarelo" } });
+  assert.equal(badColor.status, 400);
+  const below = await admin.post("/admin/api/v1/events").set(PANEL).send({ ...base, multiplier: 0.5 });
+  assert.equal(below.status, 400);
+
+  const appearance = { style: "solid", colorFrom: "#19163A", textColor: "#ffffff", accentColor: "#8b6cf0", accentTextColor: "#ffffff", icon: "🔥" };
+  const created = await admin.post("/admin/api/v1/events").set(PANEL).send({ ...base, multiplier: 50, appearance });
+  assert.equal(created.status, 201, created.body.error);
+  assert.equal(created.body.event.multiplier, 50);
+  assert.equal(created.body.event.appearance.colorFrom, "#19163a");
+  assert.equal(created.body.event.appearance.icon, "🔥");
+
+  // Editar só uma cor mantém o resto da aparência.
+  const edited = await admin.patch(`/admin/api/v1/events/${created.body.event.id}`).set(PANEL).send({ appearance: { textColor: "#eeeeee" } });
+  assert.equal(edited.status, 200, edited.body.error);
+  assert.equal(edited.body.event.appearance.textColor, "#eeeeee");
+  assert.equal(edited.body.event.appearance.style, "solid");
+
+  const active = await request(app).get("/internal/v1/events/active").set(withKey());
+  const fromApp = active.body.events.find((event) => event.id === created.body.event.id);
+  assert.equal(fromApp.multiplier, 50);
+  assert.equal(fromApp.appearance.style, "solid");
+  await admin.delete(`/admin/api/v1/events/${created.body.event.id}`).set(PANEL);
+});

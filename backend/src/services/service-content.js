@@ -6,7 +6,7 @@ const EVENTS_MAX_AGE_MS = 15 * 1000;
 
 /**
  * Eventos valendo agora (ex.: 2x XP), para a faixa de evento no app.
- * @returns {Promise<object[]>} [{id, title, description, type, multiplier, startsAt, endsAt}]
+ * @returns {Promise<object[]>} [{id, title, description, type, multiplier, startsAt, endsAt, appearance}] (appearance = cores e estilo da faixa)
  * Usado por: GET /events/active.
  */
 export async function listActiveEvents() {

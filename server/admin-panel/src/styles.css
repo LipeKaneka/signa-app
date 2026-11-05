@@ -350,3 +350,23 @@ input:disabled, select:disabled { background: var(--off-bg); }
   .doc-field { grid-template-columns: minmax(0, 1fr); gap: 4px; }
   .doc-field__name { padding-top: 0; }
 }
+
+/* ---------- Eventos: aparência da faixa no app ---------- */
+.appearance-editor { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; display: grid; gap: 12px; margin: 0; }
+.appearance-editor legend { font-weight: 700; padding: 0 6px; }
+.event-preview { display: flex; justify-content: center; }
+.event-preview__phone { width: min(360px, 100%); padding: 14px 12px; border-radius: 20px; background: linear-gradient(180deg, #faf9fe 0%, #e7e0ff 100%); border: 1px solid var(--border); }
+.event-preview__banner { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 16px; box-shadow: 0 4px 14px rgba(22, 20, 39, 0.18); }
+.event-preview__banner div { display: grid; gap: 2px; font-size: 0.8rem; line-height: 1.3; min-width: 0; }
+.event-preview__banner strong { font-size: 0.94rem; overflow-wrap: anywhere; }
+.event-preview__badge { flex: none; display: grid; place-items: center; min-width: 46px; height: 46px; padding: 0 6px; border-radius: 50%; font-weight: 800; font-size: 1rem; }
+.preset-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.preset { display: inline-flex; align-items: center; gap: 8px; padding: 5px 10px 5px 5px; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--surface); font: inherit; font-size: 0.82rem; cursor: pointer; }
+.preset:hover { border-color: var(--primary); }
+.preset__swatch { width: 22px; height: 22px; border-radius: 50%; }
+.color-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.color-field { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; cursor: pointer; }
+.color-field input[type="color"] { width: 42px; height: 34px; padding: 2px; flex: none; cursor: pointer; }
+.color-field span { display: grid; }
+.color-field code { font-size: 0.74rem; background: none; padding: 0; color: var(--muted); }
+.event-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 4px; margin-right: 8px; vertical-align: -2px; }

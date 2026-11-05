@@ -1,4 +1,5 @@
-/* Faixa de evento de XP (2x XP): dourada, para destacar do roxo do app. */
+/* Faixa de evento de XP (2x XP). As cores vêm do evento (painel → Aparência no app) por variáveis CSS; o padrão é
+   o roxo da marca. */
 .event-banner {
   display: flex;
   align-items: center;
@@ -6,9 +7,10 @@
   margin: 14px 16px 0;
   padding: 10px 14px;
   border-radius: 16px;
-  background: linear-gradient(90deg, #ffb820 0%, #ffd56b 100%);
-  color: #2a1a00;
-  box-shadow: 0 4px 14px rgba(255, 184, 32, 0.35);
+  background: var(--event-background, linear-gradient(90deg, #5233c4 0%, #8b6cf0 100%));
+  color: var(--event-text, #ffffff);
+  border: 2px solid var(--event-border, transparent);
+  box-shadow: 0 4px 14px rgba(22, 20, 39, 0.22);
   animation: event-banner-in 420ms ease-out both;
 }
 
@@ -20,8 +22,8 @@
   height: 46px;
   padding: 0 6px;
   border-radius: 50%;
-  background: #2a1a00;
-  color: #ffd56b;
+  background: var(--event-accent, #ffffff);
+  color: var(--event-accent-text, #3f2c88);
   font-weight: 800;
   font-size: 1.05rem;
 }

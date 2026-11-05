@@ -10,6 +10,7 @@ import { publishContentChange } from "./service-admin-publish.js";
 import { describeActiveChange } from "./service-admin-trail.js";
 import { listLevels } from "./service-level.js";
 import { setSetting } from "./service-settings.js";
+import { readEventAppearance, toPublicAppearance } from "../config/event-appearance.js";
 
 /**
  * Conquista no formato do painel.
@@ -103,7 +104,7 @@ function toAdminEvent(event, now = new Date()) {
   if (event.active === false) state = "inactive";
   else if (new Date(event.endsAt) <= now) state = "ended";
   else if (new Date(event.startsAt) <= now) state = "running";
-  return { id: String(_id), ...fields, state };
+  return { id: String(_id), ...fields, appearance: toPublicAppearance(event.appearance), state };
 }
 
 /**
@@ -146,6 +147,8 @@ export async function updateEvent(actor, eventId, changes) {
   for (const field of ["title", "description", "multiplier", "startsAt", "endsAt", "active"]) {
     if (changes[field] !== undefined) event[field] = changes[field];
   }
+  // Aparência: completa o que veio com a aparência atual do evento (eventos antigos começam do padrão).
+  if (changes.appearance !== undefined) event.appearance = readEventAppearance(changes.appearance, event.appearance?.toObject?.() ?? event.appearance);
   if (event.endsAt <= event.startsAt) throw badRequest("O fim do evento precisa ser depois do início.");
   await event.save();
   await publishContentChange();
