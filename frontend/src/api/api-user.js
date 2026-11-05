@@ -15,6 +15,14 @@ export function signInAccount({ email, password }) {
 }
 
 /**
+ * GET /auth/session: confere se a conta ainda pode usar o app (401 = sessão inválida; 403 = conta banida).
+ * @returns {Promise<{active: true}>} Usado por: AuthContext (conferência periódica).
+ */
+export function checkSession() {
+  return requestApi("/auth/session");
+}
+
+/**
  * GET /profile. @returns {Promise<{user, achievements}>} Usado por: AuthContext (sessão) e ProfilePage (conquistas).
  */
 export function fetchProfile() {

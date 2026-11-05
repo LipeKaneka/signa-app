@@ -39,6 +39,15 @@ export async function signIn(req, res) {
 }
 
 /**
+ * GET /auth/session — {active: true} se a conta ainda pode usar o app. O requireAuth já respondeu 401 (sessão
+ * inválida) ou 403 + {code: "account_banned", ban} (conta banida). O app chama periodicamente para tirar da conta
+ * quem for banido enquanto usa.
+ */
+export function getSession(_req, res) {
+  res.json({ active: true });
+}
+
+/**
  * GET /profile — responde {user, achievements}.
  */
 export async function getProfile(req, res) {

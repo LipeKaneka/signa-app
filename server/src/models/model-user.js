@@ -28,6 +28,8 @@ const rankingPositionSchema = new mongoose.Schema(
  * Usuário (coleção "users").
  * - publicId: id que aparece na API (o _id nunca sai). passwordHash: bcrypt, nunca selecionado por padrão.
  * - status: "active" | "blocked" (bloqueado não entra; base para moderação pelo painel).
+ * - ban: motivo e prazo do bloqueio (until null = sem prazo). Vencido o prazo, a conta volta a "active" sozinha
+ *   no próximo acesso (readActiveBan em service-user.js).
  * - xp, streak/maxStreak/lastActivityDay ("AAAA-MM-DD" em Brasília), totalCorrectAnswers: métricas de progresso
  *   e de conquistas (veja readAchievementMetrics).
  * - completedActivities + completedActivitiesCount: progresso na trilha (o contador existe para ordenar o ranking).
@@ -43,6 +45,10 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true, maxlength: 254 },
     passwordHash: { type: String, required: true, select: false },
     status: { type: String, enum: ["active", "blocked"], default: "active" },
+    ban: {
+      type: { _id: false, reason: { type: String, maxlength: 200 }, until: Date, bannedAt: Date },
+      default: null,
+    },
     city: { type: String, default: "", trim: true, maxlength: 60 },
     // Foto de perfil como data URL (JPEG/PNG/WebP, 256×256, validada em readAvatar); "" = sem foto.
     avatar: { type: String, default: "", maxlength: 60000 },

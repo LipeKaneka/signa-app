@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { ACCOUNT_BANNED } from "../../api/http-client.js";
+import { BanDialog } from "../../components/BanDialog.jsx";
 import { AuthBrand, GoogleButton, IconField, PasswordField } from "./AuthForm.jsx";
 import "./auth.css";
 
@@ -12,6 +14,7 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [ban, setBan] = useState(null);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -20,7 +23,8 @@ export function LoginPage() {
     try {
       await signIn({ email: email.trim(), password });
     } catch (signInError) {
-      setError(signInError.message);
+      if (signInError.code === ACCOUNT_BANNED) setBan(signInError.ban);
+      else setError(signInError.message);
       setSubmitting(false);
     }
   }
@@ -51,6 +55,7 @@ export function LoginPage() {
       </form>
 
       <GoogleButton onUnavailable={setError} />
+      {ban && <BanDialog ban={ban} onClose={() => setBan(null)} />}
     </main>
   );
 }

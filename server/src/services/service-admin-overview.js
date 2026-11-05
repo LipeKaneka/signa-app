@@ -29,7 +29,7 @@ export async function readStats(now = new Date()) {
     modules, activities, signs, unreviewedSigns, achievements, activeEvents, contentVersion,
   ] = await Promise.all([
     UserModel.countDocuments(),
-    UserModel.countDocuments({ status: "blocked" }),
+    UserModel.countDocuments({ status: "blocked", $or: [{ "ban.until": null }, { "ban.until": { $gt: new Date() } }] }),
     UserModel.countDocuments({ createdAt: { $gte: weekAgo } }),
     UserModel.countDocuments({ lastActivityDay: { $gte: weekAgoKey } }),
     AttemptModel.countDocuments({ status: "finished", finishedAt: { $gte: weekAgo } }),

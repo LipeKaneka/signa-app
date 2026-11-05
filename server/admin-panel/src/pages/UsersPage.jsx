@@ -17,7 +17,7 @@ export function UsersPage() {
         <select value={filters.status} onChange={(e) => setFilter({ status: e.target.value })}>
           <option value="">Todos</option>
           <option value="active">Ativos</option>
-          <option value="blocked">Bloqueados</option>
+          <option value="blocked">Banidos</option>
         </select>
       </div>
       <LoadState loading={loading && !data} error={error} onRetry={reload} />
@@ -34,7 +34,7 @@ export function UsersPage() {
                   <td>{user.streak}</td>
                   <td>{user.completedActivities}</td>
                   <td>{formatDateTime(user.lastLogin)}</td>
-                  <td>{user.status === "blocked" ? <Badge tone="danger">Bloqueado</Badge> : <Badge tone="ok">Ativo</Badge>}</td>
+                  <td>{user.status === "blocked" ? <span title={user.ban?.until ? `até ${formatDateTime(user.ban.until)}` : "sem prazo"}><Badge tone="danger">{user.ban?.until ? `Banido até ${new Date(user.ban.until).toLocaleDateString("pt-BR")}` : "Banido"}</Badge></span> : <Badge tone="ok">Ativo</Badge>}</td>
                 </tr>
               ))}
             </tbody>

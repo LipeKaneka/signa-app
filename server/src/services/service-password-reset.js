@@ -4,6 +4,7 @@ import { UserModel } from "../models/model-user.js";
 import { PASSWORD_RULES } from "../config/rules.js";
 import { badRequest, HttpError } from "../utils/util-http-error.js";
 import { sendPasswordResetCode } from "./service-mailer.js";
+import { readActiveBan } from "./service-user.js";
 
 /** Validade do código, tentativas erradas permitidas e intervalo mínimo entre envios. */
 const CODE_TTL_MS = 15 * 60 * 1000;
@@ -32,7 +33,7 @@ function hashCode(email, code) {
  */
 export async function requestPasswordReset(email) {
   const user = await UserModel.findOne({ email }).select("+passwordReset");
-  if (!user || user.status !== "active") return;
+  if (!user || readActiveBan(user)) return;
   const now = Date.now();
   if (user.passwordReset?.sentAt && now - user.passwordReset.sentAt.getTime() < RESEND_INTERVAL_MS) {
     throw new HttpError(429, "Espere um minuto para pedir outro código.");
@@ -53,7 +54,7 @@ export async function requestPasswordReset(email) {
 async function checkCode(email, code) {
   const user = await UserModel.findOne({ email }).select("+passwordReset +passwordHash");
   const reset = user?.passwordReset;
-  if (!user || user.status !== "active" || !reset?.codeHash || reset.expiresAt.getTime() < Date.now() || reset.attempts >= MAX_ATTEMPTS) {
+  if (!user || readActiveBan(user) || !reset?.codeHash || reset.expiresAt.getTime() < Date.now() || reset.attempts >= MAX_ATTEMPTS) {
     throw badRequest(INVALID_CODE_MESSAGE);
   }
   if (reset.codeHash !== hashCode(email, code)) {

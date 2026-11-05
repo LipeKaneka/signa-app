@@ -1,8 +1,11 @@
 import { callServer } from "../clients/server-client.js";
 import { cachedContent } from "../clients/content-cache.js";
 
-/** Eventos começam/terminam pelo relógio (sem mudar a versão do conteúdo): revalida a cada 15 s. */
-const EVENTS_MAX_AGE_MS = 15 * 1000;
+/**
+ * Eventos começam/terminam pelo relógio (sem mudar a versão do conteúdo): revalida a cada 5 s. Uma edição no
+ * painel (cor, multiplicador) também chega nesse tempo, sem depender da conferência de versão.
+ */
+const EVENTS_MAX_AGE_MS = 5 * 1000;
 
 /**
  * Eventos valendo agora (ex.: 2x XP), para a faixa de evento no app.

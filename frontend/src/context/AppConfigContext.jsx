@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import * as ContentApi from "../api/api-content.js";
 
 /**
@@ -22,8 +22,14 @@ const FALLBACK_SETTINGS = Object.freeze({
   ],
 });
 
-/** De quanto em quanto tempo o app pergunta de novo por eventos e textos (com a tela visível). */
-const REFRESH_INTERVAL_MS = 60 * 1000;
+/**
+ * De quanto em quanto tempo o app pergunta de novo por eventos e textos (só com a tela visível). Curto para uma
+ * mudança no painel (cor, multiplicador) aparecer sem reabrir o app; o backend responde do cache, então é leve.
+ * Além disso, o app pergunta ao trocar de tela (App.jsx) e ao voltar para o app.
+ */
+const REFRESH_INTERVAL_MS = 15 * 1000;
+/** Ao trocar de tela, não pergunta de novo se a última resposta tem menos que isto. */
+const NAVIGATION_REFRESH_MIN_MS = 3 * 1000;
 /** Recalcula se o evento ainda vale (ele pode terminar enquanto a tela está aberta). */
 const CLOCK_TICK_MS = 15 * 1000;
 
@@ -68,7 +74,10 @@ export function AppConfigProvider({ children }) {
   const [events, setEvents] = useState([]);
   const [now, setNow] = useState(() => Date.now());
 
+  const lastRefreshAt = useRef(0);
+
   const refresh = useCallback(async () => {
+    lastRefreshAt.current = Date.now();
     const [config, active] = await Promise.allSettled([ContentApi.fetchAppConfig(), ContentApi.fetchActiveEvents()]);
     if (config.status === "fulfilled") {
       setSettings({ ...FALLBACK_SETTINGS, ...config.value.settings });
@@ -77,6 +86,11 @@ export function AppConfigProvider({ children }) {
     if (active.status === "fulfilled") setEvents(active.value.events ?? []);
     setNow(Date.now());
   }, []);
+
+  /** Pergunta de novo ao trocar de tela, a menos que tenha acabado de perguntar. */
+  const refreshIfStale = useCallback(() => {
+    if (Date.now() - lastRefreshAt.current >= NAVIGATION_REFRESH_MIN_MS) refresh();
+  }, [refresh]);
 
   useEffect(() => {
     refresh();
@@ -103,15 +117,16 @@ export function AppConfigProvider({ children }) {
       levels,
       xpEvent: pickXpEvent(events, now),
       refresh,
+      refreshIfStale,
     }),
-    [settings, levels, events, now, refresh],
+    [settings, levels, events, now, refresh, refreshIfStale],
   );
   return <AppConfigContext.Provider value={value}>{children}</AppConfigContext.Provider>;
 }
 
 /**
  * @returns {{text: (key: string) => string, pickFeedbackPhrase: (correct: boolean) => {title: string, text: string},
- *   minScoreToPass: number, levels: object[], xpEvent: object|null, refresh: () => Promise<void>}}
+ *   minScoreToPass: number, levels: object[], xpEvent: object|null, refresh: () => Promise<void>, refreshIfStale: () => void}}
  * pickFeedbackPhrase(acertou) sorteia a frase da folha de resposta; xpEvent = evento de XP valendo agora (ou null).
  * Usado por: TrailPage e ActivityPage (faixa de evento), FeedbackSheet (textos), ActivityResult (nota mínima).
  */

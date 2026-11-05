@@ -6,15 +6,29 @@ import { Badge, Field, LoadState, Modal, Notice, confirmAction, formatDateTime, 
 
 const ATTEMPT_STATUS = { finished: "concluída", in_progress: "em andamento", expired: "expirada" };
 
-/** Janela de ação com motivo obrigatório (vai para a auditoria). */
-function ReasonDialog({ title, withDelta, onClose, onConfirm }) {
+/** Prazos de banimento oferecidos (dias; "" = sem prazo; "custom" = digitar). */
+const BAN_DURATIONS = [
+  ["1", "1 dia"], ["3", "3 dias"], ["7", "7 dias"], ["15", "15 dias"], ["30", "30 dias"], ["90", "90 dias"],
+  ["", "Sem prazo (até desbloquear)"], ["custom", "Outro (em dias)"],
+];
+
+/** "até 12/11/2026 14:30" ou "sem prazo". */
+function describeBanEnd(ban) {
+  return ban.until ? `até ${formatDateTime(ban.until)}` : "sem prazo";
+}
+
+/** Janela de ação com motivo obrigatório (vai para a auditoria; no banimento, aparece também para o usuário). */
+function ReasonDialog({ title, withDelta, withBan, onClose, onConfirm }) {
   const [reason, setReason] = useState("");
   const [delta, setDelta] = useState(0);
+  const [duration, setDuration] = useState("7");
+  const [customDays, setCustomDays] = useState(7);
   const { run, busy, message } = useAction();
   const submit = (event) => {
     event.preventDefault();
     run(async () => {
-      await onConfirm({ reason, delta: Number(delta) });
+      const durationDays = duration === "custom" ? Number(customDays) : duration ? Number(duration) : null;
+      await onConfirm({ reason, delta: Number(delta), durationDays });
       onClose();
     });
   };
@@ -26,7 +40,21 @@ function ReasonDialog({ title, withDelta, onClose, onConfirm }) {
             <input type="number" value={delta} onChange={(e) => setDelta(e.target.value)} required />
           </Field>
         )}
-        <Field label="Motivo" hint="Fica registrado na auditoria.">
+        {withBan && (
+          <div className="form__row">
+            <Field label="Prazo do banimento" hint="Quando vence, a conta volta a funcionar sozinha.">
+              <select value={duration} onChange={(e) => setDuration(e.target.value)}>
+                {BAN_DURATIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+            </Field>
+            {duration === "custom" && (
+              <Field label="Dias">
+                <input type="number" min={1} max={3650} step={1} value={customDays} onChange={(e) => setCustomDays(e.target.value)} required />
+              </Field>
+            )}
+          </div>
+        )}
+        <Field label="Motivo" hint={withBan ? "Aparece para o usuário quando ele tentar entrar, e fica na auditoria." : "Fica registrado na auditoria."}>
           <input value={reason} onChange={(e) => setReason(e.target.value)} maxLength={200} required />
         </Field>
         <Notice message={message} />
@@ -48,7 +76,11 @@ export function UserDetailPage() {
   const user = data?.user;
 
   const actions = {
-    block: { title: "Bloquear usuário", run: ({ reason }) => api(`/users/${id}/status`, { method: "PATCH", body: { status: "blocked", reason } }) },
+    block: {
+      title: "Banir usuário",
+      withBan: true,
+      run: ({ reason, durationDays }) => api(`/users/${id}/status`, { method: "PATCH", body: { status: "blocked", reason, durationDays } }),
+    },
     unblock: { title: "Desbloquear usuário", run: ({ reason }) => api(`/users/${id}/status`, { method: "PATCH", body: { status: "active", reason } }) },
     xp: { title: "Ajustar XP", withDelta: true, run: ({ reason, delta }) => api(`/users/${id}/xp`, { method: "POST", body: { delta, reason } }) },
     reset: { title: "Zerar progresso", run: ({ reason }) => api(`/users/${id}/reset-progress`, { method: "POST", body: { reason } }) },
@@ -61,12 +93,12 @@ export function UserDetailPage() {
       {user && (
         <>
           <div className="toolbar">
-            <h1>{user.nickname} {user.status === "blocked" && <Badge tone="danger">Bloqueado</Badge>}</h1>
+            <h1>{user.nickname} {user.status === "blocked" && <Badge tone="danger">Banido</Badge>}</h1>
             {can("manage") && (
               <span className="table__actions">
                 {user.status === "blocked"
                   ? <button className="button button--ghost" onClick={() => setDialog("unblock")}>Desbloquear</button>
-                  : <button className="button button--ghost" onClick={() => setDialog("block")}>Bloquear</button>}
+                  : <button className="button button--ghost" onClick={() => setDialog("block")}>Banir</button>}
                 <button className="button button--ghost" onClick={() => setDialog("xp")}>Ajustar XP</button>
                 <button className="button button--danger" onClick={() => confirmAction("Zerar todo o progresso deste usuário? XP, ofensiva, atividades e tentativas serão apagados.") && setDialog("reset")}>
                   Zerar progresso
@@ -74,6 +106,12 @@ export function UserDetailPage() {
               </span>
             )}
           </div>
+          {user.ban && (
+            <div className="notice notice--error">
+              <strong>Conta banida {describeBanEnd(user.ban)}.</strong> Motivo: {user.ban.reason || "—"}
+              {user.ban.bannedAt && <> · aplicado em {formatDateTime(user.ban.bannedAt)}</>}
+            </div>
+          )}
           <div className="card details">
             <p><strong>E-mail:</strong> {user.email}</p>
             <p><strong>Id público:</strong> {user.publicId}</p>
@@ -118,6 +156,7 @@ export function UserDetailPage() {
         <ReasonDialog
           title={actions[dialog].title}
           withDelta={actions[dialog].withDelta}
+          withBan={actions[dialog].withBan}
           onClose={() => setDialog(null)}
           onConfirm={async (values) => {
             await actions[dialog].run(values);

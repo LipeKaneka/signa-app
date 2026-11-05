@@ -1,5 +1,6 @@
 import * as UsersAdmin from "../../services/service-admin-users.js";
 import { readActor } from "../../middlewares/admin-auth-middleware.js";
+import { badRequest } from "../../utils/util-http-error.js";
 import { readRequiredString, readOptionalString, readPositiveInteger, readInteger } from "../../utils/util-validators.js";
 
 /** Motivo obrigatório das ações sobre usuários (fica na auditoria). */
@@ -23,9 +24,24 @@ export async function detail(req, res) {
   res.json({ user: await UsersAdmin.getUserDetail(req.params.id) });
 }
 
-/** PATCH /admin/api/v1/users/:id/status — {status: "active"|"blocked", reason} → {user}. */
+/**
+ * Prazo do banimento em dias: vazio/null/0 = sem prazo; senão inteiro de 1 a MAX_BAN_DAYS.
+ * @param {unknown} value
+ * @returns {number|null}
+ */
+function readBanDays(value) {
+  if (value === undefined || value === null || value === "" || value === 0) return null;
+  const days = Number(value);
+  if (!Number.isInteger(days) || days < 1 || days > UsersAdmin.MAX_BAN_DAYS) {
+    throw badRequest(`Prazo do banimento: de 1 a ${UsersAdmin.MAX_BAN_DAYS} dias (ou sem prazo).`);
+  }
+  return days;
+}
+
+/** PATCH /admin/api/v1/users/:id/status — {status: "active"|"blocked", reason, durationDays?} → {user}. */
 export async function setStatus(req, res) {
-  res.json({ user: await UsersAdmin.setUserStatus(readActor(req), req.params.id, req.body?.status, readReason(req.body)) });
+  const durationDays = req.body?.status === "blocked" ? readBanDays(req.body?.durationDays) : null;
+  res.json({ user: await UsersAdmin.setUserStatus(readActor(req), req.params.id, req.body?.status, readReason(req.body), durationDays) });
 }
 
 /** POST /admin/api/v1/users/:id/xp — {delta, reason} → {user}. */

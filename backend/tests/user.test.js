@@ -132,3 +132,26 @@ test("rota desconhecida responde 404 e CORS só libera o front configurado", asy
   const blocked = await request(app).get("/api/v1/health").set("Origin", "https://site-estranho.example");
   assert.equal(blocked.headers["access-control-allow-origin"], undefined);
 });
+
+test("conta banida: login e sessão devolvem motivo e prazo ao app", async () => {
+  const user = await registerTestUser(app);
+  assert.equal((await request(app).get("/api/v1/auth/session").set(authorized(user.token))).status, 200);
+
+  const { UserModel } = await import("../../server/src/models/model-user.js");
+  const until = new Date(Date.now() + 3 * 86400000);
+  await UserModel.updateOne({ email: user.email }, { status: "blocked", ban: { reason: "Ofensas no chat", until, bannedAt: new Date() } });
+
+  const login = await request(app).post("/api/v1/auth/login").send({ email: user.email, password: user.password });
+  assert.equal(login.status, 403);
+  assert.equal(login.body.code, "account_banned");
+  assert.deepEqual(login.body.ban, { reason: "Ofensas no chat", until: until.toISOString() });
+  assert.equal(login.body.token, undefined);
+
+  // A sessão aberta (cache de 15 s do backend) é recusada assim que conferida no servidor de novo.
+  const { forgetSession } = await import("../src/middlewares/auth-middleware.js");
+  const { readUserIdFromToken } = await import("../src/utils/util-tokens.js");
+  forgetSession(readUserIdFromToken(user.token));
+  const session = await request(app).get("/api/v1/auth/session").set(authorized(user.token));
+  assert.equal(session.status, 403);
+  assert.equal(session.body.code, "account_banned");
+});

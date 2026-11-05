@@ -1,0 +1,78 @@
+.ban-dialog {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(10, 4, 40, 0.6);
+  z-index: 50;
+  animation: ban-dialog-fade 0.18s ease-out;
+}
+
+.ban-dialog__card {
+  width: 100%;
+  max-width: 360px;
+  padding: 24px 20px 20px;
+  border-radius: var(--radius-medium);
+  background: var(--color-card);
+  color: var(--color-card-text);
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(10, 4, 40, 0.35);
+}
+
+.ban-dialog__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 8px;
+  border-radius: 50%;
+  background: var(--color-wrong-bg);
+  color: var(--color-wrong-text);
+}
+
+.ban-dialog__title {
+  margin: 0 0 14px;
+  font-size: 1.3rem;
+}
+
+.ban-dialog__label {
+  margin: 10px 0 2px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-primary);
+}
+
+.ban-dialog__value {
+  margin: 0;
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.ban-dialog__muted,
+.ban-dialog__hint {
+  color: var(--color-card-muted);
+}
+
+.ban-dialog__hint {
+  margin: 14px 0 0;
+  font-size: 0.85rem;
+}
+
+.ban-dialog__button {
+  width: 100%;
+  margin-top: 18px;
+}
+
+@keyframes ban-dialog-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ban-dialog { animation: none; }
+}

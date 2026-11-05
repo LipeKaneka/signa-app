@@ -6,7 +6,7 @@ import { checkSession } from "../services/service-user.js";
  * Por quanto tempo uma conta conferida no servidor vale sem nova consulta. Curto o bastante para um
  * bloqueio feito no painel valer rápido; longo o bastante para não consultar o servidor a cada toque.
  */
-const SESSION_CACHE_MS = 30 * 1000;
+const SESSION_CACHE_MS = 15 * 1000;
 const checkedSessions = new Map();
 
 /**

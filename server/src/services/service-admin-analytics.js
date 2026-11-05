@@ -199,7 +199,7 @@ export async function readAnalytics({ days = 30, now = new Date() } = {}) {
     ModuleModel.find(NOT_DEACTIVATED).sort({ order: 1 }).lean(),
     ActivityModel.find(NOT_DEACTIVATED).select("module title questions").lean(),
     UserModel.countDocuments(),
-    UserModel.countDocuments({ status: "blocked" }),
+    UserModel.countDocuments({ status: "blocked", $or: [{ "ban.until": null }, { "ban.until": { $gt: new Date() } }] }),
   ]);
   const modulesById = new Map(modules.map((module) => [String(module._id), module]));
 

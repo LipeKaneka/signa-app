@@ -12,6 +12,7 @@ userRouter.post("/auth/password-reset/request", authLimiter, asyncHandler(UserCo
 userRouter.post("/auth/password-reset/verify", authLimiter, asyncHandler(UserController.verifyPasswordReset));
 userRouter.post("/auth/password-reset/confirm", authLimiter, asyncHandler(UserController.confirmPasswordReset));
 
+userRouter.get("/auth/session", requireAuth, UserController.getSession);
 userRouter.get("/profile", requireAuth, asyncHandler(UserController.getProfile));
 userRouter.patch("/profile", requireAuth, asyncHandler(UserController.updateProfile));
 userRouter.delete("/profile", requireAuth, asyncHandler(UserController.deleteAccount));

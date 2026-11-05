@@ -202,6 +202,44 @@ test("usuários: bloquear tira o acesso ao app; XP e progresso exigem motivo", a
   assert.equal(reset.body.user.xp, 0);
 });
 
+test("banimento: login e sessão recebem motivo e prazo; prazo vencido libera a conta", async () => {
+  const admin = await signIn("admin");
+  const email = `ban_${randomBytes(3).toString("hex")}@exemplo.test`;
+  const password = `${randomBytes(6).toString("hex")}A1`;
+  const account = await request(app).post("/internal/v1/auth/register").set(withKey()).send({ nickname: "Banido", email, password });
+  const statusPath = `/admin/api/v1/users/${account.body.id}/status`;
+
+  assert.equal((await admin.patch(statusPath).set(PANEL).send({ status: "blocked", reason: "x", durationDays: 0.5 })).status, 400);
+  const banned = await admin.patch(statusPath).set(PANEL).send({ status: "blocked", reason: "Spam no ranking", durationDays: 7 });
+  assert.equal(banned.body.user.status, "blocked");
+  assert.equal(banned.body.user.ban.reason, "Spam no ranking");
+  const days = (new Date(banned.body.user.ban.until).getTime() - Date.now()) / 86400000;
+  assert.ok(days > 6.9 && days <= 7);
+
+  const login = await request(app).post("/internal/v1/auth/verify-credentials").set(withKey()).send({ email, password });
+  assert.equal(login.status, 403);
+  assert.equal(login.body.code, "account_banned");
+  assert.equal(login.body.ban.reason, "Spam no ranking");
+  assert.equal(login.body.ban.until, banned.body.user.ban.until);
+  const session = await request(app).get(`/internal/v1/users/${account.body.id}/session`).set(withKey());
+  assert.equal(session.body.code, "account_banned");
+  // Senha errada não revela o banimento.
+  assert.equal((await request(app).post("/internal/v1/auth/verify-credentials").set(withKey()).send({ email, password: "Errada123" })).status, 401);
+
+  const permanent = await admin.patch(statusPath).set(PANEL).send({ status: "blocked", reason: "Grave" });
+  assert.equal(permanent.body.user.ban.until, null);
+  assert.equal((await admin.get("/admin/api/v1/users?status=blocked&search=Banido").set(PANEL)).body.users.length >= 1, true);
+
+  // Prazo vencido: a conta volta sozinha no próximo acesso.
+  const { UserModel } = await import("../src/models/model-user.js");
+  await UserModel.updateOne({ _id: account.body.id }, { "ban.until": new Date(Date.now() - 1000) });
+  assert.equal((await request(app).post("/internal/v1/auth/verify-credentials").set(withKey()).send({ email, password })).status, 200);
+  assert.equal((await UserModel.findById(account.body.id).lean()).status, "active");
+
+  const unbanned = await admin.patch(statusPath).set(PANEL).send({ status: "active", reason: "ok" });
+  assert.equal(unbanned.body.user.ban, null);
+});
+
 test("níveis: tabela inválida é recusada; válida vale no app", async () => {
   const admin = await signIn("admin");
   const invalid = await admin.put("/admin/api/v1/levels").set(PANEL).send({ levels: [{ minXp: 10, title: "A" }] });

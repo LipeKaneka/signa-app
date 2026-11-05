@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from "react";
 import { HashRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
+import { useAppConfig } from "./context/AppConfigContext.jsx";
 import { SplashScreen } from "./components/SplashScreen.jsx";
 import { LoginPage } from "./pages/auth/LoginPage.jsx";
 import { RegisterPage } from "./pages/auth/RegisterPage.jsx";
@@ -30,6 +31,16 @@ function ScrollToTopOnNavigate() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
+  return null;
+}
+
+/** Ao trocar de tela, confere eventos e textos do painel (a faixa de evento muda sem reabrir o app). */
+function RefreshConfigOnNavigate() {
+  const { pathname } = useLocation();
+  const { refreshIfStale } = useAppConfig();
+  useEffect(() => {
+    refreshIfStale();
+  }, [pathname, refreshIfStale]);
   return null;
 }
 
@@ -87,6 +98,7 @@ export function App() {
   return (
     <HashRouter>
       <ScrollToTopOnNavigate />
+      <RefreshConfigOnNavigate />
       {status === "signedIn" ? <PrivateRoutes /> : <PublicRoutes />}
     </HashRouter>
   );

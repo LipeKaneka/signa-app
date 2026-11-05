@@ -1,13 +1,15 @@
 /**
  * Erro com status HTTP. Services lançam (com as fábricas abaixo) e o errorHandler responde {error}.
  * @property {number} status
+ * @property {object} [extra] - campos a mais na resposta (ex.: {code: "account_banned", ban}), só em erros 4xx.
  * Fábricas: badRequest (400), unauthorized (401), forbidden (403), notFound (404), conflict (409).
  */
 export class HttpError extends Error {
-  constructor(status, message) {
+  constructor(status, message, extra) {
     super(message);
     this.name = "HttpError";
     this.status = status;
+    if (extra) this.extra = extra;
   }
 }
 

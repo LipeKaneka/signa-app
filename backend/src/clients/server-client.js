@@ -49,7 +49,9 @@ async function readJsonSafely(response) {
  * @returns {HttpError}
  */
 function toHttpError(status, data) {
-  return new HttpError(status, data.error ?? "Não foi possível concluir a operação.");
+  // code + ban: conta banida (o app mostra motivo e prazo). Só estes campos passam adiante.
+  const extra = data.code === "account_banned" ? { code: data.code, ban: data.ban ?? null } : undefined;
+  return new HttpError(status, data.error ?? "Não foi possível concluir a operação.", extra);
 }
 
 /**

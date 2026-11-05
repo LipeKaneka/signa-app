@@ -46,6 +46,7 @@ export function errorHandler(error, _req, res, _next) {
   if (status >= 500) console.error(error);
 
   const body = { error: readPublicMessage(error, status) };
+  if (status < 500 && error.extra) Object.assign(body, error.extra);
   if (isDevelopment() && status >= 500) body.details = error.message;
   res.status(status).json(body);
 }

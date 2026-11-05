@@ -3,7 +3,7 @@ import { UserModel } from "../models/model-user.js";
 import { AttemptModel } from "../models/model-attempt.js";
 import { PASSWORD_RULES } from "../config/rules.js";
 import { generatePublicId } from "../utils/util-generators.js";
-import { conflict, unauthorized, forbidden, badRequest } from "../utils/util-http-error.js";
+import { conflict, unauthorized, badRequest, HttpError } from "../utils/util-http-error.js";
 import { readCurrentStreak } from "./service-streak.js";
 import { readAchievementMetrics, listAchievementsWithProgress, recordUnlockDates, withUnlockDates } from "./service-achievement.js";
 import { countCompletedModules } from "./service-trail.js";
@@ -66,15 +66,45 @@ export async function createAccount({ nickname, email, password, acceptedTerms =
 }
 
 /**
+ * Banimento valendo agora (status "blocked" e prazo ainda não vencido).
+ * @param {object} user
+ * @param {number} [now]
+ * @returns {{reason: string, until: string|null}|null} until null = sem prazo; null = não está banido.
+ * Usado por: login, sessão, recuperação de senha e painel.
+ */
+export function readActiveBan(user, now = Date.now()) {
+  if (user.status !== "blocked") return null;
+  const until = user.ban?.until ? new Date(user.ban.until) : null;
+  if (until && until.getTime() <= now) return null;
+  return { reason: user.ban?.reason ?? "", until: until ? until.toISOString() : null };
+}
+
+/**
+ * Recusa conta banida com 403 + {code: "account_banned", ban: {reason, until}} (o app tira a pessoa da conta e
+ * mostra o aviso). Banimento com prazo vencido é desfeito aqui mesmo.
+ * @param {object} user - documento Mongoose (é salvo se o banimento venceu).
+ * @returns {Promise<void>}
+ * @throws {HttpError} 403.
+ */
+async function ensureNotBanned(user) {
+  if (user.status !== "blocked") return;
+  const ban = readActiveBan(user);
+  if (ban) throw new HttpError(403, "Conta banida.", { code: "account_banned", ban });
+  user.status = "active";
+  user.ban = null;
+  await user.save();
+}
+
+/**
  * Login. Mesma mensagem para e-mail inexistente e senha errada (não revela quem tem conta).
  * @returns {Promise<{id: string, user: object}>} id interno (o backend usa no token) + perfil público (com o nível).
- * @throws {HttpError} 401 credenciais erradas; 403 conta bloqueada.
+ * @throws {HttpError} 401 credenciais erradas; 403 conta banida (com motivo e prazo).
  */
 export async function signIn({ email, password }) {
   const user = await UserModel.findOne({ email }).select("+passwordHash");
   const passwordMatches = user ? await bcrypt.compare(password, user.passwordHash) : false;
   if (!passwordMatches) throw unauthorized("E-mail ou senha incorretos.");
-  if (user.status !== "active") throw forbidden("Conta bloqueada.");
+  await ensureNotBanned(user);
 
   user.lastLogin = new Date();
   await user.save();
@@ -85,13 +115,13 @@ export async function signIn({ email, password }) {
  * Usuário ativo pelo id interno: base de toda rota de usuário da API interna.
  * @param {string} userId
  * @returns {Promise<object>} documento do usuário.
- * @throws {HttpError} 401 se não existir (sessão inválida); 403 se estiver bloqueado.
+ * @throws {HttpError} 401 se não existir (sessão inválida); 403 se estiver banido (com motivo e prazo).
  * Usado por: middleware loadUser (rotas /internal/v1/users/:userId/...).
  */
 export async function findActiveUserById(userId) {
   const user = await UserModel.findById(userId);
   if (!user) throw unauthorized("Sessão inválida. Entre novamente.");
-  if (user.status !== "active") throw forbidden("Conta bloqueada.");
+  await ensureNotBanned(user);
   return user;
 }
 

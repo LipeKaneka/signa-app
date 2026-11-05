@@ -4,7 +4,20 @@ import { ActivityModel } from "../models/model-activity.js";
 import { escapeRegExp } from "../utils/util-text.js";
 import { badRequest, notFound } from "../utils/util-http-error.js";
 import { recordAudit } from "./service-audit.js";
-import { toPublicProfile, getProfileWithAchievements } from "./service-user.js";
+import { toPublicProfile, getProfileWithAchievements, readActiveBan } from "./service-user.js";
+
+/** Maior prazo de banimento com data (10 anos); acima disso, use "sem prazo". */
+export const MAX_BAN_DAYS = 3650;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Banimento para o painel: motivo, prazo (null = sem prazo) e quando foi aplicado. null se não estiver banido
+ * (inclusive quando o prazo já venceu e a pessoa ainda não voltou a entrar).
+ */
+function toAdminBan(user) {
+  const ban = readActiveBan(user);
+  return ban ? { ...ban, bannedAt: user.ban?.bannedAt ?? null } : null;
+}
 
 const RECENT_ATTEMPTS = 20;
 
@@ -17,7 +30,8 @@ function toAdminUserRow(user) {
   return {
     id: String(user._id),
     ...toPublicProfile(user),
-    status: user.status,
+    status: readActiveBan(user) ? "blocked" : "active",
+    ban: toAdminBan(user),
     lastLogin: user.lastLogin,
   };
 }
@@ -29,12 +43,17 @@ function toAdminUserRow(user) {
  * Usado por: GET /admin/api/v1/users.
  */
 export async function listUsers({ search, status, page, limit }) {
-  const filter = {};
-  if (status) filter.status = status;
+  // Banimento com prazo vencido conta como ativo (a conta só volta a "active" no próximo acesso da pessoa).
+  const now = new Date();
+  const banValid = [{ "ban.until": null }, { "ban.until": { $gt: now } }];
+  const conditions = [];
+  if (status === "blocked") conditions.push({ status: "blocked", $or: banValid });
+  if (status === "active") conditions.push({ $or: [{ status: "active" }, { status: "blocked", "ban.until": { $lte: now } }] });
   if (search) {
     const pattern = { $regex: escapeRegExp(search), $options: "i" };
-    filter.$or = [{ nickname: pattern }, { email: pattern }, { publicId: pattern }];
+    conditions.push({ $or: [{ nickname: pattern }, { email: pattern }, { publicId: pattern }] });
   }
+  const filter = conditions.length ? { $and: conditions } : {};
   const [users, total] = await Promise.all([
     UserModel.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
     UserModel.countDocuments(filter),
@@ -61,7 +80,8 @@ export async function getUserDetail(userId) {
   return {
     id: String(user._id),
     ...profile,
-    status: user.status,
+    status: readActiveBan(user) ? "blocked" : "active",
+    ban: toAdminBan(user),
     lastLogin: user.lastLogin,
     achievements,
     completedActivities: user.completedActivities.map((entry) => ({
@@ -105,26 +125,32 @@ function snapshotProgress(user) {
 }
 
 /**
- * Bloqueia ou desbloqueia um usuário do app. Bloqueado não entra, e a sessão aberta cai em até 30 s
- * (cache de sessão do backend).
+ * Bane (bloqueia) ou desbloqueia um usuário do app. Banido é tirado da conta (o app confere a sessão a cada
+ * ~20 s) e, ao tentar entrar, vê o motivo e até quando vale. Com prazo, a conta volta sozinha quando ele vence.
  * @param {object} actor
  * @param {string} userId
  * @param {"active"|"blocked"} status
- * @param {string} reason
+ * @param {string} reason - vai para a auditoria e, no banimento, aparece para o usuário.
+ * @param {number|null} [durationDays] - dias de banimento; null = sem prazo. Ignorado ao desbloquear.
  * @returns {Promise<object>}
  * Usado por: PATCH /admin/api/v1/users/:id/status.
  */
-export async function setUserStatus(actor, userId, status, reason) {
+export async function setUserStatus(actor, userId, status, reason, durationDays = null) {
   if (!["active", "blocked"].includes(status)) throw badRequest("Status inválido.");
   const user = await findUser(userId);
   const before = snapshotProgress(user);
   user.status = status;
+  const now = Date.now();
+  user.ban = status === "blocked"
+    ? { reason, until: durationDays ? new Date(now + durationDays * DAY_MS) : null, bannedAt: new Date(now) }
+    : null;
   await user.save();
+  const period = status !== "blocked" ? "" : durationDays ? ` (por ${durationDays} ${durationDays === 1 ? "dia" : "dias"})` : " (sem prazo)";
   await recordAudit(actor, {
     action: status === "blocked" ? "block" : "unblock",
     entity: "user",
     entityId: user._id,
-    summary: `${user.nickname} (${user.email}): ${reason}`,
+    summary: `${user.nickname} (${user.email}): ${reason}${period}`,
     before,
     after: snapshotProgress(user),
   });
