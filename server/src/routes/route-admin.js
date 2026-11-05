@@ -32,6 +32,7 @@ adminRouter.post("/auth/logout", asyncHandler(AuthController.logout));
 adminRouter.post("/auth/password", asyncHandler(AuthController.changePassword));
 
 adminRouter.get("/stats", read, asyncHandler(OverviewController.stats));
+adminRouter.get("/analytics", read, asyncHandler(OverviewController.analytics));
 
 adminRouter.get("/modules", read, asyncHandler(TrailController.listModules));
 adminRouter.post("/modules", content, asyncHandler(TrailController.createModule));

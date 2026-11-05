@@ -241,3 +241,16 @@ test("exportar conteúdo traz tudo menos usuários e contas", async () => {
   assert.equal(response.body.users, undefined);
   assert.match(response.headers["content-disposition"], /attachment/);
 });
+
+test("dashboard: /analytics devolve indicadores, série diária do período e funil", async () => {
+  const viewer = await signIn("viewer");
+  const response = await viewer.get("/admin/api/v1/analytics?days=7").set(PANEL);
+  assert.equal(response.status, 200, response.body.error);
+  assert.equal(response.body.days, 7);
+  assert.equal(response.body.series.length, 7);
+  assert.ok("value" in response.body.kpis.activeUsers);
+  assert.ok(Array.isArray(response.body.funnel) && response.body.funnel.length > 0);
+  // Período fora da lista cai no padrão (30 dias).
+  const fallback = await viewer.get("/admin/api/v1/analytics?days=999").set(PANEL);
+  assert.equal(fallback.body.days, 30);
+});

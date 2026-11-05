@@ -1,4 +1,5 @@
 import { readStats, exportContent } from "../../services/service-admin-overview.js";
+import { readAnalytics } from "../../services/service-admin-analytics.js";
 import { listAuditLogs, recordAudit } from "../../services/service-audit.js";
 import { seedContent } from "../../seeds/seed-content.js";
 import { readActor } from "../../middlewares/admin-auth-middleware.js";
@@ -7,6 +8,11 @@ import { readOptionalString, readPositiveInteger } from "../../utils/util-valida
 /** GET /admin/api/v1/stats — números da tela inicial. */
 export async function stats(_req, res) {
   res.json(await readStats());
+}
+
+/** GET /admin/api/v1/analytics?days=7|30|90 — dados do dashboard (indicadores, série diária, rankings, funil). */
+export async function analytics(req, res) {
+  res.json(await readAnalytics({ days: Number(req.query.days) || 30 }));
 }
 
 /** GET /admin/api/v1/audit-log?entity=&adminEmail=&page=&limit= — {logs, total, page, pages}. */
