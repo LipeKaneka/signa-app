@@ -26,6 +26,16 @@ export function readAchievementMetrics(user, completedModules = 0) {
 }
 
 /**
+ * Conquistas dadas/tiradas à mão pelo painel para este usuário.
+ * @param {object} user
+ * @returns {Map<string, boolean>} key -> true (dada) | false (tirada).
+ * Usado por: perfil, fim de atividade e painel.
+ */
+export function readAchievementOverrides(user) {
+  return new Map((user?.achievementOverrides ?? []).map((entry) => [entry.key, entry.unlocked]));
+}
+
+/**
  * Catálogo de conquistas ATIVAS, em ordem (do banco; os padrões do código se a coleção estiver vazia).
  * @returns {Promise<{key: string, title: string, description: string, metric: string, goal: number, icon: string}[]>}
  */
@@ -41,22 +51,27 @@ export function listActiveAchievements() {
 
 /**
  * Todas as conquistas ativas com progresso limitado à meta e se foi desbloqueada.
+ * Ajuste manual do painel (overrides) vence a meta: dada = desbloqueada (progresso cheio); tirada = bloqueada.
  * @param {ReturnType<typeof readAchievementMetrics>} metrics
- * @returns {Promise<{id: string, title: string, description: string, icon: string, current: number, goal: number, unlocked: boolean}[]>}
- * Usado por: perfil (GET /profile) e findNewlyUnlocked.
+ * @param {Map<string, boolean>} [overrides] - de readAchievementOverrides.
+ * @returns {Promise<{id: string, title: string, description: string, icon: string, current: number, goal: number,
+ *   unlocked: boolean, manual: "granted"|"revoked"|null}[]>}
+ * Usado por: perfil (GET /profile), findNewlyUnlocked e painel.
  */
-export async function listAchievementsWithProgress(metrics) {
+export async function listAchievementsWithProgress(metrics, overrides = new Map()) {
   const catalog = await listActiveAchievements();
   return catalog.map((achievement) => {
-    const current = Math.min(metrics[achievement.metric] ?? 0, achievement.goal);
+    const override = overrides.get(achievement.key);
+    const reached = Math.min(metrics[achievement.metric] ?? 0, achievement.goal);
     return {
       id: achievement.key,
       title: achievement.title,
       description: achievement.description,
       icon: achievement.icon,
-      current,
+      current: override === true ? achievement.goal : reached,
       goal: achievement.goal,
-      unlocked: current >= achievement.goal,
+      unlocked: override ?? reached >= achievement.goal,
+      manual: override === undefined ? null : override ? "granted" : "revoked",
     };
   });
 }
@@ -66,13 +81,14 @@ export async function listAchievementsWithProgress(metrics) {
  * Não guarda nada: compara as métricas, então é seguro chamar quantas vezes quiser.
  * @param {ReturnType<typeof readAchievementMetrics>} metricsBefore
  * @param {ReturnType<typeof readAchievementMetrics>} metricsAfter
+ * @param {Map<string, boolean>} [overrides] - ajustes manuais do painel (valem antes e depois).
  * @returns {Promise<{id: string, title: string}[]>}
  * Usado por: service-attempt.js (result.newAchievements na tela de resultado).
  */
-export async function findNewlyUnlocked(metricsBefore, metricsAfter) {
-  const before = await listAchievementsWithProgress(metricsBefore);
+export async function findNewlyUnlocked(metricsBefore, metricsAfter, overrides = new Map()) {
+  const before = await listAchievementsWithProgress(metricsBefore, overrides);
   const unlockedBefore = new Set(before.filter((achievement) => achievement.unlocked).map((achievement) => achievement.id));
-  const after = await listAchievementsWithProgress(metricsAfter);
+  const after = await listAchievementsWithProgress(metricsAfter, overrides);
   return after
     .filter((achievement) => achievement.unlocked && !unlockedBefore.has(achievement.id))
     .map(({ id, title }) => ({ id, title }));

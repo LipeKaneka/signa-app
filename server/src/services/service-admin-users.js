@@ -2,9 +2,15 @@ import { UserModel } from "../models/model-user.js";
 import { AttemptModel } from "../models/model-attempt.js";
 import { ActivityModel } from "../models/model-activity.js";
 import { escapeRegExp } from "../utils/util-text.js";
-import { badRequest, notFound } from "../utils/util-http-error.js";
+import { badRequest, conflict, notFound } from "../utils/util-http-error.js";
 import { recordAudit } from "./service-audit.js";
 import { toPublicProfile, getProfileWithAchievements, readActiveBan } from "./service-user.js";
+import { buildTrail } from "./service-trail.js";
+import { listActiveAchievements } from "./service-achievement.js";
+import { toDayKey } from "./service-streak.js";
+
+/** Maior número aceito em XP, ofensiva e acertos (sem teto prático; é o maior inteiro exato do JavaScript). */
+export const MAX_COUNTER = Number.MAX_SAFE_INTEGER;
 
 /** Maior prazo de banimento com data (10 anos); acima disso, use "sem prazo". */
 export const MAX_BAN_DAYS = 3650;
@@ -72,6 +78,7 @@ export async function getUserDetail(userId) {
   const user = await UserModel.findById(userId);
   if (!user) throw notFound("Usuário não encontrado.");
   const { user: profile, achievements } = await getProfileWithAchievements(user);
+  const trail = await buildTrail(user);
   const attempts = await AttemptModel.find({ user: user._id }).sort({ createdAt: -1 }).limit(RECENT_ATTEMPTS).lean();
   const activityIds = [...new Set([...attempts.map((a) => String(a.activity)), ...user.completedActivities.map((c) => String(c.activity))])];
   const activities = await ActivityModel.find({ _id: { $in: activityIds } }).select("title").lean();
@@ -83,7 +90,17 @@ export async function getUserDetail(userId) {
     status: readActiveBan(user) ? "blocked" : "active",
     ban: toAdminBan(user),
     lastLogin: user.lastLogin,
+    lastActivityDay: user.lastActivityDay,
+    storedStreak: user.streak,
     achievements,
+    modules: trail.map((module) => ({
+      id: module.id,
+      title: module.title,
+      status: module.status,
+      completedActivities: module.completedActivities,
+      totalActivities: module.totalActivities,
+      activities: module.activities.map(({ id, title, order, status, bestScore }) => ({ id, title, order, status, bestScore })),
+    })),
     completedActivities: user.completedActivities.map((entry) => ({
       activityId: String(entry.activity),
       title: titles.get(String(entry.activity)) ?? "(atividade excluída)",
@@ -158,7 +175,7 @@ export async function setUserStatus(actor, userId, status, reason, durationDays 
 }
 
 /**
- * Soma (ou tira) XP de um usuário, com motivo obrigatório. O XP nunca fica negativo.
+ * Soma (ou tira) XP de um usuário, com motivo obrigatório. Sem limite de quantidade; o XP nunca fica negativo.
  * @param {object} actor
  * @param {string} userId
  * @param {number} delta - inteiro, positivo ou negativo.
@@ -169,13 +186,13 @@ export async function setUserStatus(actor, userId, status, reason, durationDays 
 export async function adjustUserXp(actor, userId, delta, reason) {
   const user = await findUser(userId);
   const before = snapshotProgress(user);
-  user.xp = Math.max(0, user.xp + delta);
+  user.xp = Math.min(Math.max(0, user.xp + delta), MAX_COUNTER);
   await user.save();
   await recordAudit(actor, {
     action: "adjust_xp",
     entity: "user",
     entityId: user._id,
-    summary: `${user.nickname}: ${delta > 0 ? "+" : ""}${delta} XP (${reason})`,
+    summary: `${user.nickname}: ${delta > 0 ? "+" : ""}${delta.toLocaleString("pt-BR")} XP (${reason})`,
     before,
     after: snapshotProgress(user),
   });
@@ -215,4 +232,142 @@ export async function resetUserProgress(actor, userId, reason) {
     after: snapshotProgress(user),
   });
   return toAdminUserRow(user);
+}
+
+/**
+ * Grava a alteração e a auditoria (antes/depois) de uma vez.
+ * @param {object} actor
+ * @param {object} user - documento já alterado (é salvo aqui).
+ * @param {object} before - snapshotProgress de antes.
+ * @param {string} action
+ * @param {string} summary
+ * @returns {Promise<object>} linha do usuário para o painel.
+ */
+async function saveWithAudit(actor, user, before, action, summary) {
+  await user.save();
+  await recordAudit(actor, { action, entity: "user", entityId: user._id, summary, before, after: snapshotProgress(user) });
+  return toAdminUserRow(user);
+}
+
+/**
+ * Edita dados do perfil (apelido, e-mail, cidade, aparecer no ranking). Só os campos enviados mudam.
+ * @param {object} actor
+ * @param {string} userId
+ * @param {{nickname?: string, email?: string, city?: string, showInRanking?: boolean}} changes - já validados.
+ * @param {string} reason
+ * @returns {Promise<object>}
+ * @throws {HttpError} 409 se o e-mail já for de outra conta.
+ * Usado por: PATCH /admin/api/v1/users/:id/profile.
+ */
+export async function updateUserProfile(actor, userId, changes, reason) {
+  const user = await findUser(userId);
+  const before = { ...snapshotProgress(user), nickname: user.nickname, email: user.email, city: user.city, showInRanking: user.showInRanking };
+  if (changes.email !== undefined && changes.email !== user.email && (await UserModel.exists({ email: changes.email, _id: { $ne: user._id } }))) {
+    throw conflict("Este e-mail já é de outra conta.");
+  }
+  const changed = Object.entries(changes).filter(([field, value]) => value !== undefined && user[field] !== value);
+  if (changed.length === 0) throw badRequest("Nada mudou.");
+  changed.forEach(([field, value]) => {
+    user[field] = value;
+  });
+  const fields = changed.map(([field]) => ({ nickname: "apelido", email: "e-mail", city: "cidade", showInRanking: "ranking" })[field]).join(", ");
+  await user.save();
+  await recordAudit(actor, {
+    action: "update",
+    entity: "user",
+    entityId: user._id,
+    summary: `${before.nickname}: perfil alterado (${fields}) — ${reason}`,
+    before,
+    after: { ...snapshotProgress(user), nickname: user.nickname, email: user.email, city: user.city, showInRanking: user.showInRanking },
+  });
+  return toAdminUserRow(user);
+}
+
+/**
+ * Define números do progresso com o valor exato (sem limite): XP, ofensiva atual, maior ofensiva e acertos.
+ * A ofensiva atual vale a partir de hoje (a pessoa precisa estudar amanhã para não perder); a maior ofensiva nunca
+ * fica abaixo da atual.
+ * @param {object} actor
+ * @param {string} userId
+ * @param {{xp?: number, streak?: number, maxStreak?: number, totalCorrectAnswers?: number}} values - inteiros >= 0.
+ * @param {string} reason
+ * @returns {Promise<object>}
+ * Usado por: PATCH /admin/api/v1/users/:id/stats.
+ */
+export async function updateUserStats(actor, userId, values, reason) {
+  const user = await findUser(userId);
+  const before = snapshotProgress(user);
+  if (values.xp !== undefined) user.xp = values.xp;
+  if (values.totalCorrectAnswers !== undefined) user.totalCorrectAnswers = values.totalCorrectAnswers;
+  if (values.streak !== undefined) {
+    user.streak = values.streak;
+    user.lastActivityDay = values.streak > 0 ? toDayKey(new Date()) : null;
+  }
+  if (values.maxStreak !== undefined) user.maxStreak = values.maxStreak;
+  user.maxStreak = Math.max(user.maxStreak, user.streak);
+  const labels = { xp: "XP", streak: "ofensiva", maxStreak: "maior ofensiva", totalCorrectAnswers: "acertos" };
+  const described = Object.entries(values)
+    .filter(([, value]) => value !== undefined)
+    .map(([field, value]) => `${labels[field]} ${before[field] ?? "?"} → ${value}`)
+    .join(", ");
+  if (!described) throw badRequest("Nada mudou.");
+  return saveWithAudit(actor, user, before, "update", `${user.nickname}: ${described} (${reason})`);
+}
+
+/**
+ * Marca uma atividade como concluída (com a nota) ou tira a conclusão. Concluir libera o que depende dela na trilha.
+ * @param {object} actor
+ * @param {string} userId
+ * @param {string} activityId
+ * @param {{completed: boolean, bestScore?: number}} change - bestScore 0-100 (padrão 100).
+ * @param {string} reason
+ * @returns {Promise<object>}
+ * @throws {HttpError} 404 atividade inexistente.
+ * Usado por: PUT /admin/api/v1/users/:id/activities/:activityId.
+ */
+export async function setUserActivity(actor, userId, activityId, { completed, bestScore = 100 }, reason) {
+  const [user, activity] = await Promise.all([findUser(userId), ActivityModel.findById(activityId).select("title").lean()]);
+  if (!activity) throw notFound("Atividade não encontrada.");
+  const before = snapshotProgress(user);
+  const index = user.completedActivities.findIndex((entry) => String(entry.activity) === String(activity._id));
+  if (completed) {
+    if (index === -1) user.completedActivities.push({ activity: activity._id, bestScore, completedAt: new Date() });
+    else user.completedActivities[index].bestScore = bestScore;
+  } else {
+    if (index === -1) throw badRequest("Esta atividade já não está concluída.");
+    user.completedActivities.splice(index, 1);
+  }
+  user.completedActivitiesCount = user.completedActivities.length;
+  const what = completed ? `marcou "${activity.title}" como concluída (${bestScore}%)` : `tirou a conclusão de "${activity.title}"`;
+  return saveWithAudit(actor, user, before, "update", `${user.nickname}: ${what} (${reason})`);
+}
+
+/**
+ * Dá, tira ou devolve ao automático uma conquista do usuário.
+ * - granted: desbloqueada (com a data de hoje, se ainda não tinha).
+ * - revoked: bloqueada mesmo que a meta tenha sido alcançada (a data some).
+ * - auto: volta a valer a meta normal.
+ * @param {object} actor
+ * @param {string} userId
+ * @param {string} key - chave da conquista.
+ * @param {"granted"|"revoked"|"auto"} mode
+ * @param {string} reason
+ * @returns {Promise<object>}
+ * @throws {HttpError} 400 modo inválido; 404 conquista inexistente.
+ * Usado por: PUT /admin/api/v1/users/:id/achievements/:key.
+ */
+export async function setUserAchievement(actor, userId, key, mode, reason) {
+  if (!["granted", "revoked", "auto"].includes(mode)) throw badRequest("Use granted, revoked ou auto.");
+  const [user, catalog] = await Promise.all([findUser(userId), listActiveAchievements()]);
+  const achievement = catalog.find((entry) => entry.key === key);
+  if (!achievement) throw notFound("Conquista não encontrada (ou desativada).");
+  const before = snapshotProgress(user);
+  user.achievementOverrides = user.achievementOverrides.filter((entry) => entry.key !== key);
+  if (mode !== "auto") user.achievementOverrides.push({ key, unlocked: mode === "granted" });
+  if (mode === "granted" && !user.achievementUnlocks.some((entry) => entry.key === key)) {
+    user.achievementUnlocks.push({ key, unlockedAt: new Date() });
+  }
+  if (mode === "revoked") user.achievementUnlocks = user.achievementUnlocks.filter((entry) => entry.key !== key);
+  const what = { granted: "deu", revoked: "tirou", auto: "voltou ao automático" }[mode];
+  return saveWithAudit(actor, user, before, "update", `${user.nickname}: ${what} a conquista "${achievement.title}" (${reason})`);
 }

@@ -24,10 +24,13 @@ function downloadText(filename, text, type) {
   URL.revokeObjectURL(url);
 }
 
-/** Importar vários níveis de uma vez: colar (JSON, CSV ou linhas da planilha) ou escolher um arquivo. */
-function ImportDialog({ current, onApply, onClose }) {
+/**
+ * Importar vários níveis de uma vez: colar (JSON, CSV ou linhas da planilha) ou escolher um arquivo.
+ * Padrão: adiciona à tabela atual. "Importar e salvar" já grava; "Só colocar na tabela" deixa para revisar antes.
+ */
+function ImportDialog({ current, busy, message, onApply, onClose }) {
   const [text, setText] = useState("");
-  const [mode, setMode] = useState("replace");
+  const [mode, setMode] = useState("merge");
   const parsed = useMemo(() => (text.trim() ? parseLevelsText(text) : null), [text]);
   const result = useMemo(() => {
     if (!parsed || parsed.levels.length === 0) return [];
@@ -56,8 +59,8 @@ function ImportDialog({ current, onApply, onClose }) {
           </Field>
           <Field label="O que fazer">
             <select value={mode} onChange={(e) => setMode(e.target.value)}>
+              <option value="merge">Adicionar à tabela atual (mesmo XP troca o nome)</option>
               <option value="replace">Substituir a tabela inteira</option>
-              <option value="merge">Juntar com a atual (mesmo XP troca o nome)</option>
             </select>
           </Field>
         </div>
@@ -90,10 +93,14 @@ function ImportDialog({ current, onApply, onClose }) {
           </div>
         )}
 
+        {message?.type === "error" && <Notice message={message} />}
         <div className="form__actions">
           <button type="button" className="button button--ghost" onClick={onClose}>Cancelar</button>
-          <button type="button" className="button" disabled={result.length === 0} onClick={() => onApply(result)}>
-            Usar estes níveis
+          <button type="button" className="button button--ghost" disabled={result.length === 0} onClick={() => onApply(result, false)}>
+            Só colocar na tabela
+          </button>
+          <button type="button" className="button" disabled={result.length === 0 || problems.length > 0 || busy} onClick={() => onApply(result, true)}>
+            {busy ? "Salvando…" : "Importar e salvar"}
           </button>
         </div>
       </div>
@@ -208,9 +215,21 @@ export function LevelsPage() {
         <ImportDialog
           current={exportRows()}
           onClose={() => setImporting(false)}
-          onApply={(imported) => {
-            change(withIds(imported));
-            setImporting(false);
+          busy={busy}
+          message={message}
+          onApply={(imported, saveNow) => {
+            if (!saveNow) {
+              change(withIds(imported));
+              setImporting(false);
+              return;
+            }
+            run(async () => {
+              const body = { levels: imported.map((level) => ({ title: level.title.trim(), minXp: Number(level.minXp) })) };
+              const saved = await api("/levels", { method: "PUT", body });
+              setLevels(withIds(saved.levels));
+              setDirty(false);
+              setImporting(false);
+            }, `${imported.length} níveis importados e salvos.`);
           }}
         />
       )}

@@ -76,6 +76,10 @@ adminRouter.get("/users", read, asyncHandler(UsersController.list));
 adminRouter.get("/users/:id", read, asyncHandler(UsersController.detail));
 adminRouter.patch("/users/:id/status", manage, asyncHandler(UsersController.setStatus));
 adminRouter.post("/users/:id/xp", manage, asyncHandler(UsersController.adjustXp));
+adminRouter.patch("/users/:id/profile", manage, asyncHandler(UsersController.updateProfile));
+adminRouter.patch("/users/:id/stats", manage, asyncHandler(UsersController.updateStats));
+adminRouter.put("/users/:id/activities/:activityId", manage, asyncHandler(UsersController.setActivity));
+adminRouter.put("/users/:id/achievements/:key", manage, asyncHandler(UsersController.setAchievement));
 adminRouter.post("/users/:id/reset-progress", manage, asyncHandler(UsersController.resetProgress));
 
 adminRouter.get("/audit-log", manage, asyncHandler(OverviewController.auditLog));

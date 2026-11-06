@@ -406,3 +406,61 @@ test("eventos: multiplicador sem teto e aparência da faixa (salva, valida e vai
   assert.equal(fromApp.appearance.style, "solid");
   await admin.delete(`/admin/api/v1/events/${created.body.event.id}`).set(PANEL);
 });
+
+test("usuários: editar perfil, números sem limite, atividades e conquistas (tudo com motivo e auditoria)", async () => {
+  const admin = await signIn("admin");
+  const account = await request(app).post("/internal/v1/auth/register").set(withKey())
+    .send({ nickname: "Editavel", email: `edit_${randomBytes(3).toString("hex")}@exemplo.test`, password: `${randomBytes(6).toString("hex")}A1`, acceptedTerms: true });
+  const id = account.body.id;
+  const base = `/admin/api/v1/users/${id}`;
+
+  // XP sem o antigo teto de 1.000.000, para dar e para tirar (nunca abaixo de 0).
+  assert.equal((await admin.post(`${base}/xp`).set(PANEL).send({ delta: 50_000_000, reason: "bônus" })).body.user.xp, 50_000_000);
+  assert.equal((await admin.post(`${base}/xp`).set(PANEL).send({ delta: -90_000_000, reason: "correção" })).body.user.xp, 0);
+  assert.equal((await admin.post(`${base}/xp`).set(PANEL).send({ delta: 10, reason: "" })).status, 400);
+
+  const stats = await admin.patch(`${base}/stats`).set(PANEL).send({ xp: 123_456_789, streak: 12, totalCorrectAnswers: 999, reason: "migração" });
+  assert.equal(stats.status, 200);
+  assert.equal(stats.body.user.xp, 123_456_789);
+  assert.equal(stats.body.user.streak, 12);
+  assert.equal(stats.body.user.maxStreak, 12); // maior ofensiva acompanha a atual
+  assert.equal((await admin.patch(`${base}/stats`).set(PANEL).send({ xp: -1, reason: "x" })).status, 400);
+
+  const profile = await admin.patch(`${base}/profile`).set(PANEL).send({ nickname: "Novo Nome", city: "Recife", showInRanking: false, reason: "pedido" });
+  assert.equal(profile.body.user.nickname, "Novo Nome");
+  assert.equal(profile.body.user.showInRanking, false);
+
+  // Atividade: concluir com nota, trocar a nota e desmarcar.
+  let detail = (await admin.get(base).set(PANEL)).body.user;
+  const first = detail.modules[0].activities[0];
+  assert.equal(first.status, "available");
+  await admin.put(`${base}/activities/${first.id}`).set(PANEL).send({ completed: true, bestScore: 80, reason: "teste" });
+  detail = (await admin.get(base).set(PANEL)).body.user;
+  assert.equal(detail.modules[0].activities[0].status, "completed");
+  assert.equal(detail.modules[0].activities[0].bestScore, 80);
+  assert.equal(detail.modules[0].activities[1].status, "available"); // a seguinte foi liberada
+  await admin.put(`${base}/activities/${first.id}`).set(PANEL).send({ completed: false, reason: "teste" });
+  detail = (await admin.get(base).set(PANEL)).body.user;
+  assert.equal(detail.modules[0].activities[0].status, "available");
+  assert.equal(detail.completedActivities.length, 0);
+
+  // Conquista: dar, tirar e voltar ao automático (o app vê o mesmo resultado).
+  const target = detail.achievements.find((achievement) => !achievement.unlocked);
+  await admin.put(`${base}/achievements/${target.id}`).set(PANEL).send({ mode: "granted", reason: "evento" });
+  let profileInApp = await request(app).get(`/internal/v1/users/${id}/profile`).set(withKey());
+  assert.equal(profileInApp.body.achievements.find((a) => a.id === target.id).unlocked, true);
+  await admin.put(`${base}/achievements/${target.id}`).set(PANEL).send({ mode: "revoked", reason: "engano" });
+  profileInApp = await request(app).get(`/internal/v1/users/${id}/profile`).set(withKey());
+  assert.equal(profileInApp.body.achievements.find((a) => a.id === target.id).unlocked, false);
+  await admin.put(`${base}/achievements/${target.id}`).set(PANEL).send({ mode: "auto", reason: "volta" });
+  detail = (await admin.get(base).set(PANEL)).body.user;
+  assert.equal(detail.achievements.find((a) => a.id === target.id).manual, null);
+  assert.equal((await admin.put(`${base}/achievements/nao_existe`).set(PANEL).send({ mode: "granted", reason: "x" })).status, 404);
+
+  // Visualizador não edita.
+  const viewer = await signIn("viewer");
+  assert.equal((await viewer.patch(`${base}/stats`).set(PANEL).send({ xp: 1, reason: "x" })).status, 403);
+
+  const audit = await admin.get("/admin/api/v1/audit-log?limit=50").set(PANEL);
+  assert.ok(audit.body.logs.some((log) => log.summary.includes("deu a conquista")));
+});

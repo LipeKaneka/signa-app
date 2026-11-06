@@ -79,6 +79,12 @@ const userSchema = new mongoose.Schema(
     },
     // Quando cada conquista foi desbloqueada (key = AchievementModel.key). O desbloqueio continua sendo calculado
     // pelas métricas; aqui só fica a data, para a tela "Conquistas" e as conquistas recentes do perfil.
+    // Conquistas dadas ou tiradas à mão pelo painel (unlocked true = dada; false = tirada). Sem entrada = automática
+    // (vale a meta). Tem prioridade sobre as métricas.
+    achievementOverrides: {
+      type: [{ _id: false, key: { type: String, required: true }, unlocked: { type: Boolean, required: true } }],
+      default: [],
+    },
     achievementUnlocks: {
       type: [{ _id: false, key: { type: String, required: true }, unlockedAt: { type: Date, required: true } }],
       default: [],

@@ -6,7 +6,7 @@ import { PASSWORD_RULES } from "../config/rules.js";
 import { generatePublicId } from "../utils/util-generators.js";
 import { conflict, unauthorized, badRequest, HttpError } from "../utils/util-http-error.js";
 import { readCurrentStreak } from "./service-streak.js";
-import { readAchievementMetrics, listAchievementsWithProgress, recordUnlockDates, withUnlockDates } from "./service-achievement.js";
+import { readAchievementMetrics, readAchievementOverrides, listAchievementsWithProgress, recordUnlockDates, withUnlockDates } from "./service-achievement.js";
 import { countCompletedModules } from "./service-trail.js";
 import { describeLevel } from "./service-level.js";
 import { verifyGoogleIdToken } from "./service-google-auth.js";
@@ -174,7 +174,7 @@ export async function findActiveUserById(userId) {
 export async function getProfileWithAchievements(user) {
   const completedModules = await countCompletedModules(user);
   const metrics = readAchievementMetrics(user, completedModules);
-  const achievements = await listAchievementsWithProgress(metrics);
+  const achievements = await listAchievementsWithProgress(metrics, readAchievementOverrides(user));
   if (recordUnlockDates(user, achievements)) await user.save();
   return {
     user: { ...toPublicProfile(user), level: await describeLevel(user.xp) },

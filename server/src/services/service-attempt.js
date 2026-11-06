@@ -6,7 +6,7 @@ import { describeLevel } from "./service-level.js";
 import { notFound, conflict, badRequest } from "../utils/util-http-error.js";
 import { findUnlockedActivity, countCompletedModules } from "./service-trail.js";
 import { registerActivityDay } from "./service-streak.js";
-import { readAchievementMetrics, findNewlyUnlocked, listAchievementsWithProgress, recordUnlockDates } from "./service-achievement.js";
+import { readAchievementMetrics, readAchievementOverrides, findNewlyUnlocked, listAchievementsWithProgress, recordUnlockDates } from "./service-achievement.js";
 import { toPublicProfile } from "./service-user.js";
 import { CAMERA_UNAVAILABLE_OPTION, findCameraTarget } from "../config/camera-targets.js";
 
@@ -232,8 +232,9 @@ export async function finishAttempt(user, attemptId) {
   await user.save();
 
   const metricsAfter = readAchievementMetrics(user, await countCompletedModules(user));
-  const newAchievements = await findNewlyUnlocked(metricsBefore, metricsAfter);
-  if (recordUnlockDates(user, await listAchievementsWithProgress(metricsAfter))) await user.save();
+  const overrides = readAchievementOverrides(user);
+  const newAchievements = await findNewlyUnlocked(metricsBefore, metricsAfter, overrides);
+  if (recordUnlockDates(user, await listAchievementsWithProgress(metricsAfter, overrides))) await user.save();
 
   const result = { correctAnswers, totalQuestions, score, passed, xpEarned, xpMultiplier: multiplier, newAchievements };
   closed.result = result;
