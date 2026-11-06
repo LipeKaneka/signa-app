@@ -1,6 +1,6 @@
 {
   "appId": "br.signa.ludus",
-  "appName": "Signa Ludus",
+  "appName": "Signa",
   "webDir": "dist",
   "server": {
     "androidScheme": "https"

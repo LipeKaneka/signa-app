@@ -22,6 +22,12 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    // Arquivo gerado com o nome do app: Signa-debug.apk / Signa-release.apk.
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "Signa-${variant.buildType.name}.apk"
+        }
+    }
 }
 
 repositories {
