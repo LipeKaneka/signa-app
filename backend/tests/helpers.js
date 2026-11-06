@@ -20,6 +20,7 @@ export async function startTestApp() {
   Object.assign(process.env, {
     NODE_ENV: "test",
     // Nunca envia e-mail de verdade nem fala com o Google nos testes (mesmo com essas chaves no server/.env).
+    BREVO_API_KEY: "",
     MAILTRAP_API_TOKEN: "",
     GOOGLE_CLIENT_IDS: "test-client.apps.googleusercontent.com",
     DATABASE_URL: memoryServer.getUri(),

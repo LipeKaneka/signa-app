@@ -53,18 +53,22 @@ function readAdminSessionHours() {
 }
 
 /**
- * E-mail pela API do Mailtrap (recuperação de senha). Sem MAILTRAP_API_TOKEN, nada é enviado (em desenvolvimento,
- * o código vai para o log). MAILTRAP_INBOX_ID (opcional) manda para a caixa de testes (Sandbox) em vez de entregar.
- * @returns {{mailtrapToken: string, mailtrapInboxId: string, fromEmail: string, fromName: string}}
- * @throws {Error} se houver token sem MAIL_FROM_EMAIL válido.
+ * E-mail da recuperação de senha. Provedor: Brevo (BREVO_API_KEY) se houver chave; senão Mailtrap
+ * (MAILTRAP_API_TOKEN). Sem nenhum, nada é enviado (em desenvolvimento, o código vai para o log).
+ * - Brevo: MAIL_FROM_EMAIL = remetente confirmado no Brevo (Senders; pode ser um Gmail, sem domínio próprio).
+ * - Mailtrap: MAIL_FROM_EMAIL do domínio verificado; MAILTRAP_INBOX_ID (opcional) manda para a caixa de testes.
+ * @returns {{brevoApiKey: string, mailtrapToken: string, mailtrapInboxId: string, fromEmail: string, fromName: string}}
+ * @throws {Error} se houver chave de provedor sem MAIL_FROM_EMAIL válido.
  */
 function readMail() {
+  const brevoApiKey = readOptional("BREVO_API_KEY", "");
   const mailtrapToken = readOptional("MAILTRAP_API_TOKEN", "");
   const fromEmail = readOptional("MAIL_FROM_EMAIL", "");
-  if (mailtrapToken && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fromEmail)) {
-    throw new Error("MAIL_FROM_EMAIL precisa ser um e-mail do domínio verificado no Mailtrap (ex.: nao-responda@seudominio.com)");
+  if ((brevoApiKey || mailtrapToken) && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fromEmail)) {
+    throw new Error("MAIL_FROM_EMAIL precisa ser o e-mail remetente confirmado no provedor (Brevo: Senders; Mailtrap: domínio verificado)");
   }
   return {
+    brevoApiKey,
     mailtrapToken,
     mailtrapInboxId: readOptional("MAILTRAP_INBOX_ID", ""),
     fromEmail,

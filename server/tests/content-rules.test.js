@@ -15,7 +15,7 @@ let services;
 before(async () => {
   memoryServer = await MongoMemoryServer.create();
   serviceKey = randomBytes(48).toString("hex");
-  Object.assign(process.env, { NODE_ENV: "test", DATABASE_URL: memoryServer.getUri(), SERVICE_KEY: serviceKey, MAILTRAP_API_TOKEN: "", GOOGLE_CLIENT_IDS: "" });
+  Object.assign(process.env, { NODE_ENV: "test", DATABASE_URL: memoryServer.getUri(), SERVICE_KEY: serviceKey, BREVO_API_KEY: "", MAILTRAP_API_TOKEN: "", GOOGLE_CLIENT_IDS: "" });
 
   const database = await import("../src/database/database.js");
   const { seedContent } = await import("../src/seeds/seed-content.js");

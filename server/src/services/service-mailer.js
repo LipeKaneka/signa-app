@@ -1,7 +1,7 @@
 import { getEnvironment, isDevelopment } from "../config/env.js";
 import { HttpError } from "../utils/util-http-error.js";
 
-/** Envio pela API do Mailtrap (Email Sending); com MAILTRAP_INBOX_ID, vai para a caixa de testes (Sandbox). */
+/** Provedores: Brevo (principal) e Mailtrap (alternativa, exige domínio próprio). Envio pela API do Mailtrap (Email Sending); com MAILTRAP_INBOX_ID, vai para a caixa de testes (Sandbox). */
 const MAILTRAP_SEND_URL = "https://send.api.mailtrap.io/api/send";
 const MAILTRAP_SANDBOX_URL = "https://sandbox.api.mailtrap.io/api/send";
 const SEND_TIMEOUT_MS = 10_000;
@@ -37,6 +37,56 @@ function buildPasswordResetMessage(code) {
   return { subject, text, html };
 }
 
+/** API transacional do Brevo (ex-Sendinblue). */
+const BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email";
+
+/**
+ * POST com tempo-limite; falha de rede ou resposta de erro vira 503 "mail_failed" (detalhe só no log, nunca a chave).
+ * @param {string} provider - nome para o log.
+ * @param {string} url
+ * @param {Record<string, string>} headers
+ * @param {object} body
+ * @returns {Promise<void>}
+ * @throws {HttpError} 503.
+ */
+async function postMail(provider, url, headers, body) {
+  let response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+    });
+  } catch (error) {
+    console.error(`${provider} inacessível:`, error.message);
+    throw new HttpError(503, MAIL_FAILED_MESSAGE, { code: "mail_failed" });
+  }
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    console.error(`${provider} recusou o envio (${response.status}):`, detail.slice(0, 300));
+    throw new HttpError(503, MAIL_FAILED_MESSAGE, { code: "mail_failed" });
+  }
+}
+
+/**
+ * Envia um e-mail pela API do Brevo.
+ * @param {{to: string, subject: string, text: string, html: string, category: string}} message
+ * @returns {Promise<void>}
+ * @throws {HttpError} 503 se o Brevo recusar ou não responder.
+ */
+async function sendWithBrevo({ to, subject, text, html, category }) {
+  const { mail } = getEnvironment();
+  await postMail("Brevo", BREVO_SEND_URL, { "api-key": mail.brevoApiKey }, {
+    sender: { email: mail.fromEmail, name: mail.fromName },
+    to: [{ email: to }],
+    subject,
+    htmlContent: html,
+    textContent: text,
+    tags: [category],
+  });
+}
+
 /**
  * Envia um e-mail pela API do Mailtrap.
  * @param {{to: string, subject: string, text: string, html: string, category: string}} message
@@ -46,29 +96,21 @@ function buildPasswordResetMessage(code) {
 async function sendWithMailtrap({ to, subject, text, html, category }) {
   const { mail } = getEnvironment();
   const url = mail.mailtrapInboxId ? `${MAILTRAP_SANDBOX_URL}/${encodeURIComponent(mail.mailtrapInboxId)}` : MAILTRAP_SEND_URL;
-  let response;
-  try {
-    response = await fetch(url, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${mail.mailtrapToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: { email: mail.fromEmail, name: mail.fromName }, to: [{ email: to }], subject, text, html, category }),
-      signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
-    });
-  } catch (error) {
-    console.error("Mailtrap inacessível:", error.message);
-    throw new HttpError(503, MAIL_FAILED_MESSAGE, { code: "mail_failed" });
-  }
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    console.error(`Mailtrap recusou o envio (${response.status}):`, detail.slice(0, 300));
-    throw new HttpError(503, MAIL_FAILED_MESSAGE, { code: "mail_failed" });
-  }
+  await postMail("Mailtrap", url, { Authorization: `Bearer ${mail.mailtrapToken}` }, {
+    from: { email: mail.fromEmail, name: mail.fromName },
+    to: [{ email: to }],
+    subject,
+    text,
+    html,
+    category,
+  });
 }
 
 /**
  * Envia o código de recuperação de senha.
- * - Com MAILTRAP_API_TOKEN: envia pela API do Mailtrap.
- * - Sem token, em desenvolvimento: o código aparece no log do servidor.
+ * - Com BREVO_API_KEY: envia pela API do Brevo.
+ * - Senão, com MAILTRAP_API_TOKEN: envia pela API do Mailtrap.
+ * - Sem nenhum, em desenvolvimento: o código aparece no log do servidor.
  * - Sem token, em produção: nada é enviado (aviso no log).
  * @param {string} email
  * @param {string} code - 6 dígitos.
@@ -77,13 +119,19 @@ async function sendWithMailtrap({ to, subject, text, html, category }) {
  * Usado por: service-password-reset.js.
  */
 export async function sendPasswordResetCode(email, code) {
-  if (getEnvironment().mail.mailtrapToken) {
-    await sendWithMailtrap({ to: email, ...buildPasswordResetMessage(code), category: "password-reset" });
+  const { mail } = getEnvironment();
+  const message = { to: email, ...buildPasswordResetMessage(code), category: "password-reset" };
+  if (mail.brevoApiKey) {
+    await sendWithBrevo(message);
+    return;
+  }
+  if (mail.mailtrapToken) {
+    await sendWithMailtrap(message);
     return;
   }
   if (isDevelopment()) {
     console.log(`[desenvolvimento] Código de recuperação de senha para ${email}: ${code}`);
     return;
   }
-  console.warn(`Recuperação de senha pedida para ${email}, mas MAILTRAP_API_TOKEN não está configurado.`);
+  console.warn(`Recuperação de senha pedida para ${email}, mas nenhum provedor de e-mail (BREVO_API_KEY ou MAILTRAP_API_TOKEN) está configurado.`);
 }

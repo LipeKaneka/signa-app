@@ -23,12 +23,13 @@ before(async () => {
     DATABASE_URL: memoryServer.getUri(),
     SERVICE_KEY: serviceKey,
     GOOGLE_CLIENT_IDS: CLIENT_ID,
+    BREVO_API_KEY: "",
     MAILTRAP_API_TOKEN: "token-de-teste",
     MAIL_FROM_EMAIL: "nao-responda@exemplo.test",
     MAILTRAP_INBOX_ID: "12345",
   });
   globalThis.fetch = async (url, options) => {
-    if (!String(url).includes("mailtrap.io")) return realFetch(url, options);
+    if (!/mailtrap\.io|brevo\.com/.test(String(url))) return realFetch(url, options);
     sentMail.push({ url: String(url), headers: options.headers, body: JSON.parse(options.body) });
     return new Response(JSON.stringify({ success: mailtrapStatus === 200 }), { status: mailtrapStatus });
   };
