@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Icon } from "../../components/Icon.jsx";
 import { Flame, LogoHand } from "../../components/illustrations.jsx";
 import { prefersReducedMotion } from "../../utils/motion.js";
+import { formatCompact, formatFull } from "../../utils/format-number.js";
 
 /** Duração da animação do cartão tocado antes de trocar de tela (igual a .trail-item--opening no CSS). */
 const OPEN_ANIMATION_MS = 280;
@@ -95,13 +96,13 @@ export function TrailHeader({ user, title, percent, progressLabel, onBack }) {
           <span>Signa</span>
         </span>
         <span className="trail-header__stats">
-          <span className="trail-header__stat" title="Dias seguidos">
+          <span className="trail-header__stat" title={`${formatFull(user.streak)} dias seguidos`}>
             <span className="trail-header__icon"><Flame size={22} /></span>
-            {user.streak}<small>D</small>
+            {formatCompact(user.streak)}<small>D</small>
           </span>
-          <span className="trail-header__stat" title="Pontos de XP">
+          <span className="trail-header__stat" title={`${formatFull(user.xp)} pontos de XP`}>
             <span className="trail-header__icon trail-header__icon--xp"><XpBadge /></span>
-            {user.xp}<small>P</small>
+            {formatCompact(user.xp)}<small>P</small>
           </span>
         </span>
       </div>

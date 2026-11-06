@@ -4,6 +4,7 @@ import { prefersReducedMotion } from "../../utils/motion.js";
 import { Icon } from "../../components/Icon.jsx";
 import { useAppConfig } from "../../context/AppConfigContext.jsx";
 import { formatMultiplier } from "../../components/EventBanner.jsx";
+import { formatCompact, formatFull } from "../../utils/format-number.js";
 
 /**
  * Cor da barra de progresso: vermelho no início -> laranja -> amarelo -> verde no fim (como no protótipo).
@@ -135,7 +136,7 @@ export function FeedbackSheet({ feedback, onNext, isLast }) {
       {phrase.text && <p className="feedback-sheet__text">{phrase.text}</p>}
       {correct && (
         <span className="xp-pill">
-          +{feedback.xpForQuestion}xp{xpEvent && feedback.xpForQuestion > 0 ? ` · ${formatMultiplier(xpEvent.multiplier)}` : ""}
+          +{formatCompact(feedback.xpForQuestion)}xp{xpEvent && feedback.xpForQuestion > 0 ? ` · ${formatMultiplier(xpEvent.multiplier)}` : ""}
         </span>
       )}
       <button

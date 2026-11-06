@@ -9,6 +9,7 @@ import { Icon } from "../../components/Icon.jsx";
 import { AwardIllustration, BookIllustration, Flame, GearsIllustration, LogoHand, XpIcon } from "../../components/illustrations.jsx";
 import { AchievementCard, sortByUnlockDate } from "../../components/AchievementCard.jsx";
 import "./profile.css";
+import { formatCompact, formatFull } from "../../utils/format-number.js";
 
 /** Quantas conquistas recentes aparecem no perfil (as outras ficam na tela Conquistas). */
 const RECENT_ACHIEVEMENTS = 3;
@@ -157,7 +158,7 @@ function LevelCard({ level, xp }) {
         >
           <div className="level-card__fill" style={{ width: `${progress * 100}%` }} />
         </div>
-        <p className="level-card__hint">{isLast ? "Nível máximo alcançado!" : `Faltam ${missing} XP para o nível ${level.level + 1}`}</p>
+        <p className="level-card__hint">{isLast ? "Nível máximo alcançado!" : `Faltam ${formatCompact(missing)} XP para o nível ${level.level + 1}`}</p>
       </div>
     </section>
   );
@@ -211,11 +212,11 @@ export function ProfilePage() {
 
           <div className="profile-stats">
             <div className="stat-card">
-              <strong><Flame size={42} /> {data.user.streak}</strong>
+              <strong title={formatFull(data.user.streak)}><Flame size={42} /> {formatCompact(data.user.streak)}</strong>
               <span>Dias consecutivos</span>
             </div>
             <div className="stat-card">
-              <strong><XpIcon size={70} /> {data.user.xp}</strong>
+              <strong title={formatFull(data.user.xp)}><XpIcon size={70} /> {formatCompact(data.user.xp)}</strong>
               <span>Pontos de XP Totais</span>
             </div>
           </div>

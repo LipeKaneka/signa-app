@@ -4,6 +4,7 @@ import { SignDialog } from "../../components/SignDialog.jsx";
 import { AchievementToast } from "../../components/AchievementToast.jsx";
 import { formatMultiplier } from "../../components/EventBanner.jsx";
 import { useAppConfig } from "../../context/AppConfigContext.jsx";
+import { formatCompact, formatFull } from "../../utils/format-number.js";
 
 /** Ícone de acerto: círculo com visto (quadrado roxo). */
 function CorrectMark() {
@@ -71,7 +72,7 @@ export function ActivityResult({ result, levelUp, reviewItems, onContinue, onBac
       </div>
 
       <p className="result-pill">
-        <strong>+{result.xpEarned}XP</strong>
+        <strong title={formatFull(result.xpEarned)}>+{formatCompact(result.xpEarned)}XP</strong>
         {multiplier > 1 && result.xpEarned > 0 && <span className="result-pill__event"> ({formatMultiplier(multiplier)} evento)</span>} • {result.score}% de precisão
       </p>
       {/* Todas as perguntas eram de câmera e foram puladas por falta de câmera: não há nota para mostrar. */}

@@ -4,11 +4,12 @@ import { useAsyncData } from "../../hooks/useAsyncData.js";
 import { ErrorState, LoadingState, ScreenWithNav } from "../../components/layout.jsx";
 import { RankMedal } from "../../components/illustrations.jsx";
 import "./ranking.css";
+import { formatCompact, formatFull } from "../../utils/format-number.js";
 
 const METRICS = [
-  { id: "activities", label: "Atividades", unit: (value) => `${value} ${value === 1 ? "Atividade" : "Atividades"}` },
-  { id: "xp", label: "XP", unit: (value) => `${value} XP` },
-  { id: "streak", label: "Ofensiva", unit: (value) => `${value} ${value === 1 ? "dia" : "dias"}` },
+  { id: "activities", label: "Atividades", unit: (value) => `${formatCompact(value)} ${value === 1 ? "Atividade" : "Atividades"}` },
+  { id: "xp", label: "XP", unit: (value) => `${formatCompact(value)} XP` },
+  { id: "streak", label: "Ofensiva", unit: (value) => `${formatCompact(value)} ${value === 1 ? "dia" : "dias"}` },
 ];
 
 const PODIUM_COLORS = ["#d8b500", "#9a9a9a", "#b06a2c"];
@@ -26,7 +27,7 @@ function PositionChangePill({ change }) {
   const amount = Math.abs(change);
   return (
     <span className={`position-pill ${movedUp ? "position-pill--up" : "position-pill--down"}`}>
-      <span aria-hidden="true">{movedUp ? "▲" : "▼"}</span> {amount} {amount === 1 ? "Posição" : "Posições"}
+      <span aria-hidden="true">{movedUp ? "▲" : "▼"}</span> {formatCompact(amount)} {amount === 1 ? "Posição" : "Posições"}
       <span className="visually-hidden">{movedUp ? " acima" : " abaixo"} desde a última vez</span>
     </span>
   );
@@ -37,9 +38,9 @@ function describeGapToNext(ranking, metric) {
   const above = ranking.neighbors.find((row) => row.position === ranking.me.position - 1);
   if (!above) return { text: "Você está no topo!", fraction: 1 };
   const missing = above.value - ranking.me.value + 1;
-  const unitText = metric.unit(missing).replace(/^\d+ /, "");
+  const unitText = metric.unit(missing).replace(/^\S+ /, "");
   return {
-    text: `${missing === 1 ? "Falta" : "Faltam"} ${missing} ${unitText.toLowerCase()} para subir de rank`,
+    text: `${missing === 1 ? "Falta" : "Faltam"} ${formatCompact(missing)} ${unitText.toLowerCase()} para subir de rank`,
     fraction: above.value ? Math.min(ranking.me.value / (above.value + 1), 1) : 0,
   };
 }
@@ -59,11 +60,11 @@ function PositionCard({ ranking, metric }) {
       <div className="position-card__row">
         <div>
           <p className="position-card__label">Sua Posição</p>
-          <strong className="position-card__position">{ranking.me.position}°</strong>
+          <strong className="position-card__position" title={`${formatFull(ranking.me.position)}°`}>{formatCompact(ranking.me.position)}°</strong>
         </div>
         <div className="position-card__pills">
           <PositionChangePill change={ranking.me.positionChange} />
-          <span className="position-pill position-pill--best">Melhor: Nº {ranking.me.bestPosition}</span>
+          <span className="position-pill position-pill--best">Melhor: Nº {formatCompact(ranking.me.bestPosition)}</span>
         </div>
       </div>
       <div className="position-card__bar"><div style={{ transform: `scaleX(${gap.fraction})` }} /></div>
@@ -79,14 +80,14 @@ function RankingRow({ row, metric, podium }) {
   return (
     <li className={classes.join(" ")}>
       <span className="ranking-row__position">
-        {podium ? <RankMedal position={row.position} size={30} color={PODIUM_COLORS[row.position - 1]} /> : `${row.position}°`}
+        {podium ? <RankMedal position={row.position} size={30} color={PODIUM_COLORS[row.position - 1]} /> : `${formatCompact(row.position)}°`}
       </span>
       {/* Foto (miniatura 64×64) quando a pessoa tem; senão, o quadrado colorido do protótipo. */}
       <span className="ranking-row__avatar" style={{ background: pickAvatarColor(row.publicId) }} aria-hidden="true">
         {row.avatar && <img src={row.avatar} alt="" />}
       </span>
       <span className="ranking-row__name">{row.isMe ? "Você" : row.nickname}</span>
-      <span className="ranking-row__value">{metric.unit(row.value)}</span>
+      <span className="ranking-row__value" title={formatFull(row.value)}>{metric.unit(row.value)}</span>
     </li>
   );
 }
