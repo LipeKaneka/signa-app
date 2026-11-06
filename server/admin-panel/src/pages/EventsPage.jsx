@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
-import { Badge, Field, LoadState, Modal, Notice, confirmAction, formatDateTime, toLocalInput, useAction, useLoad } from "../components/ui.jsx";
+import { Badge, Field, LoadState, Modal, Notice, confirmAction, useAction, useLoad } from "../components/ui.jsx";
+import { ScheduleFields, describeSchedule, describeWhen, scheduleBodyFrom, scheduleFormFrom } from "../event-schedule.jsx";
 
 const STATES = {
   running: { label: "Valendo agora", tone: "ok" },
@@ -61,29 +62,26 @@ function EventPreview({ title, description, multiplier, appearance }) {
   );
 }
 
-/** Formulário de evento de XP (datas no horário deste computador). */
+/** Formulário de evento de XP: uma vez (datas deste computador), toda semana ou todo ano (horário de Brasília). */
 function EventForm({ event, onClose, onSaved }) {
-  const now = Date.now();
   const [form, setForm] = useState({
     title: event?.title ?? "",
     description: event?.description ?? "",
     multiplier: event?.multiplier ?? 2,
-    startsAt: toLocalInput(event?.startsAt ?? now),
-    endsAt: toLocalInput(event?.endsAt ?? now + 2 * 24 * 60 * 60 * 1000),
     appearance: { ...DEFAULT_APPEARANCE, ...(event?.appearance ?? {}) },
   });
+  const [schedule, setSchedule] = useState(() => scheduleFormFrom(event));
+  const applyPreset = (preset) => {
+    setSchedule((current) => ({ ...current, ...preset.schedule, limited: false }));
+    setForm((current) => ({ ...current, title: current.title.trim() ? current.title : preset.title }));
+  };
   const setAppearance = (changes) => setForm((current) => ({ ...current, appearance: { ...current.appearance, ...changes } }));
   const { run, busy, message } = useAction();
   const set = (changes) => setForm({ ...form, ...changes });
 
   const submit = (submitEvent) => {
     submitEvent.preventDefault();
-    const body = {
-      ...form,
-      multiplier: Number(form.multiplier),
-      startsAt: new Date(form.startsAt).toISOString(),
-      endsAt: new Date(form.endsAt).toISOString(),
-    };
+    const body = { ...form, multiplier: Number(form.multiplier), ...scheduleBodyFrom(schedule) };
     run(async () => {
       await api(event ? `/events/${event.id}` : "/events", { method: event ? "PATCH" : "POST", body });
       onSaved();
@@ -130,14 +128,11 @@ function EventForm({ event, onClose, onSaved }) {
             ))}
           </div>
         </fieldset>
-        <div className="form__row">
-          <Field label="Começa"><input type="datetime-local" value={form.startsAt} onChange={(e) => set({ startsAt: e.target.value })} required /></Field>
-          <Field label="Termina"><input type="datetime-local" value={form.endsAt} onChange={(e) => set({ endsAt: e.target.value })} required /></Field>
-        </div>
+        <ScheduleFields form={schedule} onChange={setSchedule} onPreset={applyPreset} />
         <Notice message={message} />
         <div className="form__actions">
           <button type="button" className="button button--ghost" onClick={onClose}>Cancelar</button>
-          <button className="button" disabled={busy}>Salvar</button>
+          <button className="button" disabled={busy || (schedule.kind === "weekly" && schedule.days.length === 0)}>Salvar</button>
         </div>
       </form>
     </Modal>
@@ -166,13 +161,16 @@ export function EventsPage() {
         <h1>Eventos de XP</h1>
         {can("manage") && <button className="button" onClick={() => setEditing("new")}>Novo evento</button>}
       </div>
-      <p className="muted">O multiplicador vale para o XP de cada acerto e o da atividade concluída enquanto o evento estiver valendo.</p>
+      <p className="muted">
+        O multiplicador vale para o XP de cada acerto e o da atividade concluída enquanto o evento estiver valendo. Eventos
+        "toda semana" (ex.: fim de semana) e "todo ano" (datas comemorativas) começam e terminam sozinhos.
+      </p>
       <Notice message={message} />
       <LoadState loading={loading && !data} error={error} onRetry={reload} />
       {data && data.events.length === 0 && <p className="muted">Nenhum evento cadastrado.</p>}
       {data && data.events.length > 0 && (
         <table className="table">
-          <thead><tr><th>Evento</th><th>Multiplicador</th><th>Período</th><th>Situação</th><th /></tr></thead>
+          <thead><tr><th>Evento</th><th>Multiplicador</th><th>Quando</th><th>Situação</th><th /></tr></thead>
           <tbody>
             {data.events.map((event) => (
               <tr key={event.id}>
@@ -182,13 +180,16 @@ export function EventsPage() {
                   <div className="field__hint">{event.description}</div>
                 </td>
                 <td>{event.multiplier}x</td>
-                <td>{formatDateTime(event.startsAt)} → {formatDateTime(event.endsAt)}</td>
+                <td>
+                  {event.schedule?.kind && event.schedule.kind !== "once" && <strong className="schedule-label">{describeSchedule(event.schedule)}</strong>}
+                  <div className={event.schedule?.kind && event.schedule.kind !== "once" ? "field__hint" : undefined}>{describeWhen(event)}</div>
+                </td>
                 <td><Badge tone={STATES[event.state].tone}>{STATES[event.state].label}</Badge></td>
                 <td className="table__actions">
                   {can("manage") && (
                     <>
                       {event.state !== "ended" && <button className="button button--ghost" onClick={() => setEditing(event)}>Editar</button>}
-                      {event.state === "running" && <button className="button button--ghost" onClick={() => endNow(event)}>Encerrar agora</button>}
+                      {event.state === "running" && (event.schedule?.kind ?? "once") === "once" && <button className="button button--ghost" onClick={() => endNow(event)}>Encerrar agora</button>}
                       {event.state !== "ended" && <button className="button button--ghost" onClick={() => toggle(event)}>{event.state === "inactive" ? "Ativar" : "Desativar"}</button>}
                       {(event.state === "inactive" || event.state === "ended") && <button className="button button--danger" onClick={() => remove(event)}>Excluir</button>}
                     </>

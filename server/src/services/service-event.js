@@ -1,5 +1,6 @@
 import { EventModel } from "../models/model-event.js";
 import { toPublicAppearance } from "../config/event-appearance.js";
+import { currentOccurrence } from "../config/event-schedule.js";
 import { createTimedCache } from "../utils/util-timed-cache.js";
 
 /** Curto: um evento que começa ou termina passa a valer em no máximo este tempo. */
@@ -12,15 +13,16 @@ const cache = createTimedCache(EVENTS_CACHE_MS);
  * @returns {{id: string, title: string, description: string, type: string, multiplier: number, startsAt: Date, endsAt: Date,
  *   appearance: object}}
  */
-function toPublicEvent(event) {
+function toPublicEvent(event, occurrence = { startsAt: event.startsAt, endsAt: event.endsAt }) {
   return {
     id: String(event._id),
     title: event.title,
     description: event.description,
     type: event.type,
     multiplier: event.multiplier,
-    startsAt: event.startsAt,
-    endsAt: event.endsAt,
+    // Nos recorrentes, o início e o fim desta ocorrência (ex.: o domingo 23:59 do fim de semana de hoje).
+    startsAt: occurrence.startsAt,
+    endsAt: occurrence.endsAt,
     appearance: toPublicAppearance(event.appearance),
   };
 }
@@ -33,10 +35,19 @@ function toPublicEvent(event) {
  */
 export async function findActiveEvents(now = new Date()) {
   const load = async () => {
-    const events = await EventModel.find({ active: true, startsAt: { $lte: now }, endsAt: { $gt: now } })
-      .sort({ endsAt: 1 })
-      .lean();
-    return events.map(toPublicEvent);
+    const recurringKinds = ["weekly", "yearly"];
+    const [single, recurring] = await Promise.all([
+      EventModel.find({ active: true, "schedule.kind": { $nin: recurringKinds }, startsAt: { $lte: now }, endsAt: { $gt: now } }).lean(),
+      EventModel.find({ active: true, "schedule.kind": { $in: recurringKinds } }).lean(),
+    ]);
+    const running = [
+      ...single.map((event) => toPublicEvent(event)),
+      ...recurring.flatMap((event) => {
+        const occurrence = currentOccurrence(event, now);
+        return occurrence ? [toPublicEvent(event, occurrence)] : [];
+      }),
+    ];
+    return running.sort((a, b) => new Date(a.endsAt) - new Date(b.endsAt));
   };
   return cache.get("active", load);
 }

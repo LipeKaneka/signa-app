@@ -11,6 +11,7 @@ import { describeActiveChange } from "./service-admin-trail.js";
 import { listLevels } from "./service-level.js";
 import { setSetting } from "./service-settings.js";
 import { readEventAppearance, toPublicAppearance } from "../config/event-appearance.js";
+import { currentOccurrence, isRecurring, nextOccurrence } from "../config/event-schedule.js";
 
 /**
  * Conquista no formato do painel.
@@ -100,11 +101,23 @@ export async function deleteAchievement(actor, achievementId) {
  */
 function toAdminEvent(event, now = new Date()) {
   const { _id, __v, ...fields } = event;
+  const schedule = event.schedule?.kind ? event.schedule : { kind: "once" };
+  const withSchedule = { ...event, schedule };
+  const current = currentOccurrence(withSchedule, now);
+  const next = current ? null : nextOccurrence(withSchedule, now);
   let state = "scheduled";
   if (event.active === false) state = "inactive";
-  else if (new Date(event.endsAt) <= now) state = "ended";
-  else if (new Date(event.startsAt) <= now) state = "running";
-  return { id: String(_id), ...fields, appearance: toPublicAppearance(event.appearance), state };
+  else if (current) state = "running";
+  else if (!next) state = "ended";
+  return {
+    id: String(_id),
+    ...fields,
+    schedule,
+    appearance: toPublicAppearance(event.appearance),
+    state,
+    // Ocorrência em andamento ou a próxima (recorrentes: "próxima: sáb., 00:00").
+    occurrence: current ?? next,
+  };
 }
 
 /**
@@ -125,7 +138,7 @@ export async function listEvents() {
  * Usado por: POST /admin/api/v1/events.
  */
 export async function createEvent(actor, data) {
-  if (data.endsAt <= data.startsAt) throw badRequest("O fim do evento precisa ser depois do início.");
+  if (data.startsAt && data.endsAt && data.endsAt <= data.startsAt) throw badRequest("O fim do evento precisa ser depois do início.");
   const event = await EventModel.create(data);
   await publishContentChange();
   await recordAudit(actor, { action: "create", entity: "event", entityId: event._id, summary: `Evento "${data.title}" (${data.multiplier}x)`, after: event });
@@ -144,12 +157,13 @@ export async function updateEvent(actor, eventId, changes) {
   const event = await EventModel.findById(eventId);
   if (!event) throw notFound("Evento não encontrado.");
   const before = event.toObject();
-  for (const field of ["title", "description", "multiplier", "startsAt", "endsAt", "active"]) {
+  for (const field of ["title", "description", "multiplier", "startsAt", "endsAt", "active", "schedule"]) {
     if (changes[field] !== undefined) event[field] = changes[field];
   }
+  if (!isRecurring(event) && (!event.startsAt || !event.endsAt)) throw badRequest("Evento de uma vez: informe o início e o fim.");
   // Aparência: completa o que veio com a aparência atual do evento (eventos antigos começam do padrão).
   if (changes.appearance !== undefined) event.appearance = readEventAppearance(changes.appearance, event.appearance?.toObject?.() ?? event.appearance);
-  if (event.endsAt <= event.startsAt) throw badRequest("O fim do evento precisa ser depois do início.");
+  if (event.startsAt && event.endsAt && event.endsAt <= event.startsAt) throw badRequest("O fim do evento precisa ser depois do início.");
   await event.save();
   await publishContentChange();
   await recordAudit(actor, {
@@ -174,6 +188,7 @@ export async function endEventNow(actor, eventId) {
   const event = await EventModel.findById(eventId).lean();
   if (!event) throw notFound("Evento não encontrado.");
   const now = new Date();
+  if (isRecurring(event)) throw badRequest("Evento que se repete: use Desativar para parar.");
   if (event.startsAt > now || event.endsAt <= now) throw badRequest("Só dá para encerrar um evento em andamento.");
   return updateEvent(actor, eventId, { endsAt: now, endNow: true });
 }
@@ -188,7 +203,7 @@ export async function endEventNow(actor, eventId) {
 export async function deleteEvent(actor, eventId) {
   const event = await EventModel.findById(eventId);
   if (!event) throw notFound("Evento não encontrado.");
-  if (event.active !== false && event.endsAt > new Date()) throw badRequest("Desative ou encerre o evento antes de excluir.");
+  if (event.active !== false && toAdminEvent(event.toObject()).state !== "ended") throw badRequest("Desative ou encerre o evento antes de excluir.");
   await event.deleteOne();
   await publishContentChange();
   await recordAudit(actor, { action: "delete", entity: "event", entityId: eventId, summary: `Evento "${event.title}"`, before: event });

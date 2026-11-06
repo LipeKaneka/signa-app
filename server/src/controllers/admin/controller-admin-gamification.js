@@ -4,6 +4,7 @@ import { readActor } from "../../middlewares/admin-auth-middleware.js";
 import { readRequiredString, readOptionalString, readBoolean, readInteger, readDate } from "../../utils/util-validators.js";
 import { badRequest } from "../../utils/util-http-error.js";
 import { readEventAppearance } from "../../config/event-appearance.js";
+import { readEventSchedule } from "../../config/event-schedule.js";
 
 /**
  * Campos de conquista. A chave só é lida ao criar (minúsculas, números e _).
@@ -73,12 +74,31 @@ function readEventFields(body, creating) {
       throw badRequest(error.message);
     }
   }
+  let schedule;
+  if (creating || body?.schedule !== undefined) {
+    try {
+      schedule = readEventSchedule(body?.schedule);
+    } catch (error) {
+      throw badRequest(error.message);
+    }
+  }
+  // Uma vez: início e fim obrigatórios. Recorrente: opcionais (null = sem limite), só limitam quando vale.
+  const recurring = schedule && schedule.kind !== "once";
+  const readLimit = (value, label) => {
+    if (value === undefined) return creating && !recurring ? readDate(value, label) : undefined;
+    if (value === null || value === "") {
+      if (!recurring) throw badRequest(`${label}: obrigatório em evento de uma vez.`);
+      return null;
+    }
+    return readDate(value, label);
+  };
   const fields = {
     title: creating ? readRequiredString(body?.title, "o título", 80) : readOptionalString(body?.title, "Título", 80) || undefined,
     description: readOptionalString(body?.description, "Descrição", 200) ?? (creating ? "" : undefined),
     multiplier,
-    startsAt: body?.startsAt === undefined && !creating ? undefined : readDate(body?.startsAt, "Início"),
-    endsAt: body?.endsAt === undefined && !creating ? undefined : readDate(body?.endsAt, "Fim"),
+    startsAt: readLimit(body?.startsAt, "Início"),
+    endsAt: readLimit(body?.endsAt, "Fim"),
+    schedule,
     appearance,
   };
   if (creating) fields.type = "xp_multiplier";

@@ -464,3 +464,49 @@ test("usuários: editar perfil, números sem limite, atividades e conquistas (tu
   const audit = await admin.get("/admin/api/v1/audit-log?limit=50").set(PANEL);
   assert.ok(audit.body.logs.some((log) => log.summary.includes("deu a conquista")));
 });
+
+test("eventos que se repetem: toda semana e todo ano entram e saem sozinhos", async () => {
+  const admin = await signIn("admin");
+  // Dia de hoje em Brasília (o servidor usa esse fuso).
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", weekday: "short", month: "numeric", day: "numeric" })
+    .formatToParts(new Date()).map((part) => [part.type, part.value]));
+  const weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(parts.weekday);
+  const otherDays = [0, 1, 2, 3, 4, 5, 6].filter((day) => day !== weekday);
+
+  const today = await admin.post("/admin/api/v1/events").set(PANEL)
+    .send({ title: "Semanal hoje", multiplier: 7, schedule: { kind: "weekly", days: [weekday] } });
+  assert.equal(today.status, 201);
+  assert.equal(today.body.event.state, "running");
+  assert.equal(today.body.event.startsAt, null); // recorrente sem limite de período
+
+  const notToday = await admin.post("/admin/api/v1/events").set(PANEL)
+    .send({ title: "Semanal outro dia", multiplier: 9, schedule: { kind: "weekly", days: otherDays } });
+  assert.equal(notToday.body.event.state, "scheduled");
+  assert.ok(new Date(notToday.body.event.occurrence.startsAt) > new Date());
+
+  const yearly = await admin.post("/admin/api/v1/events").set(PANEL)
+    .send({ title: "Data de hoje", multiplier: 3, schedule: { kind: "yearly", month: Number(parts.month), day: Number(parts.day), durationDays: 1 } });
+  assert.equal(yearly.body.event.state, "running");
+
+  // O app vê os que valem agora, com o fim da ocorrência de hoje (meia-noite de amanhã, em Brasília).
+  const active = await request(app).get("/internal/v1/events/active").set(withKey());
+  const titles = active.body.events.map((event) => event.title);
+  assert.ok(titles.includes("Semanal hoje") && titles.includes("Data de hoje") && !titles.includes("Semanal outro dia"));
+  const weekly = active.body.events.find((event) => event.title === "Semanal hoje");
+  assert.ok(new Date(weekly.endsAt) > new Date() && new Date(weekly.endsAt) - new Date() <= 24 * 60 * 60 * 1000);
+
+  // Recorrente não tem "encerrar agora" (usa desativar) e validações de agenda.
+  assert.equal((await admin.post(`/admin/api/v1/events/${today.body.event.id}/end`).set(PANEL)).status, 400);
+  assert.equal((await admin.post("/admin/api/v1/events").set(PANEL).send({ title: "x", multiplier: 2, schedule: { kind: "weekly", days: [] } })).status, 400);
+  assert.equal((await admin.post("/admin/api/v1/events").set(PANEL).send({ title: "x", multiplier: 2, schedule: { kind: "yearly", month: 2, day: 31 } })).status, 400);
+  assert.equal((await admin.post("/admin/api/v1/events").set(PANEL).send({ title: "x", multiplier: 2, schedule: { kind: "once" } })).status, 400);
+
+  // Período de validade já encerrado: não vale mais.
+  const expired = await admin.patch(`/admin/api/v1/events/${today.body.event.id}`).set(PANEL)
+    .send({ startsAt: "2020-01-01T00:00:00Z", endsAt: "2020-02-01T00:00:00Z" });
+  assert.equal(expired.body.event.state, "ended");
+
+  for (const event of [today, notToday, yearly]) {
+    await admin.patch(`/admin/api/v1/events/${event.body.event.id}`).set(PANEL).send({ active: false });
+  }
+});
