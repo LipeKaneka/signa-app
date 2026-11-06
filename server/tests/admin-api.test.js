@@ -248,6 +248,16 @@ test("níveis: tabela inválida é recusada; válida vale no app", async () => {
   assert.equal(valid.status, 200);
   const config = await request(app).get("/internal/v1/app-config").set(withKey());
   assert.deepEqual(config.body.levels.map((level) => level.title), ["Novato", "Veterano"]);
+
+  // Fora de ordem: o servidor organiza pelo XP. XP repetido é recusado.
+  const unsorted = await admin.put("/admin/api/v1/levels").set(PANEL)
+    .send({ levels: [{ minXp: 500, title: "Mestre" }, { minXp: 0, title: "Novato" }, { minXp: 120, title: "Aprendiz" }] });
+  assert.equal(unsorted.status, 200);
+  assert.deepEqual(unsorted.body.levels.map((level) => [level.level, level.title]), [[1, "Novato"], [2, "Aprendiz"], [3, "Mestre"]]);
+  const repeated = await admin.put("/admin/api/v1/levels").set(PANEL)
+    .send({ levels: [{ minXp: 0, title: "A" }, { minXp: 50, title: "B" }, { minXp: 50, title: "C" }] });
+  assert.equal(repeated.status, 400);
+  assert.match(repeated.body.error, /mesmo XP/);
 });
 
 test("contas do painel: o último owner não pode ser rebaixado; desativar derruba a sessão na hora", async () => {

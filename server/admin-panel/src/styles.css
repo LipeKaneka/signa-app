@@ -370,3 +370,9 @@ input:disabled, select:disabled { background: var(--off-bg); }
 .color-field span { display: grid; }
 .color-field code { font-size: 0.74rem; background: none; padding: 0; color: var(--muted); }
 .event-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 4px; margin-right: 8px; vertical-align: -2px; }
+
+/* Importar níveis em lote */
+.import-text { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.85rem; resize: vertical; }
+.import-preview { max-height: 260px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+.import-preview .table { margin: 0; }
+.import-list { margin: 4px 0 0; padding-left: 18px; }

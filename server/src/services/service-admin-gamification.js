@@ -195,23 +195,30 @@ export async function deleteEvent(actor, eventId) {
 }
 
 /**
- * Valida a tabela de níveis inteira: números 1..N em sequência, nível 1 com 0 XP e XP sempre crescente.
- * @param {unknown} levels
+ * Valida a tabela de níveis inteira e a coloca em ordem de XP (a ordem enviada não importa): o nível 1 é o de
+ * 0 XP e cada nível seguinte precisa de mais XP. Os números dos níveis (1..N) saem dessa ordem.
+ * @param {unknown} levels - [{title, minXp}], em qualquer ordem.
  * @returns {{level: number, minXp: number, title: string}[]}
- * @throws {HttpError} 400.
+ * @throws {HttpError} 400 (nome vazio, XP inválido, XP repetido ou nenhum nível em 0 XP).
  */
 export function readLevelTable(levels) {
   if (!Array.isArray(levels) || levels.length === 0 || levels.length > 100) throw badRequest("Envie de 1 a 100 níveis.");
-  return levels.map((entry, index) => {
+  const entries = levels.map((entry, index) => {
     const title = typeof entry?.title === "string" ? entry.title.trim() : "";
-    if (!title || title.length > 60) throw badRequest(`Nível ${index + 1}: nome de 1 a 60 caracteres.`);
+    if (!title || title.length > 60) throw badRequest(`Linha ${index + 1}: nome de 1 a 60 caracteres.`);
     if (!Number.isInteger(entry.minXp) || entry.minXp < 0 || entry.minXp > 10_000_000) {
-      throw badRequest(`Nível ${index + 1}: XP mínimo inválido.`);
+      throw badRequest(`Linha ${index + 1} ("${title}"): XP mínimo precisa ser um inteiro de 0 a 10.000.000.`);
     }
-    if (index === 0 && entry.minXp !== 0) throw badRequest("O nível 1 precisa começar em 0 XP.");
-    if (index > 0 && entry.minXp <= levels[index - 1].minXp) throw badRequest(`Nível ${index + 1}: o XP mínimo precisa ser maior que o do nível anterior.`);
-    return { level: index + 1, minXp: entry.minXp, title };
+    return { minXp: entry.minXp, title };
   });
+  entries.sort((a, b) => a.minXp - b.minXp);
+  if (entries[0].minXp !== 0) throw badRequest("Um dos níveis precisa começar em 0 XP (é o nível 1).");
+  entries.forEach((entry, index) => {
+    if (index > 0 && entry.minXp === entries[index - 1].minXp) {
+      throw badRequest(`"${entries[index - 1].title}" e "${entry.title}" têm o mesmo XP mínimo (${entry.minXp}).`);
+    }
+  });
+  return entries.map((entry, index) => ({ level: index + 1, ...entry }));
 }
 
 /**

@@ -117,7 +117,7 @@ export async function listLevels(_req, res) {
   res.json({ levels: await readLevels() });
 }
 
-/** PUT /admin/api/v1/levels — {levels: [{minXp, title}]} (tabela inteira, em ordem) → {levels}. */
+/** PUT /admin/api/v1/levels — {levels: [{minXp, title}]} (tabela inteira, em qualquer ordem: é ordenada por XP) → {levels}. */
 export async function replaceLevels(req, res) {
   res.json({ levels: await GamificationAdmin.replaceLevels(readActor(req), GamificationAdmin.readLevelTable(req.body?.levels)) });
 }
