@@ -53,6 +53,35 @@ function readAdminSessionHours() {
 }
 
 /**
+ * E-mail pela API do Mailtrap (recuperação de senha). Sem MAILTRAP_API_TOKEN, nada é enviado (em desenvolvimento,
+ * o código vai para o log). MAILTRAP_INBOX_ID (opcional) manda para a caixa de testes (Sandbox) em vez de entregar.
+ * @returns {{mailtrapToken: string, mailtrapInboxId: string, fromEmail: string, fromName: string}}
+ * @throws {Error} se houver token sem MAIL_FROM_EMAIL válido.
+ */
+function readMail() {
+  const mailtrapToken = readOptional("MAILTRAP_API_TOKEN", "");
+  const fromEmail = readOptional("MAIL_FROM_EMAIL", "");
+  if (mailtrapToken && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fromEmail)) {
+    throw new Error("MAIL_FROM_EMAIL precisa ser um e-mail do domínio verificado no Mailtrap (ex.: nao-responda@seudominio.com)");
+  }
+  return {
+    mailtrapToken,
+    mailtrapInboxId: readOptional("MAILTRAP_INBOX_ID", ""),
+    fromEmail,
+    fromName: readOptional("MAIL_FROM_NAME", "Signa Ludus"),
+  };
+}
+
+/**
+ * Google: ids de cliente OAuth aceitos no login com Google (o "Web client ID" que o app usa), separados por vírgula.
+ * Vazio = login com Google desligado.
+ * @returns {string[]}
+ */
+function readGoogleClientIds() {
+  return readOptional("GOOGLE_CLIENT_IDS", "").split(",").map((id) => id.trim()).filter(Boolean);
+}
+
+/**
  * Lê e valida toda a configuração do servidor de gerenciamento.
  * HOST padrão 127.0.0.1: na mesma máquina do backend, o servidor fica inacessível de fora.
  * Ao mover para outra máquina, troque HOST para o endereço da rede privada.
@@ -60,7 +89,7 @@ function readAdminSessionHours() {
  * trustProxy: confiar no proxy da hospedagem (Render etc.), que recebe em HTTPS e repassa em HTTP. Padrão: 1 salto em
  * produção. Sem isso o painel achava que estava em "http" e recusava o login ("Origem não permitida").
  * @returns {Readonly<{nodeEnv: string, host: string, port: number, databaseUrl: string, serviceKey: string,
- *   adminSessionHours: number, adminCookieSecure: boolean, trustProxy: number|false}>}
+ *   adminSessionHours: number, adminCookieSecure: boolean, trustProxy: number|false, mail: object, googleClientIds: string[]}>}
  */
 export function loadEnvironment() {
   return Object.freeze({
@@ -72,6 +101,8 @@ export function loadEnvironment() {
     adminSessionHours: readAdminSessionHours(),
     adminCookieSecure: readOptional("ADMIN_COOKIE_SECURE", readOptional("NODE_ENV", "development") === "production" ? "true" : "false") === "true",
     trustProxy: readTrustProxy(),
+    mail: Object.freeze(readMail()),
+    googleClientIds: Object.freeze(readGoogleClientIds()),
   });
 }
 

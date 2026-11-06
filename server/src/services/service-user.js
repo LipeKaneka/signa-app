@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { randomBytes } from "node:crypto";
 import { UserModel } from "../models/model-user.js";
 import { AttemptModel } from "../models/model-attempt.js";
 import { PASSWORD_RULES } from "../config/rules.js";
@@ -8,6 +9,7 @@ import { readCurrentStreak } from "./service-streak.js";
 import { readAchievementMetrics, listAchievementsWithProgress, recordUnlockDates, withUnlockDates } from "./service-achievement.js";
 import { countCompletedModules } from "./service-trail.js";
 import { describeLevel } from "./service-level.js";
+import { verifyGoogleIdToken } from "./service-google-auth.js";
 
 /**
  * Dados do usuário que podem sair na API (nunca hash de senha nem _id).
@@ -109,6 +111,43 @@ export async function signIn({ email, password }) {
   user.lastLogin = new Date();
   await user.save();
   return { id: String(user._id), user: { ...toPublicProfile(user), level: await describeLevel(user.xp) } };
+}
+
+/**
+ * Login com Google (o app manda o ID token que recebeu do Google).
+ * - Conta com o mesmo Google: entra.
+ * - Conta com o mesmo e-mail (criada com senha): liga o Google a ela e entra (o Google confirmou o e-mail).
+ * - Nenhuma: cria a conta (exige o aceite do Termo de Uso), com uma senha aleatória que ninguém sabe; para ter
+ *   senha, a pessoa usa "Esqueci minha senha".
+ * @param {{idToken: string, acceptedTerms: boolean}} data
+ * @returns {Promise<{id: string, user: object, created: boolean}>}
+ * @throws {HttpError} 400 sem aceite (conta nova) ou Google desligado; 401 token inválido; 403 conta banida.
+ * Usado por: POST /internal/v1/auth/google.
+ */
+export async function signInWithGoogle({ idToken, acceptedTerms }) {
+  const google = await verifyGoogleIdToken(idToken);
+  let user = (await UserModel.findOne({ googleId: google.googleId })) ?? (await UserModel.findOne({ email: google.email }));
+  const created = !user;
+
+  if (user) {
+    await ensureNotBanned(user);
+    if (!user.googleId) user.googleId = google.googleId;
+    user.lastLogin = new Date();
+    await user.save();
+  } else {
+    if (!acceptedTerms) throw badRequest("Para criar a conta, aceite o Termo de Uso.");
+    const nickname = google.name.trim().slice(0, 60) || "Pessoa";
+    user = await UserModel.create({
+      publicId: await generateUniquePublicId(nickname),
+      nickname,
+      email: google.email,
+      passwordHash: await bcrypt.hash(randomBytes(32).toString("hex"), PASSWORD_RULES.BCRYPT_ROUNDS),
+      googleId: google.googleId,
+      termsAcceptedAt: new Date(),
+      lastLogin: new Date(),
+    });
+  }
+  return { id: String(user._id), user: { ...toPublicProfile(user), level: await describeLevel(user.xp) }, created };
 }
 
 /**

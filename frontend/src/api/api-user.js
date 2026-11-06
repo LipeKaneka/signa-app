@@ -15,6 +15,14 @@ export function signInAccount({ email, password }) {
 }
 
 /**
+ * POST /auth/google com o ID token que o Google deu ao app (conta nova: acceptedTerms = aviso mostrado junto do botão).
+ * @returns {Promise<{token, user, created}>} Usado por: AuthContext.signInWithGoogle.
+ */
+export function signInWithGoogleAccount(idToken) {
+  return requestApi("/auth/google", { method: "POST", body: { idToken, acceptedTerms: true } });
+}
+
+/**
  * GET /auth/session: confere se a conta ainda pode usar o app (401 = sessão inválida; 403 = conta banida).
  * @returns {Promise<{active: true}>} Usado por: AuthContext (conferência periódica).
  */

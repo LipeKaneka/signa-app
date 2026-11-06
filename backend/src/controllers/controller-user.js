@@ -39,6 +39,17 @@ export async function signIn(req, res) {
 }
 
 /**
+ * POST /auth/google — {idToken, acceptedTerms} (ID token que o app recebeu do Google) → {message, token, user, created}.
+ * Conta nova só é criada com acceptedTerms: true (o app mostra o aviso do Termo de Uso junto do botão).
+ */
+export async function googleSignIn(req, res) {
+  const idToken = readRequiredString(req.body?.idToken, "o token do Google", 4096);
+  const acceptedTerms = readBoolean(req.body?.acceptedTerms, "O aceite do Termo de Uso") === true;
+  const session = await UserService.signInWithGoogle({ idToken, acceptedTerms });
+  res.json({ message: session.created ? "Conta criada." : "Bem-vindo de volta!", ...session });
+}
+
+/**
  * GET /auth/session — {active: true} se a conta ainda pode usar o app. O requireAuth já respondeu 401 (sessão
  * inválida) ou 403 + {code: "account_banned", ban} (conta banida). O app chama periodicamente para tirar da conta
  * quem for banido enquanto usa.

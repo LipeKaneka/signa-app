@@ -19,6 +19,7 @@ internalRouter.get("/health", (_req, res) => res.json({ status: "ok" }));
 
 internalRouter.post("/auth/register", asyncHandler(UserController.register));
 internalRouter.post("/auth/verify-credentials", asyncHandler(UserController.verifyCredentials));
+internalRouter.post("/auth/google", asyncHandler(UserController.googleSignIn));
 internalRouter.post("/auth/password-reset/request", asyncHandler(UserController.requestPasswordReset));
 internalRouter.post("/auth/password-reset/verify", asyncHandler(UserController.verifyPasswordReset));
 internalRouter.post("/auth/password-reset/confirm", asyncHandler(UserController.confirmPasswordReset));

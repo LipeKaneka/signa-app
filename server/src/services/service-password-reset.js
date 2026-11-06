@@ -41,7 +41,14 @@ export async function requestPasswordReset(email) {
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
   user.passwordReset = { codeHash: hashCode(email, code), expiresAt: new Date(now + CODE_TTL_MS), attempts: 0, sentAt: new Date(now) };
   await user.save();
-  await sendPasswordResetCode(email, code);
+  try {
+    await sendPasswordResetCode(email, code);
+  } catch (error) {
+    // E-mail não saiu: o código não vale e a pessoa pode pedir de novo na hora.
+    user.passwordReset = null;
+    await user.save();
+    throw error;
+  }
 }
 
 /**

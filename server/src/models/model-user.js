@@ -35,6 +35,7 @@ const rankingPositionSchema = new mongoose.Schema(
  * - completedActivities + completedActivitiesCount: progresso na trilha (o contador existe para ordenar o ranking).
  * - showInRanking: privacidade do ranking. rankingPositions: histórico de posição.
  * - termsAcceptedAt: quando a pessoa aceitou o Termo de Uso no cadastro (null = conta anterior ao termo).
+ * - googleId: "sub" da conta Google ligada (login com Google); null = só e-mail e senha.
  * - passwordReset: código de recuperação de senha em andamento (só o hash; nunca selecionado por padrão).
  * Usado por: auth, perfil, trilha, tentativas, ranking.
  */
@@ -44,6 +45,7 @@ const userSchema = new mongoose.Schema(
     nickname: { type: String, required: true, trim: true, maxlength: 60 },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true, maxlength: 254 },
     passwordHash: { type: String, required: true, select: false },
+    googleId: { type: String, default: undefined, index: { unique: true, sparse: true } },
     status: { type: String, enum: ["active", "blocked"], default: "active" },
     ban: {
       type: { _id: false, reason: { type: String, maxlength: 200 }, until: Date, bannedAt: Date },

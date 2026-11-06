@@ -84,6 +84,10 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signIn = useCallback(async (credentials) => startSession(await UserApi.signInAccount(credentials)), [startSession]);
+  const signInWithGoogle = useCallback(
+    async (idToken) => startSession(await UserApi.signInWithGoogleAccount(idToken)),
+    [startSession],
+  );
   const register = useCallback(async (data) => startSession(await UserApi.registerAccount(data)), [startSession]);
   const resetPassword = useCallback(
     async (email, code, password) => startSession(await UserApi.confirmPasswordReset(email, code, password)),
@@ -91,15 +95,15 @@ export function AuthProvider({ children }) {
   );
 
   const value = useMemo(
-    () => ({ user, status, signIn, register, resetPassword, signOut, refreshProfile, retryConnection, setUser }),
-    [user, status, signIn, register, resetPassword, signOut, refreshProfile, retryConnection],
+    () => ({ user, status, signIn, signInWithGoogle, register, resetPassword, signOut, refreshProfile, retryConnection, setUser }),
+    [user, status, signIn, signInWithGoogle, register, resetPassword, signOut, refreshProfile, retryConnection],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 /**
  * Acesso à sessão em qualquer tela.
- * @returns {{user: object|null, status: "loading"|"signedOut"|"signedIn"|"offline", signIn, register, resetPassword, signOut,
+ * @returns {{user: object|null, status: "loading"|"signedOut"|"signedIn"|"offline", signIn, signInWithGoogle, register, resetPassword, signOut,
  *   refreshProfile, retryConnection, setUser}}
  * resetPassword(email, code, senha) troca a senha com o código e já entra na conta.
  * setUser atualiza o perfil local (ex.: XP e ofensiva depois de uma atividade, sem nova requisição).

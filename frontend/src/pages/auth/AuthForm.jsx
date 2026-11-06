@@ -2,6 +2,9 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Icon } from "../../components/Icon.jsx";
 import { GoogleLogo, SignaLudusLogo } from "../../components/illustrations.jsx";
+import { BanDialog } from "../../components/BanDialog.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
+import { ACCOUNT_BANNED, ApiError } from "../../api/http-client.js";
 
 /** Campo com ícone à esquerda (padrão das telas de entrada do protótipo). */
 export function IconField({ icon, label, type = "text", value, onChange, autoComplete, children, ...inputProps }) {
@@ -63,19 +66,81 @@ export function AuthBrand({ backTo, backLabel = "Voltar" }) {
   );
 }
 
+/** "Web client ID" do Google Cloud (o mesmo de GOOGLE_CLIENT_IDS no servidor). Vazio = botão só avisa. */
+const GOOGLE_WEB_CLIENT_ID = (import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID ?? "").trim();
+
+let googleReady = null;
+
+/** Carrega o plugin de login social (só quando a pessoa toca no botão) e o inicializa uma vez. */
+function loadGoogleSignIn() {
+  googleReady ??= import("@capgo/capacitor-social-login")
+    .then(async ({ SocialLogin }) => {
+      await SocialLogin.initialize({ google: { webClientId: GOOGLE_WEB_CLIENT_ID, mode: "online" } });
+      return SocialLogin;
+    })
+    .catch((error) => {
+      googleReady = null;
+      throw error;
+    });
+  return googleReady;
+}
+
+/** A pessoa fechou a janela do Google sem escolher conta: não é erro para mostrar. */
+function wasCancelled(error) {
+  return /cancel/i.test(String(error?.message ?? error?.code ?? ""));
+}
+
 /**
- * Botão quadrado do Google (protótipo). O login com Google ainda não existe no backend:
- * por enquanto o botão só avisa, sem sair do app.
+ * Botão quadrado do Google (protótipo): abre a escolha de conta do Google no aparelho, manda o ID token ao
+ * backend e entra (conta nova é criada; conta com o mesmo e-mail ganha o Google ligado). Conta banida mostra o aviso.
+ * @param {{onUnavailable: (message: string) => void}} props - onUnavailable mostra uma mensagem de erro na tela.
+ * Usado por: LoginPage e RegisterPage.
  */
 export function GoogleButton({ onUnavailable }) {
+  const { signInWithGoogle } = useAuth();
+  const [busy, setBusy] = useState(false);
+  const [ban, setBan] = useState(null);
+
+  async function handleClick() {
+    if (!GOOGLE_WEB_CLIENT_ID) {
+      onUnavailable("Entrar com o Google ainda não está disponível. Use e-mail e senha.");
+      return;
+    }
+    setBusy(true);
+    onUnavailable("");
+    try {
+      const SocialLogin = await loadGoogleSignIn();
+      const response = await SocialLogin.login({ provider: "google", options: { scopes: ["email", "profile"] } });
+      const idToken = response?.result?.idToken;
+      if (!idToken) throw new Error("Sem token do Google.");
+      await signInWithGoogle(idToken);
+    } catch (error) {
+      if (error?.code === ACCOUNT_BANNED) setBan(error.ban);
+      else if (!wasCancelled(error)) {
+        onUnavailable(error instanceof ApiError ? error.message : "Não foi possível entrar com o Google. Tente de novo.");
+      }
+      setBusy(false);
+    }
+  }
+
   return (
-    <button
-      type="button"
-      className="auth-google"
-      onClick={() => onUnavailable("Entrar com o Google ainda não está disponível. Use e-mail e senha.")}
-      aria-label="Entrar com o Google"
-    >
-      <GoogleLogo size={26} />
-    </button>
+    <>
+      <button
+        type="button"
+        className="auth-google"
+        onClick={handleClick}
+        disabled={busy}
+        aria-busy={busy}
+        aria-label={busy ? "Entrando com o Google…" : "Entrar com o Google"}
+      >
+        <GoogleLogo size={26} />
+      </button>
+      {GOOGLE_WEB_CLIENT_ID && (
+        <p className="auth-google__terms">
+          Ao entrar com o Google, você aceita o <Link to="/termos">Termo de Uso</Link>.
+        </p>
+      )}
+      {ban && <BanDialog ban={ban} onClose={() => setBan(null)} />}
+    </>
   );
 }

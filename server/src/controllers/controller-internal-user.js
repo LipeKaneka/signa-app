@@ -38,6 +38,16 @@ export async function verifyCredentials(req, res) {
 }
 
 /**
+ * POST /internal/v1/auth/google — {idToken, acceptedTerms?} -> {id, user, created}.
+ * 401 token do Google inválido; 403 conta banida; 400 conta nova sem o aceite do Termo de Uso.
+ */
+export async function googleSignIn(req, res) {
+  const idToken = readRequiredString(req.body?.idToken, "o token do Google", 4096);
+  const acceptedTerms = readBoolean(req.body?.acceptedTerms, "acceptedTerms") === true;
+  res.json(await UserService.signInWithGoogle({ idToken, acceptedTerms }));
+}
+
+/**
  * GET /internal/v1/users/:userId/session — {active: true} se a conta existe e está ativa
  * (o loadUser já respondeu 401/403 caso contrário). Usado pelo backend para validar sessões.
  */

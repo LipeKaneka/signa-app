@@ -8,6 +8,7 @@ export const userRouter = Router();
 
 userRouter.post("/auth/register", authLimiter, asyncHandler(UserController.createAccount));
 userRouter.post("/auth/login", authLimiter, asyncHandler(UserController.signIn));
+userRouter.post("/auth/google", authLimiter, asyncHandler(UserController.googleSignIn));
 userRouter.post("/auth/password-reset/request", authLimiter, asyncHandler(UserController.requestPasswordReset));
 userRouter.post("/auth/password-reset/verify", authLimiter, asyncHandler(UserController.verifyPasswordReset));
 userRouter.post("/auth/password-reset/confirm", authLimiter, asyncHandler(UserController.confirmPasswordReset));

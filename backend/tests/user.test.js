@@ -155,3 +155,11 @@ test("conta banida: login e sessão devolvem motivo e prazo ao app", async () =>
   assert.equal(session.status, 403);
   assert.equal(session.body.code, "account_banned");
 });
+
+test("login com Google: token que o Google não emitiu é recusado, sem token do app", async () => {
+  const missing = await request(app).post("/api/v1/auth/google").send({});
+  assert.equal(missing.status, 400);
+  const forged = await request(app).post("/api/v1/auth/google").send({ idToken: "eyJhbGciOiJSUzI1NiJ9.e30.assinatura", acceptedTerms: true });
+  assert.equal(forged.status, 401);
+  assert.equal(forged.body.token, undefined);
+});

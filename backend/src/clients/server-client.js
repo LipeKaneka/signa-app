@@ -93,6 +93,8 @@ export async function callServer(path, { method = "GET", body, query } = {}) {
 
   // Chave recusada é erro de configuração do backend, não do usuário: não pode virar 401 (o app sairia da conta).
   const serviceKeyRejected = response.status === 401 && data.error === SERVICE_KEY_REJECTED_MESSAGE;
+  // O e-mail de recuperação não saiu (Mailtrap fora ou recusou): o servidor está de pé, a mensagem é para o usuário.
+  if (response.status === 503 && data.code === "mail_failed") throw new HttpError(503, data.error);
   if (response.status >= 500 || serviceKeyRejected) {
     console.error(`Servidor de gerenciamento respondeu ${response.status} (${method} ${path}):`, data.error);
     throw new HttpError(503, UNAVAILABLE_MESSAGE);

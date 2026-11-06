@@ -428,3 +428,20 @@
   margin-top: auto;
   border-radius: 6px;
 }
+
+.auth-google:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.auth-google__terms {
+  margin: 10px 0 0;
+  max-width: 280px;
+  font-size: 0.8rem;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.auth-google__terms a {
+  color: var(--color-primary);
+}

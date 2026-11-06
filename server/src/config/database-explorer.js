@@ -29,7 +29,7 @@ export const EXPLORER_COLLECTIONS = Object.freeze({
     label: "Usuários do app",
     model: UserModel,
     hidden: ["passwordHash", "passwordReset", "avatar", "avatarThumb"],
-    readonly: ["publicId", "completedActivities", "completedActivitiesCount", "rankingPositions"],
+    readonly: ["publicId", "googleId", "completedActivities", "completedActivitiesCount", "rankingPositions"],
     editable: true,
     creatable: false,
     deletable: true,

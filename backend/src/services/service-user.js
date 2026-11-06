@@ -26,6 +26,18 @@ export async function signIn({ email, password }) {
 }
 
 /**
+ * Login com Google: o servidor confere o token do Google (e cria/liga a conta); o backend emite o token do app.
+ * @param {{idToken: string, acceptedTerms: boolean}} data
+ * @returns {Promise<{token: string, user: object, created: boolean}>}
+ * @throws {HttpError} 400/401/403 vindos do servidor.
+ * Usado por: POST /auth/google.
+ */
+export async function signInWithGoogle({ idToken, acceptedTerms }) {
+  const { id, user, created } = await callServer("/auth/google", { method: "POST", body: { idToken, acceptedTerms } });
+  return { token: generateAccessToken(id), user, created };
+}
+
+/**
  * Perfil + conquistas com progresso.
  * @param {string} userId - id interno (do token).
  * @returns {Promise<{user: object, achievements: object[]}>}

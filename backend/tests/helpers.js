@@ -19,6 +19,9 @@ export async function startTestApp() {
   const serviceKey = randomBytes(48).toString("hex");
   Object.assign(process.env, {
     NODE_ENV: "test",
+    // Nunca envia e-mail de verdade nem fala com o Google nos testes (mesmo com essas chaves no server/.env).
+    MAILTRAP_API_TOKEN: "",
+    GOOGLE_CLIENT_IDS: "test-client.apps.googleusercontent.com",
     DATABASE_URL: memoryServer.getUri(),
     SERVICE_KEY: serviceKey,
     SERVER_SERVICE_KEY: serviceKey,
