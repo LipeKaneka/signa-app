@@ -48,6 +48,25 @@ function UnitCard({ activity, selected, opening, onTap, onOpen }) {
 }
 
 /**
+ * Aviso no fim da lista quando todas as unidades do módulo foram concluídas, com o atalho para o próximo módulo
+ * (ou de volta para a trilha, se for o último ou o próximo ainda estiver bloqueado).
+ */
+function ModuleComplete({ nextModule, onNext, onBack }) {
+  return (
+    <section className="module-complete" role="status">
+      <span className="module-complete__icon" aria-hidden="true"><Icon name="check" size={22} strokeWidth={3} /></span>
+      <p className="module-complete__title">Módulo completado!</p>
+      <p className="module-complete__text">
+        {nextModule ? `Você concluiu todas as unidades. Próximo: ${nextModule.title}.` : "Você concluiu todas as unidades deste módulo."}
+      </p>
+      <button type="button" className="button-primary" onClick={nextModule ? onNext : onBack}>
+        {nextModule ? "Ir para o próximo módulo" : "Voltar para a trilha"}
+      </button>
+    </section>
+  );
+}
+
+/**
  * Unidades de um módulo (protótipo "modulo alta 3"): progresso do módulo e as atividades em ordem, com a linha
  * do tempo (verde até onde foi concluído). Tocar numa unidade liberada seleciona; tocar de novo abre a atividade.
  * Um módulo ainda sem atividades (ex.: "Treino com a câmera") mostra "em breve" e o atalho para a câmera.
@@ -79,6 +98,9 @@ export function ModulePage() {
   if (!module || module.status === "locked") return <Navigate to="/trilha" replace />;
 
   const activityPath = (activity) => `/atividade/${activity.id}?modulo=${module.id}`;
+  const completed = module.activities.length > 0 && module.activities.every((activity) => activity.status === "completed");
+  const following = modules[position + 1];
+  const nextModule = following && following.status !== "locked" && following.activities?.length !== 0 ? following : null;
 
   return (
     <div className="screen screen--with-nav trail-screen">
@@ -111,6 +133,9 @@ export function ModulePage() {
               />
             ))}
           </ol>
+        )}
+        {completed && (
+          <ModuleComplete nextModule={nextModule} onNext={() => navigate(`/trilha/modulo/${nextModule.id}`)} onBack={goBack} />
         )}
       </main>
       <BottomNav />

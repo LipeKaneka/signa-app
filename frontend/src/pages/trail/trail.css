@@ -181,15 +181,81 @@
   background: #2fae25;
 }
 
-/* Trecho verde da linha entre unidades concluídas. */
-.trail-list--units .trail-item--completed::after {
+/*
+ * Unidades: cada item desenha só o trecho da linha até a bolinha da unidade seguinte (cinza; verde se concluída).
+ * A última não desenha nada: a linha termina na última unidade, sem seguir para baixo no vazio.
+ */
+.trail-list--units::before {
+  display: none;
+}
+
+.trail-list--units .trail-item:not(:last-child)::before,
+.trail-list--units .trail-item--completed:not(:last-child)::after {
   content: "";
   position: absolute;
   left: -22px;
   top: 50%;
   height: calc(100% + 12px);
   width: 2px;
+  background: #c9c6d3;
+}
+
+.trail-list--units .trail-item--completed:not(:last-child)::after {
   background: #2fae25;
+}
+
+/* Fim do módulo: todas as unidades concluídas. */
+.module-complete {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 18px 0 8px;
+  padding: 18px 16px;
+  border-radius: 16px;
+  background: var(--color-correct-bg, #d4ffd8);
+  border: 2px solid var(--color-correct-border, #35a405);
+  color: var(--color-correct-text, #368816);
+  text-align: center;
+  animation: module-complete-in 0.4s ease-out both;
+}
+
+.module-complete__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #2fae25;
+  color: #fff;
+}
+
+.module-complete__title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 800;
+}
+
+/* Fundo verde-claro nos dois temas: texto escuro fixo (a cor de texto do tema escuro é branca). */
+.module-complete__text {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #1f4d17;
+}
+
+.module-complete .button-primary {
+  margin-top: 6px;
+  width: 100%;
+  max-width: 260px;
+}
+
+@keyframes module-complete-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .module-complete { animation: none; }
 }
 
 .trail-connector {
