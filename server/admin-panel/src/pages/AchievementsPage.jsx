@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
-import { ActiveBadge, Field, LoadState, Modal, Notice, confirmAction, useAction, useLoad } from "../components/ui.jsx";
+import { ActiveBadge, Badge, Field, LoadState, Modal, Notice, confirmAction, useAction, useLoad } from "../components/ui.jsx";
 import { Num } from "../format-number.jsx";
 
 /** Formulário de conquista. A métrica vem de uma lista fixa (cada métrica é um cálculo no servidor). */
@@ -14,6 +14,7 @@ function AchievementForm({ achievement, metrics, onClose, onSaved }) {
     goal: achievement?.goal ?? 1,
     icon: achievement?.icon ?? "medal",
     order: achievement?.order ?? 0,
+    secret: achievement?.secret === true,
   });
   const { run, busy, message } = useAction();
   const set = (changes) => setForm({ ...form, ...changes });
@@ -50,6 +51,13 @@ function AchievementForm({ achievement, metrics, onClose, onSaved }) {
           <Field label="Ícone"><input value={form.icon} onChange={(e) => set({ icon: e.target.value })} maxLength={40} /></Field>
           <Field label="Ordem no perfil"><input type="number" min={0} value={form.order} onChange={(e) => set({ order: e.target.value })} /></Field>
         </div>
+        <label className="check secret-check">
+          <input type="checkbox" checked={form.secret} onChange={(e) => set({ secret: e.target.checked })} />
+          <span>
+            <strong>Conquista secreta</strong>
+            <span className="field__hint"> No app, enquanto bloqueada, aparece como "Conquista secreta": sem título, descrição nem progresso. Ao desbloquear, mostra tudo.</span>
+          </span>
+        </label>
         <Notice message={message} />
         <div className="form__actions">
           <button type="button" className="button button--ghost" onClick={onClose}>Cancelar</button>
@@ -87,7 +95,11 @@ export function AchievementsPage() {
         <h1>Conquistas</h1>
         {can("content") && data && <button className="button" onClick={() => setEditing("new")}>Nova conquista</button>}
       </div>
-      <p className="muted">O desbloqueio é calculado pelo progresso de cada usuário: mudar a meta vale na hora para todos.</p>
+      <p className="muted">
+        O desbloqueio é calculado pelo progresso de cada usuário: mudar a meta vale na hora para todos. Conquistas de acertos
+        aparecem para a pessoa durante a atividade, no momento em que ela alcança a meta. Secretas ficam escondidas no app até
+        serem desbloqueadas.
+      </p>
       <Notice message={message} />
       <LoadState loading={loading && !data} error={error} onRetry={reload} />
       {data && (
@@ -97,7 +109,7 @@ export function AchievementsPage() {
             {data.achievements.map((achievement) => (
               <tr key={achievement.id}>
                 <td className="table__order">{achievement.order}</td>
-                <td><strong>{achievement.title}</strong><div className="field__hint">{achievement.description} · {achievement.key}</div></td>
+                <td><strong>{achievement.title}</strong>{achievement.secret && <> <Badge tone="warn">Secreta</Badge></>}<div className="field__hint">{achievement.description} · {achievement.key}</div></td>
                 <td>{metricLabel(achievement.metric)}</td>
                 <td><Num value={achievement.goal} /></td>
                 <td><ActiveBadge active={achievement.active} /></td>

@@ -4,6 +4,7 @@ import { getProgressRules } from "./service-settings.js";
 import { getXpMultiplier } from "./service-event.js";
 import { describeLevel } from "./service-level.js";
 import { notFound, conflict, badRequest } from "../utils/util-http-error.js";
+import { UserModel } from "../models/model-user.js";
 import { findUnlockedActivity, countCompletedModules } from "./service-trail.js";
 import { registerActivityDay } from "./service-streak.js";
 import { readAchievementMetrics, readAchievementOverrides, findNewlyUnlocked, listAchievementsWithProgress, recordUnlockDates } from "./service-achievement.js";
@@ -84,6 +85,7 @@ export async function startAttempt(user, activityId) {
     activity: activity._id,
     questionKeys: questions.map((question) => question.key),
     expiresAt: computeExpiration(await getProgressRules()),
+    liveCorrectAnswers: true,
   });
 
   return {
@@ -123,8 +125,10 @@ async function findOpenAttempt(user, attemptId) {
  * @param {string} attemptId
  * @param {string} questionKey - ex.: "q1".
  * @param {string} optionId - ex.: "a".
- * @returns {Promise<{correct: boolean, correctOptionId: string, explanation: string, xpForQuestion: number}>}
+ * @returns {Promise<{correct: boolean, correctOptionId: string, explanation: string, xpForQuestion: number,
+ *   newAchievements: {id: string, title: string}[]}>}
  *   xpForQuestion = XP por acerto x multiplicador de evento ativo (o valor da "pílula" +XP do app).
+ *   newAchievements = conquistas desbloqueadas por ESTE acerto (ex.: "65 acertos"), para o app avisar na hora.
  * Usado por: POST /attempts/:attemptId/answers (folha verde/laranja do app).
  */
 export async function answerQuestion(user, attemptId, questionKey, optionId) {
@@ -146,6 +150,7 @@ export async function answerQuestion(user, attemptId, questionKey, optionId) {
   );
   if (!updated) throw conflict("Esta pergunta já foi respondida.");
 
+  const newAchievements = correct && attempt.liveCorrectAnswers ? await countCorrectAnswerNow(user) : [];
   const rules = await getProgressRules();
   const { multiplier } = await getXpMultiplier();
   return {
@@ -154,7 +159,29 @@ export async function answerQuestion(user, attemptId, questionKey, optionId) {
     correctOptionId: question.correctOptionId,
     explanation: question.explanation,
     xpForQuestion: correct ? Math.round(rules.XP_PER_CORRECT_ANSWER * multiplier) : 0,
+    newAchievements,
   };
+}
+
+/**
+ * Soma 1 acerto ao usuário na hora (atômico) e devolve as conquistas que ele acabou de desbloquear (com a data
+ * registrada). Só os acertos mudam durante a atividade; XP, ofensiva e atividades concluídas contam ao encerrar.
+ * @param {object} user - documento do usuário (o total em memória também é atualizado).
+ * @returns {Promise<{id: string, title: string}[]>}
+ */
+async function countCorrectAnswerNow(user) {
+  const metricsBefore = readAchievementMetrics(user, await countCompletedModules(user));
+  const updated = await UserModel.findOneAndUpdate({ _id: user._id }, { $inc: { totalCorrectAnswers: 1 } }, { returnDocument: "after" })
+    .select("totalCorrectAnswers")
+    .lean();
+  user.totalCorrectAnswers = updated.totalCorrectAnswers;
+  const metricsAfter = { ...metricsBefore, totalCorrectAnswers: updated.totalCorrectAnswers };
+  const overrides = readAchievementOverrides(user);
+  const unlocked = await findNewlyUnlocked(metricsBefore, metricsAfter, overrides);
+  if (unlocked.length > 0 && recordUnlockDates(user, await listAchievementsWithProgress(metricsAfter, overrides))) {
+    await UserModel.updateOne({ _id: user._id }, { $set: { achievementUnlocks: user.achievementUnlocks } });
+  }
+  return unlocked;
 }
 
 /**
@@ -226,7 +253,8 @@ export async function finishAttempt(user, attemptId) {
   const xpEarned = passed ? computeXp(correctAnswers, totalQuestions, alreadyCompleted, rules, multiplier) : 0;
 
   user.xp += xpEarned;
-  user.totalCorrectAnswers += correctAnswers;
+  // Tentativas novas já somaram cada acerto na hora da resposta (countCorrectAnswerNow).
+  if (!closed.liveCorrectAnswers) user.totalCorrectAnswers += correctAnswers;
   registerActivityDay(user);
   if (passed) saveBestScore(user, closed.activity, score);
   await user.save();

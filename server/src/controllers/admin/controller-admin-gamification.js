@@ -21,6 +21,8 @@ function readAchievementFields(body, creating) {
     goal: body?.goal === undefined && !creating ? undefined : readInteger(body?.goal, "Meta", { min: 1, max: 10_000_000 }),
     icon: optional(body?.icon, "Ícone", 40) ?? (creating ? "medal" : undefined),
     order: body?.order === undefined ? (creating ? 0 : undefined) : readInteger(body.order, "Ordem", { min: 0, max: 10000 }),
+    // Secreta: no app, enquanto bloqueada, não mostra título, descrição nem progresso.
+    secret: readBoolean(body?.secret, "Secreta") ?? (creating ? false : undefined),
   };
   if (creating) {
     const key = readRequiredString(body?.key, "a chave", 60);

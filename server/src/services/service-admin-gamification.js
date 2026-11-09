@@ -20,7 +20,7 @@ import { currentOccurrence, isRecurring, nextOccurrence } from "../config/event-
  */
 function toAdminAchievement(achievement) {
   const { _id, __v, createdAt, ...fields } = achievement;
-  return { id: String(_id), ...fields, active: achievement.active !== false };
+  return { id: String(_id), ...fields, active: achievement.active !== false, secret: achievement.secret === true };
 }
 
 /**
@@ -61,7 +61,7 @@ export async function updateAchievement(actor, achievementId, changes) {
   const achievement = await AchievementModel.findById(achievementId);
   if (!achievement) throw notFound("Conquista não encontrada.");
   const before = achievement.toObject();
-  for (const field of ["title", "description", "metric", "goal", "icon", "order", "active"]) {
+  for (const field of ["title", "description", "metric", "goal", "icon", "order", "active", "secret"]) {
     if (changes[field] !== undefined) achievement[field] = changes[field];
   }
   await achievement.save();

@@ -1,5 +1,6 @@
-import { lazy, Suspense, useEffect } from "react";
-import { HashRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { lazy, Suspense, useEffect, useRef } from "react";
+import { HashRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import { useAuth } from "./context/AuthContext.jsx";
 import { useAppConfig } from "./context/AppConfigContext.jsx";
 import { SplashScreen } from "./components/SplashScreen.jsx";
@@ -41,6 +42,55 @@ function RefreshConfigOnNavigate() {
   useEffect(() => {
     refreshIfStale();
   }, [pathname, refreshIfStale]);
+  return null;
+}
+
+/** Telas "de saída": nelas o botão voltar do celular manda o app para segundo plano (sem fechar). */
+const ROOT_PATHS = ["/trilha", "/entrar", "/boas-vindas"];
+const ACTIVITY_EXIT_QUESTION = "Sair da atividade? O progresso desta tentativa será perdido.";
+
+/**
+ * Botão "voltar" do Android: fecha a janela aberta (sinal, aviso), volta para a tela anterior e, na atividade,
+ * pergunta antes de sair. Nas telas iniciais, o app vai para segundo plano em vez de fechar.
+ * No navegador não faz nada (o voltar do navegador já usa o histórico).
+ */
+function HardwareBackButton({ signedIn }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const current = useRef(location);
+  current.current = location;
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return undefined;
+    let listener = null;
+    let removed = false;
+    import("@capacitor/app").then(async ({ App }) => {
+      const handle = await App.addListener("backButton", () => {
+        const { pathname, key } = current.current;
+        // Janela aberta (sinal, conta banida...): fecha como o Esc.
+        if (document.querySelector('[role="dialog"], [role="alertdialog"]')) {
+          window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+          return;
+        }
+        if (ROOT_PATHS.includes(pathname)) {
+          App.minimizeApp();
+          return;
+        }
+        // Na atividade em andamento pergunta antes; na tela de resultado (mesmo endereço) só volta.
+        const answering = pathname.startsWith("/atividade/") && !document.querySelector(".activity-result");
+        if (answering && !window.confirm(ACTIVITY_EXIT_QUESTION)) return;
+        // Sem tela anterior (app aberto direto nesta tela): vai para a tela inicial.
+        if (key === "default") navigate(signedIn ? "/trilha" : "/entrar", { replace: true });
+        else navigate(-1);
+      });
+      if (removed) handle.remove();
+      else listener = handle;
+    });
+    return () => {
+      removed = true;
+      listener?.remove();
+    };
+  }, [navigate, signedIn]);
   return null;
 }
 
@@ -98,6 +148,7 @@ export function App() {
   return (
     <HashRouter>
       <ScrollToTopOnNavigate />
+      <HardwareBackButton signedIn={status === "signedIn"} />
       <RefreshConfigOnNavigate />
       {status === "signedIn" ? <PrivateRoutes /> : <PublicRoutes />}
     </HashRouter>

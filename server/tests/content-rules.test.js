@@ -239,3 +239,61 @@ test("conquista desbloqueada guarda a data; bloqueada vem sem data", async () =>
   const again = await request(app).get(`/internal/v1/users/${userId}/profile`).set(withKey());
   assert.equal(again.body.achievements.find((achievement) => achievement.id === "first_activity").unlockedAt, first.unlockedAt);
 });
+
+test("conquistas na hora: cada acerto soma ao usuário e a conquista de acertos chega na resposta (sem repetir ao encerrar)", async () => {
+  const userId = await registerUser();
+  const { UserModel } = await import("../src/models/model-user.js");
+  const target = await models.AchievementModel.create({ key: `acertos_${Date.now()}`, title: "Dois acertos", description: "Acerte 2 questões.", metric: "totalCorrectAnswers", goal: 2, active: true });
+  const { clearAchievementsCache } = await import("../src/services/service-achievement.js");
+  clearAchievementsCache();
+
+  const trail = await request(app).get(`/internal/v1/users/${userId}/trail`).set(withKey());
+  const activityId = trail.body.modules[0].activities[0].id;
+  const attempt = await request(app).post(`/internal/v1/users/${userId}/attempts`).set(withKey()).send({ activityId });
+  const stored = await models.ActivityModel.findById(activityId).lean();
+  const answer = (index) => {
+    const question = stored.questions.find((q) => q.key === attempt.body.activity.questions[index].key);
+    return request(app).post(`/internal/v1/users/${userId}/attempts/${attempt.body.attemptId}/answers`).set(withKey())
+      .send({ questionKey: question.key, optionId: question.correctOptionId });
+  };
+
+  const first = await answer(0);
+  assert.deepEqual(first.body.newAchievements, []);
+  assert.equal((await UserModel.findById(userId).lean()).totalCorrectAnswers, 1);
+  const second = await answer(1);
+  assert.deepEqual(second.body.newAchievements.map((a) => a.id), [target.key]);
+  const afterSecond = await UserModel.findById(userId).lean();
+  assert.equal(afterSecond.totalCorrectAnswers, 2);
+  assert.ok(afterSecond.achievementUnlocks.some((u) => u.key === target.key));
+
+  for (let index = 2; index < attempt.body.activity.questions.length; index += 1) await answer(index);
+  const finish = await request(app).post(`/internal/v1/users/${userId}/attempts/${attempt.body.attemptId}/finish`).set(withKey());
+  assert.ok(!finish.body.result.newAchievements.some((a) => a.id === target.key)); // já avisada durante a atividade
+  assert.equal((await UserModel.findById(userId).lean()).totalCorrectAnswers, attempt.body.activity.questions.length); // sem contar duas vezes
+
+  await models.AchievementModel.deleteOne({ _id: target._id });
+  clearAchievementsCache();
+});
+
+test("conquista secreta: no app fica escondida até desbloquear; o painel vê tudo", async () => {
+  const userId = await registerUser();
+  const key = `secreta_${Date.now()}`;
+  await models.AchievementModel.create({ key, title: "Madrugador", description: "Estude 3 dias.", metric: "streak", goal: 3, active: true, secret: true });
+  const { clearAchievementsCache } = await import("../src/services/service-achievement.js");
+  clearAchievementsCache();
+
+  const profile = await request(app).get(`/internal/v1/users/${userId}/profile`).set(withKey());
+  const hidden = profile.body.achievements.find((a) => a.id === key);
+  assert.equal(hidden.title, "Conquista secreta");
+  assert.equal(hidden.goal, null);
+  assert.ok(!JSON.stringify(profile.body).includes("Madrugador"));
+
+  const { UserModel } = await import("../src/models/model-user.js");
+  await UserModel.updateOne({ _id: userId }, { maxStreak: 3 });
+  const revealed = (await request(app).get(`/internal/v1/users/${userId}/profile`).set(withKey())).body.achievements.find((a) => a.id === key);
+  assert.equal(revealed.title, "Madrugador");
+  assert.equal(revealed.unlocked, true);
+
+  await models.AchievementModel.deleteOne({ key });
+  clearAchievementsCache();
+});

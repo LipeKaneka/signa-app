@@ -1,4 +1,5 @@
 import * as UserService from "../services/service-user.js";
+import { hideLockedSecrets } from "../services/service-achievement.js";
 import * as PasswordResetService from "../services/service-password-reset.js";
 import {
   readRequiredString,
@@ -57,7 +58,8 @@ export function getSession(_req, res) {
 
 /** GET /internal/v1/users/:userId/profile — {user, achievements}. */
 export async function getProfile(req, res) {
-  res.json(await UserService.getProfileWithAchievements(req.user));
+  const profile = await UserService.getProfileWithAchievements(req.user);
+  res.json({ ...profile, achievements: hideLockedSecrets(profile.achievements) });
 }
 
 const EDITABLE_FIELDS = ["nickname", "email", "password", "city", "showInRanking", "avatar", "avatarThumb"];

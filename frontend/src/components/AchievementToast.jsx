@@ -11,7 +11,7 @@ const TOAST_DURATION_MS = 3800;
  * Avisos que descem do topo, um de cada vez: conquistas desbloqueadas e subida de nível.
  * Toca a fanfarra (se "Efeitos sonoros e vibrações" estiver ligado) a cada aviso; tocar no aviso fecha.
  * @param {{items: {id: string, kind: "achievement"|"level", title: string}[]}} props
- * Usado por: ActivityResult.
+ * Usado por: ActivityResult (fim da atividade) e ActivityPage (conquistas de acertos, na hora).
  */
 export function AchievementToast({ items }) {
   const { settings } = useSettings();

@@ -16,15 +16,17 @@ function formatUnlockDate(isoDate) {
  */
 export function AchievementCard({ achievement, showDate = false }) {
   const unlocked = achievement.unlocked;
+  // Secreta e ainda bloqueada: o servidor já manda sem título, descrição e progresso.
+  const hiddenSecret = achievement.secret && !unlocked;
   return (
     <li className="achievement-item">
-      <div className={`achievement-card${unlocked ? "" : " achievement-card--locked"}`}>
-        <span className="achievement-card__medal"><AchievementMedal size={40} /></span>
+      <div className={`achievement-card${unlocked ? "" : " achievement-card--locked"}${hiddenSecret ? " achievement-card--secret" : ""}`}>
+        <span className="achievement-card__medal">{hiddenSecret ? <span className="achievement-card__secret" aria-hidden="true">?</span> : <AchievementMedal size={40} />}</span>
         <div>
           <h3 className="achievement-card__title">{achievement.title}</h3>
           <p className="achievement-card__description">{achievement.description}</p>
           <span className="visually-hidden">
-            {unlocked ? "Conquistada." : `Ainda não conquistada: ${achievement.current} de ${achievement.goal}.`}
+            {unlocked ? "Conquistada." : hiddenSecret ? "Conquista secreta, ainda bloqueada." : `Ainda não conquistada: ${achievement.current} de ${achievement.goal}.`}
           </span>
         </div>
       </div>

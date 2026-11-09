@@ -12,6 +12,7 @@ import { playAnswerFeedback } from "../../utils/feedback-effects.js";
 import { ActivityHeader, FeedbackSheet, OptionsGrid } from "./activity-parts.jsx";
 import { ActivityResult } from "./ActivityResult.jsx";
 import { EventBanner } from "../../components/EventBanner.jsx";
+import { AchievementToast } from "../../components/AchievementToast.jsx";
 import "./activity.css";
 
 // A pergunta de câmera carrega o MediaPipe (pesado): só baixa quando a atividade tem uma.
@@ -51,6 +52,8 @@ export function ActivityPage() {
   // Nível novo alcançado nesta atividade (para o aviso "Você subiu para o nível X"), ou null.
   const [levelUp, setLevelUp] = useState(null);
   const [actionError, setActionError] = useState("");
+  // Conquistas desbloqueadas durante a atividade (ex.: 65 acertos no total): aviso na hora e listadas no resultado.
+  const [liveAchievements, setLiveAchievements] = useState([]);
   const [busy, setBusy] = useState(false);
   // Muda para a folha de feedback subir de novo (ex.: falhou ao encerrar a tentativa).
   const [sheetKey, setSheetKey] = useState(0);
@@ -65,7 +68,16 @@ export function ActivityPage() {
   const isLastQuestion = questionIndex === questions.length - 1;
 
   if (result) {
-    return <ActivityResult result={result} levelUp={levelUp} reviewItems={reviewItems} onContinue={goToTrail} onBack={goToTrail} />;
+    return (
+      <ActivityResult
+        result={result}
+        levelUp={levelUp}
+        reviewItems={reviewItems}
+        earnedDuringActivity={liveAchievements}
+        onContinue={goToTrail}
+        onBack={goToTrail}
+      />
+    );
   }
 
   /** Envia a resposta. @returns {Promise<boolean>} false se falhou (a pergunta de câmera libera nova tentativa). */
@@ -80,6 +92,7 @@ export function ActivityPage() {
       if (!answer.skipped) playAnswerFeedback(answer.correct, settings.soundsAndVibration);
       setFeedback(answer);
       setReviewItems((items) => [...items, buildReviewItem(question, answer)]);
+      if (answer.newAchievements?.length) setLiveAchievements((current) => [...current, ...answer.newAchievements]);
       return true;
     } catch (answerError) {
       setSelectedOptionId(null);
@@ -165,6 +178,7 @@ export function ActivityPage() {
       {feedback && (
         <FeedbackSheet key={sheetKey} feedback={feedback} onNext={goToNextQuestion} isLast={isLastQuestion} />
       )}
+      <AchievementToast items={liveAchievements.map((achievement) => ({ id: `achievement-${achievement.id}`, kind: "achievement", title: achievement.title }))} />
     </div>
   );
 }

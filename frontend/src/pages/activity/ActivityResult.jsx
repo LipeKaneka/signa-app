@@ -30,8 +30,9 @@ function WrongMark() {
  * reviewItems = [{key, correct, answer, avatar}] na ordem das perguntas.
  * levelUp = nível novo alcançado nesta atividade ({level, title}) ou null.
  * Conquistas novas e nível novo aparecem como aviso no topo (AchievementToast) e ficam listados na tela.
+ * earnedDuringActivity = conquistas já avisadas durante a atividade (só listadas aqui, sem aviso de novo).
  */
-export function ActivityResult({ result, levelUp, reviewItems, onContinue, onBack }) {
+export function ActivityResult({ result, levelUp, reviewItems, earnedDuringActivity = [], onContinue, onBack }) {
   const [openItem, setOpenItem] = useState(null);
   const { minScoreToPass } = useAppConfig();
   const multiplier = result.xpMultiplier ?? 1;
@@ -82,7 +83,7 @@ export function ActivityResult({ result, levelUp, reviewItems, onContinue, onBac
         !result.passed && <p className="activity-result__notice">Acerte pelo menos {minScoreToPass}% para liberar a próxima atividade.</p>
       )}
       {levelUp && <p className="activity-result__achievement">⬆ Você subiu para o nível {levelUp.level}: {levelUp.title}</p>}
-      {result.newAchievements.map((achievement) => (
+      {[...earnedDuringActivity, ...result.newAchievements].map((achievement) => (
         <p key={achievement.id} className="activity-result__achievement">🏅 Conquista desbloqueada: {achievement.title}</p>
       ))}
 

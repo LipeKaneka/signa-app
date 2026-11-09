@@ -28,6 +28,9 @@ const attemptSchema = new mongoose.Schema(
     answers: { type: [answerSchema], default: [] },
     // Perguntas desta tentativa, na ordem mostrada (sorteadas quando a atividade tem questionsPerAttempt).
     questionKeys: { type: [String], default: undefined },
+    // true = cada acerto já foi somado ao usuário na hora da resposta (conquistas de acertos aparecem durante a
+    // atividade). Tentativas antigas (sem o campo) somam todos os acertos só ao encerrar.
+    liveCorrectAnswers: { type: Boolean, default: undefined },
     expiresAt: { type: Date, required: true },
     result: {
       correctAnswers: Number,

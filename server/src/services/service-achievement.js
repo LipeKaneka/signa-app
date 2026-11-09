@@ -72,6 +72,7 @@ export async function listAchievementsWithProgress(metrics, overrides = new Map(
       goal: achievement.goal,
       unlocked: override ?? reached >= achievement.goal,
       manual: override === undefined ? null : override ? "granted" : "revoked",
+      secret: achievement.secret === true,
     };
   });
 }
@@ -119,6 +120,31 @@ export function recordUnlockDates(user, achievements, now = new Date()) {
 export function withUnlockDates(user, achievements) {
   const dates = new Map(user.achievementUnlocks.map((entry) => [entry.key, entry.unlockedAt]));
   return achievements.map((achievement) => ({ ...achievement, unlockedAt: achievement.unlocked ? dates.get(achievement.id) ?? null : null }));
+}
+
+/**
+ * Para o app: conquista secreta ainda bloqueada vira "Conquista secreta", sem título, descrição nem progresso
+ * (não dá para saber como desbloquear). Depois de desbloqueada aparece normal.
+ * @param {object[]} achievements - de listAchievementsWithProgress / withUnlockDates.
+ * @returns {object[]}
+ * Usado por: GET /internal/v1/users/:userId/profile (o painel vê tudo).
+ */
+export function hideLockedSecrets(achievements) {
+  return achievements.map((achievement) =>
+    achievement.secret && !achievement.unlocked
+      ? {
+          id: achievement.id,
+          title: "Conquista secreta",
+          description: "Continue praticando para descobrir como desbloquear.",
+          icon: "secret",
+          current: null,
+          goal: null,
+          unlocked: false,
+          secret: true,
+          unlockedAt: null,
+        }
+      : achievement,
+  );
 }
 
 /** Esquece o catálogo em cache (depois de criar/alterar/desativar uma conquista). */

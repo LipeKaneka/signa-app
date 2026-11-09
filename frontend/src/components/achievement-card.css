@@ -87,3 +87,18 @@
   font-size: 0.875rem;
   text-align: center;
 }
+
+/* Conquista secreta ainda bloqueada: "?" no lugar da medalha. */
+.achievement-card--secret .achievement-card__description {
+  font-style: italic;
+}
+
+.achievement-card__secret {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+}
