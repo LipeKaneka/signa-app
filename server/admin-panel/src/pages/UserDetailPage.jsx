@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
+import { AppProfilePreview } from "../components/AppProfilePreview.jsx";
 import { Badge, Field, LoadState, Modal, Notice, confirmAction, formatDateTime, useAction, useLoad } from "../components/ui.jsx";
 import { Num } from "../format-number.jsx";
 
@@ -275,6 +276,7 @@ export function UserDetailPage() {
   const { data, error, loading, reload } = useLoad(() => api(`/users/${id}`), [id]);
   const [dialog, setDialog] = useState(null);
   const [saved, setSaved] = useState(null);
+  const [previewing, setPreviewing] = useState(false);
   const user = data?.user;
   const editable = can("manage");
 
@@ -377,8 +379,10 @@ export function UserDetailPage() {
         <>
           <div className="toolbar">
             <h1>{user.nickname} {user.status === "blocked" && <Badge tone="danger">Banido</Badge>}</h1>
+            <span className="table__actions">
+              <button className="button button--ghost" onClick={() => setPreviewing(true)}>Ver como no app</button>
             {editable && (
-              <span className="table__actions">
+              <>
                 {user.status === "blocked" ? (
                   <button className="button button--ghost" onClick={() => setDialog({ title: "Desbloquear usuário", run: ({ reason }) => api(`/users/${id}/status`, { method: "PATCH", body: { status: "active", reason } }) })}>
                     Desbloquear
@@ -397,8 +401,9 @@ export function UserDetailPage() {
                 >
                   Zerar progresso
                 </button>
-              </span>
+              </>
             )}
+            </span>
           </div>
           {user.ban && (
             <div className="notice notice--error">
@@ -446,6 +451,7 @@ export function UserDetailPage() {
           )}
         </>
       )}
+      {previewing && user && <AppProfilePreview user={user} onClose={() => setPreviewing(false)} />}
       {dialog && (
         <ReasonDialog
           title={dialog.title}
