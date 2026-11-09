@@ -3,6 +3,11 @@ import { LOGO_HAND_PATHS, LOGO_HAND_VIEWBOX } from "./logo-hand-paths.js";
 import logoColorida from "../assets/brand/logo-colorida.svg";
 import tipografiaColorida from "../assets/brand/tipografia-colorida.svg";
 import tipografiaBranca from "../assets/brand/tipografia-branca.svg";
+import fogo from "../assets/elements/fogo.webp";
+import fogoSequencia from "../assets/elements/fogo-sequencia.webp";
+import barraXpHorizontal from "../assets/elements/barra-xp-horizontal.webp";
+import barraXpVertical from "../assets/elements/barra-xp-vertical.webp";
+import "./illustrations.css";
 
 /** Mão da logo Signa Ludus (identidade visual nova, contornos preenchidos). color = currentColor por padrão. */
 export function LogoHand({ size = 48, color = "currentColor" }) {
@@ -65,29 +70,21 @@ export function SignLanguageHands({ size = 116 }) {
 /** Chama colorida (dias consecutivos). */
 export function Flame({ size = 40 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 40 46" aria-hidden="true">
-      <defs>
-        <linearGradient id="gchama" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#ff8a7a" /><stop offset="1" stopColor="#f2543d" />
-        </linearGradient>
-      </defs>
-      <path fill="url(#gchama)" d="M20 2 C22 10 31 15 33 25 C35.5 36 28.5 44.5 19.5 44.5 C10 44.5 4 37 6 27.5 C7 22.5 10 19.5 12.5 17 C12.5 21.5 14 24.5 17 25.5 C15.5 17.5 18 9.5 20 2 Z" />
-      <path fill="#fff" d="M20.5 26 C22 30 26 32 25.5 37 C25 40.5 22.5 42.5 19.5 42.5 C16 42.5 13.5 39.8 14.3 36 C14.8 33.8 16.3 32.3 17.5 31.2 C17.7 33 18.6 34.2 19.8 34.6 C19.2 31.5 19.6 28.5 20.5 26 Z" opacity=".85" />
-    </svg>
+    <span className="flame" style={{ width: size, height: size }} aria-hidden="true">
+      <img src={fogo} alt="" />
+      <img src={fogoSequencia} alt="" />
+    </span>
   )
 }
 
-/** Ícone de XP (etiqueta verde com seta para cima). */
+/** Barra de XP horizontal (perfil). size = largura. */
 export function XpIcon({ size = 50 }) {
-  return (
-    <svg width={size} height={size * 0.5} viewBox="0 0 60 30" fill="none" stroke="#2fc81a" strokeWidth="2.4" aria-hidden="true">
-      <rect x="16" y="9" width="40" height="12" rx="6" />
-      <path d="M26 12.5 V17.5 M31 12.5 V17.5 M36 12.5 V17.5" strokeLinecap="round" />
-      <circle cx="15" cy="15" r="12" fill="#fff" />
-      <circle cx="15" cy="15" r="8.2" />
-      <path d="M15 19.5 V11 M11.3 14.4 L15 10.7 L18.7 14.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
+  return <img className="xp-bar" src={barraXpHorizontal} alt="" width={size} aria-hidden="true" />
+}
+
+/** Barra de XP vertical (cabeçalho da trilha). size = altura. */
+export function XpBarVertical({ size = 30 }) {
+  return <img className="xp-bar" src={barraXpVertical} alt="" height={size} aria-hidden="true" />
 }
 
 /** Medalha com número (ranking). color = contorno. */

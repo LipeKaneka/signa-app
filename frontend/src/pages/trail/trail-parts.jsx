@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "../../components/Icon.jsx";
-import { Flame, LogoHand } from "../../components/illustrations.jsx";
+import { Flame, LogoHand, XpBarVertical } from "../../components/illustrations.jsx";
 import { prefersReducedMotion } from "../../utils/motion.js";
 import { formatCompact, formatFull } from "../../utils/format-number.js";
 
@@ -68,16 +68,6 @@ export function TrailProgress({ percent, label }) {
 }
 
 /** Selo "XP" do cabeçalho (desenho do protótipo: termômetro com o selo XP). */
-function XpBadge() {
-  return (
-    <svg width="18" height="30" viewBox="0 0 18 30" aria-hidden="true">
-      <rect x="6" y="1" width="6" height="18" rx="3" fill="none" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="9" cy="22" r="7" fill="currentColor" />
-      <text x="9" y="24.6" textAnchor="middle" fontSize="6.5" fontWeight="700" fill="var(--color-primary)">XP</text>
-    </svg>
-  );
-}
-
 /**
  * Cabeçalho roxo arredondado: logo, ofensiva (D = dias) e XP (P = pontos), título e progresso.
  * onBack = seta de voltar antes da marca (tela das unidades, com o título à esquerda). Ofensiva e XP aparecem nas duas telas.
@@ -97,11 +87,11 @@ export function TrailHeader({ user, title, percent, progressLabel, onBack }) {
         </span>
         <span className="trail-header__stats">
           <span className="trail-header__stat" title={`${formatFull(user.streak)} dias seguidos`}>
-            <span className="trail-header__icon"><Flame size={22} /></span>
+            <span className="trail-header__icon"><Flame size={26} /></span>
             {formatCompact(user.streak)}<small>D</small>
           </span>
           <span className="trail-header__stat" title={`${formatFull(user.xp)} pontos de XP`}>
-            <span className="trail-header__icon trail-header__icon--xp"><XpBadge /></span>
+            <span className="trail-header__icon"><XpBarVertical size={40} /></span>
             {formatCompact(user.xp)}<small>P</small>
           </span>
         </span>

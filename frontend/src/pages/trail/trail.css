@@ -58,16 +58,9 @@
   margin-bottom: 3px;
 }
 
+/* Chama e barra de XP com as cores da arte (assets/elements). */
 .trail-header__icon {
   display: inline-flex;
-  filter: grayscale(1) brightness(1.6);
-  opacity: 0.7;
-}
-
-.trail-header__icon--xp {
-  filter: none;
-  opacity: 1;
-  color: #bdb3ea;
 }
 
 .trail-header__title {

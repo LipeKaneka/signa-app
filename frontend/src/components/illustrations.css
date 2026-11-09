@@ -1,0 +1,39 @@
+/* Chama: alterna os dois quadros da arte (signa_fogo e signa_fogosequencia). */
+.flame {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+}
+
+.flame img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  animation: flame-frame-a 0.9s steps(1) infinite;
+}
+
+.flame img + img {
+  opacity: 0;
+  animation-name: flame-frame-b;
+}
+
+@keyframes flame-frame-a {
+  0% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes flame-frame-b {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flame img { animation: none; }
+}
+
+.xp-bar {
+  flex: none;
+  vertical-align: middle;
+}

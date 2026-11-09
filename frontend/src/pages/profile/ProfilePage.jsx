@@ -216,7 +216,7 @@ export function ProfilePage() {
               <span>Dias consecutivos</span>
             </div>
             <div className="stat-card">
-              <strong title={formatFull(data.user.xp)}><XpIcon size={70} /> {formatCompact(data.user.xp)}</strong>
+              <strong title={formatFull(data.user.xp)}><XpIcon size={84} /> {formatCompact(data.user.xp)}</strong>
               <span>Pontos de XP Totais</span>
             </div>
           </div>
