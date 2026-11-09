@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { formatCompact } from "../format-number.jsx";
 
 const formatDay = (key, long = false) => {
   const [year, month, day] = key.split("-").map(Number);
@@ -17,7 +18,7 @@ function niceMax(value) {
  * Gráfico de área por dia, responsivo (preenche a largura do cartão). Passar o mouse ou tocar mostra o valor do dia.
  * @param {{data: {day: string}[], valueKey: string, label: string, format?: (value: number) => string, height?: number}} props
  */
-export function AreaChart({ data, valueKey, label, format = (value) => value.toLocaleString("pt-BR"), height = 240 }) {
+export function AreaChart({ data, valueKey, label, format = formatCompact, height = 240 }) {
   const gradientId = useId();
   const [hover, setHover] = useState(null);
   // Desenha na largura real do cartão (em pixels): o texto dos eixos fica legível também no celular.

@@ -5,9 +5,10 @@ import { useAuth } from "../auth.jsx";
 import { Badge, LoadState, formatDateTime, useLoad } from "../components/ui.jsx";
 import { AreaChart, Sparkline, StackedBar } from "../components/charts.jsx";
 import { PanelIcon } from "../components/icons.jsx";
+import { Num, formatCompact } from "../format-number.jsx";
 
 const PERIODS = [7, 30, 90];
-const number = (value) => (value ?? 0).toLocaleString("pt-BR");
+const number = (value) => formatCompact(value ?? 0);
 const percent = (value) => (value === null || value === undefined ? "—" : `${value}%`);
 
 /** Indicadores do topo: valor do período, variação contra o período anterior e a tendência por dia. */
@@ -119,7 +120,7 @@ export function DashboardPage() {
             <div className="card">
               <div className="card__header">
                 <h2>Funil da trilha</h2>
-                <span className="muted small">de {number(data.totals.users)} contas</span>
+                <span className="muted small">de <Num value={data.totals.users ?? 0} /> contas</span>
               </div>
               {data.funnel.length === 0 && <p className="muted">Nenhum módulo ativo.</p>}
               {data.funnel.map((module) => (
@@ -238,15 +239,15 @@ export function DashboardPage() {
         <div className="card">
           <div className="card__header"><h2>Conteúdo publicado</h2><span className="muted small">versão {stats.data.contentVersion}</span></div>
           <div className="summary-grid">
-            <div><strong>{stats.data.content.modules}</strong><span>módulos</span></div>
-            <div><strong>{stats.data.content.activities}</strong><span>atividades</span></div>
-            <div><strong>{stats.data.content.signs}</strong><span>sinais ({stats.data.content.unreviewedSigns} com glosa não revisada)</span></div>
-            <div><strong>{stats.data.content.achievements}</strong><span>conquistas</span></div>
-            <div><strong>{stats.data.users.blocked}</strong><span>contas bloqueadas</span></div>
+            <div><strong><Num value={stats.data.content.modules} /></strong><span>módulos</span></div>
+            <div><strong><Num value={stats.data.content.activities} /></strong><span>atividades</span></div>
+            <div><strong><Num value={stats.data.content.signs} /></strong><span>sinais ({stats.data.content.unreviewedSigns} com glosa não revisada)</span></div>
+            <div><strong><Num value={stats.data.content.achievements} /></strong><span>conquistas</span></div>
+            <div><strong><Num value={stats.data.users.blocked} /></strong><span>contas bloqueadas</span></div>
           </div>
           {stats.data.activeEvents.length > 0 && (
             <p className="event-strip">
-              <PanelIcon name="events" size={16} /> Evento valendo agora: {stats.data.activeEvents.map((event) => `${event.title} (${event.multiplier}x XP até ${formatDateTime(event.endsAt)})`).join(" · ")}
+              <PanelIcon name="events" size={16} /> Evento valendo agora: {stats.data.activeEvents.map((event) => `${event.title} (${formatCompact(event.multiplier)}x XP até ${formatDateTime(event.endsAt)})`).join(" · ")}
             </p>
           )}
         </div>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { ActiveBadge, Field, LoadState, Modal, Notice, confirmAction, useAction, useLoad } from "../components/ui.jsx";
+import { Num } from "../format-number.jsx";
 
 /** Formulário de conquista. A métrica vem de uma lista fixa (cada métrica é um cálculo no servidor). */
 function AchievementForm({ achievement, metrics, onClose, onSaved }) {
@@ -98,7 +99,7 @@ export function AchievementsPage() {
                 <td className="table__order">{achievement.order}</td>
                 <td><strong>{achievement.title}</strong><div className="field__hint">{achievement.description} · {achievement.key}</div></td>
                 <td>{metricLabel(achievement.metric)}</td>
-                <td>{achievement.goal}</td>
+                <td><Num value={achievement.goal} /></td>
                 <td><ActiveBadge active={achievement.active} /></td>
                 <td className="table__actions">
                   {can("content") && (

@@ -3,6 +3,7 @@ import { api, downloadExport, downloadFile } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { Badge, LoadState, Modal, Notice, Pagination, confirmAction, formatDateTime, useAction, useLoad } from "../components/ui.jsx";
 import { PanelIcon } from "../components/icons.jsx";
+import { Num, formatCompact } from "../format-number.jsx";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
 
@@ -212,7 +213,7 @@ function DatabaseExplorer() {
             <li key={item.key}>
               <button type="button" className={item.key === selectedKey ? "is-on" : ""} onClick={() => choose(item.key)}>
                 <span>{item.label}</span>
-                <span className="db-explorer__count">{item.count.toLocaleString("pt-BR")}</span>
+                <span className="db-explorer__count"><Num value={item.count} /></span>
               </button>
             </li>
           ))}
@@ -227,7 +228,7 @@ function DatabaseExplorer() {
               <div>
                 <h2>{collection.label}</h2>
                 <p className="muted small">
-                  <code>{collection.key}</code> · {list.data ? `${list.data.total.toLocaleString("pt-BR")} documentos` : "…"}
+                  <code>{collection.key}</code> · {list.data ? `${formatCompact(list.data.total)} documentos` : "…"}
                   {" · "}
                   {collection.editable ? "editável" : "só leitura"}
                   {collection.deletable ? " · permite excluir" : ""}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api.js";
 import { Badge, LoadState, Pagination, formatDateTime, useLoad } from "../components/ui.jsx";
+import { Num } from "../format-number.jsx";
 
 /** Usuários do app: busca e filtro; o detalhe tem progresso e ações de moderação. */
 export function UsersPage() {
@@ -30,7 +31,7 @@ export function UsersPage() {
               {data.users.map((user) => (
                 <tr key={user.id}>
                   <td><Link to={`/usuarios/${user.id}`}><strong>{user.nickname}</strong></Link><div className="field__hint">{user.email}</div></td>
-                  <td>{user.xp}</td>
+                  <td><Num value={user.xp} /></td>
                   <td>{user.streak}</td>
                   <td>{user.completedActivities}</td>
                   <td>{formatDateTime(user.lastLogin)}</td>

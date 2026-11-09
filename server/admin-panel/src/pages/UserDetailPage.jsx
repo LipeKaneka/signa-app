@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { Badge, Field, LoadState, Modal, Notice, confirmAction, formatDateTime, useAction, useLoad } from "../components/ui.jsx";
+import { Num } from "../format-number.jsx";
 
 const ATTEMPT_STATUS = { finished: "concluída", in_progress: "em andamento", expired: "expirada" };
 const ACTIVITY_STATUS = { completed: ["ok", "Concluída"], available: ["warn", "Liberada"], locked: ["neutral", "Bloqueada"] };
@@ -230,7 +231,7 @@ function AchievementsCard({ user, draft, onChange, editable }) {
             return (
               <tr key={achievement.id} className={draft[achievement.id] ? "row--pending" : undefined}>
                 <td><strong>{achievement.title}</strong><div className="field__hint">{achievement.description}</div></td>
-                <td>{formatNumber(achievement.current)}/{formatNumber(achievement.goal)}</td>
+                <td><Num value={achievement.current} />/<Num value={achievement.goal} /></td>
                 <td>
                   {achievement.unlocked ? <Badge tone="ok">Desbloqueada</Badge> : <Badge>Bloqueada</Badge>}
                   {achievement.manual && <div className="field__hint">{MANUAL_LABEL[achievement.manual]}</div>}
@@ -423,7 +424,7 @@ export function UserDetailPage() {
                     <td>{attempt.activityTitle}</td>
                     <td>{ATTEMPT_STATUS[attempt.status]}</td>
                     <td>{attempt.score === null ? "—" : `${attempt.score}%`}</td>
-                    <td>{attempt.xpEarned === null ? "" : `+${formatNumber(attempt.xpEarned)} XP`}</td>
+                    <td>{attempt.xpEarned === null ? "" : <>+<Num value={attempt.xpEarned} suffix=" XP" /></>}</td>
                     <td>{formatDateTime(attempt.createdAt)}</td>
                   </tr>
                 ))}

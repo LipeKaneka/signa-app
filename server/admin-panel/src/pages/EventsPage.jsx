@@ -3,6 +3,7 @@ import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { Badge, Field, LoadState, Modal, Notice, confirmAction, useAction, useLoad } from "../components/ui.jsx";
 import { ScheduleFields, describeSchedule, describeWhen, scheduleBodyFrom, scheduleFormFrom } from "../event-schedule.jsx";
+import { Num } from "../format-number.jsx";
 
 const STATES = {
   running: { label: "Valendo agora", tone: "ok" },
@@ -179,7 +180,7 @@ export function EventsPage() {
                   <strong>{event.appearance?.icon ? `${event.appearance.icon} ` : ""}{event.title}</strong>
                   <div className="field__hint">{event.description}</div>
                 </td>
-                <td>{event.multiplier}x</td>
+                <td><Num value={event.multiplier} suffix="x" /></td>
                 <td>
                   {event.schedule?.kind && event.schedule.kind !== "once" && <strong className="schedule-label">{describeSchedule(event.schedule)}</strong>}
                   <div className={event.schedule?.kind && event.schedule.kind !== "once" ? "field__hint" : undefined}>{describeWhen(event)}</div>

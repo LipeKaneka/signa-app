@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { Field, LoadState, Modal, Notice, useAction, useLoad } from "../components/ui.jsx";
+import { Num } from "../format-number.jsx";
 import { checkLevels, levelsToCsv, mergeLevels, parseLevelsText, sortLevels } from "../level-import.js";
 
 let nextRowId = 1;
@@ -79,7 +80,7 @@ function ImportDialog({ current, busy, message, onApply, onClose }) {
                 <thead><tr><th>Nível</th><th>Nome</th><th>A partir de (XP)</th></tr></thead>
                 <tbody>
                   {result.map((level, index) => (
-                    <tr key={`${level.minXp}-${index}`}><td className="table__order">{index + 1}</td><td>{level.title}</td><td>{Number(level.minXp).toLocaleString("pt-BR")}</td></tr>
+                    <tr key={`${level.minXp}-${index}`}><td className="table__order">{index + 1}</td><td>{level.title}</td><td><Num value={Number(level.minXp)} /></td></tr>
                   ))}
                 </tbody>
               </table>
