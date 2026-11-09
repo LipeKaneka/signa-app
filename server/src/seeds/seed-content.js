@@ -13,6 +13,7 @@ import { clearLevelsCache } from "../services/service-level.js";
 import { clearSettingsCache } from "../services/service-settings.js";
 import { clearEventsCache } from "../services/service-event.js";
 import { slugify } from "../utils/util-text.js";
+import { splitAlphabetActivity } from "./migrate-split-alphabet.js";
 import { CAMERA_CORRECT_OPTION, CAMERA_OPTIONS, findCameraTarget } from "../config/camera-targets.js";
 import { VLIBRAS_SOURCE } from "../config/sign-source.js";
 
@@ -262,6 +263,7 @@ async function insertMissingLevels() {
  */
 export async function seedContent() {
   const signsBySlug = await upsertSigns();
+  await splitAlphabetActivity(); // antes do upsertTrail: as atividades são identificadas pela ordem no módulo
   const moduleCount = await upsertTrail(signsBySlug);
   const achievements = await insertMissingAchievements();
   const levels = await insertMissingLevels();

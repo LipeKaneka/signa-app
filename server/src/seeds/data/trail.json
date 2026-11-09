@@ -7,8 +7,8 @@
         "level": 1,
         "activities": [
             {
-                "title": "Alfabeto",
-                "description": "O alfabeto manual completo, de A a Z, mais o Ç. Soletrar serve para nomes e palavras sem sinal",
+                "title": "Alfabeto: parte 1",
+                "description": "As letras de A a M no alfabeto manual. Soletrar serve para nomes e palavras sem sinal",
                 "prompt": "Qual letra é essa?",
                 "note": "O alfabeto manual soletra palavras do português: é um apoio, a Libras tem sinais próprios.",
                 "signs": [
@@ -24,7 +24,20 @@
                     "j",
                     "k",
                     "l",
-                    "m",
+                    "m"
+                ],
+                "tips": {
+                    "h": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "j": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
+                    "k": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão."
+                }
+            },
+            {
+                "title": "Alfabeto: parte 2",
+                "description": "As letras de N a Z e o Ç no alfabeto manual",
+                "prompt": "Qual letra é essa?",
+                "note": "O alfabeto manual soletra palavras do português: é um apoio, a Libras tem sinais próprios.",
+                "signs": [
                     "n",
                     "o",
                     "p",
@@ -41,9 +54,6 @@
                     "c-ce-cedilha"
                 ],
                 "tips": {
-                    "h": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
-                    "j": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
-                    "k": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
                     "x": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
                     "y": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
                     "z": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
