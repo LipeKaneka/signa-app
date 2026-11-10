@@ -18,15 +18,24 @@ import "./activity.css";
 // A pergunta de câmera carrega o MediaPipe (pesado): só baixa quando a atividade tem uma.
 const CameraSignQuestion = lazy(() => import("./CameraSignQuestion.jsx"));
 
+/** Pergunta de teoria (texto, sem avatar): múltipla escolha ou verdadeiro/falso. */
+const isTextQuestion = (question) => question.type === "single_choice" || question.type === "true_false";
+
 /**
- * Item da tela de resultado (para rever o sinal): resposta certa, se acertou e o avatar.
+ * Item da tela de resultado (para rever o sinal): resposta certa, se acertou e o avatar. Na teoria, a explicação.
  */
 function buildReviewItem(question, feedback) {
   // Pergunta de câmera: o que se revê é o sinal-alvo, não o texto do botão.
   const answer = question.type === "camera_sign"
     ? question.target
     : question.options.find((option) => option.id === feedback.correctOptionId)?.text ?? "";
-  return { key: question.key, correct: feedback.correct, answer, avatar: question.avatar };
+  return {
+    key: question.key,
+    correct: feedback.correct,
+    answer,
+    avatar: question.avatar,
+    ...(isTextQuestion(question) ? { prompt: question.prompt, explanation: feedback.explanation } : {}),
+  };
 }
 
 /**
@@ -139,7 +148,7 @@ export function ActivityPage() {
         <div className="activity-heading">
           <div>
             <h1 className="activity-title">{attempt.activity.order}. {attempt.activity.title}</h1>
-            <p className="activity-prompt">{question.prompt}</p>
+            <p className={`activity-prompt${isTextQuestion(question) ? " activity-prompt--question" : ""}`}>{question.prompt}</p>
             <EventBanner compact />
           </div>
           {question.avatar && question.type !== "camera_sign" && (
@@ -158,9 +167,10 @@ export function ActivityPage() {
             {question.avatar ? (
               <SignAvatar key={question.key} avatar={question.avatar} compact />
             ) : (
-              <div className="sign-frame" />
+              !isTextQuestion(question) && <div className="sign-frame" />
             )}
             <OptionsGrid
+              layout={isTextQuestion(question) ? "list" : "grid"}
               options={question.options}
               selectedOptionId={selectedOptionId}
               feedback={feedback}
@@ -176,7 +186,13 @@ export function ActivityPage() {
       </main>
 
       {feedback && (
-        <FeedbackSheet key={sheetKey} feedback={feedback} onNext={goToNextQuestion} isLast={isLastQuestion} />
+        <FeedbackSheet
+          key={sheetKey}
+          feedback={feedback}
+          onNext={goToNextQuestion}
+          isLast={isLastQuestion}
+          explanation={isTextQuestion(question) ? feedback.explanation : ""}
+        />
       )}
       <AchievementToast items={liveAchievements.map((achievement) => ({ id: `achievement-${achievement.id}`, kind: "achievement", title: achievement.title }))} />
     </div>

@@ -23,7 +23,7 @@ export function SignDialog({ word, avatar, description, onClose }) {
         </button>
         <h2 className="sign-dialog__title">{word}</h2>
         {description && <p className="sign-dialog__description">{description}</p>}
-        {avatar ? <SignAvatar avatar={avatar} /> : <p className="muted">Ainda não temos o avatar deste sinal.</p>}
+        {avatar ? <SignAvatar avatar={avatar} /> : !description && <p className="muted">Ainda não temos o avatar deste sinal.</p>}
       </div>
     </div>
   );

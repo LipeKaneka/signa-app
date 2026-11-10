@@ -71,9 +71,10 @@ function StarBurst() {
  * Alternativas. Depois da resposta: acerto = estrelas saindo do botão; erro = o botão escolhido treme
  * (a vibração do aparelho vem de playAnswerFeedback, na ActivityPage).
  */
-export function OptionsGrid({ options, selectedOptionId, feedback, disabled, onSelect }) {
+export function OptionsGrid({ options, selectedOptionId, feedback, disabled, onSelect, layout = "grid" }) {
+  // "list": alternativas de texto (teoria), uma embaixo da outra, com letra menor.
   return (
-    <div className="options-grid">
+    <div className={`options-grid${layout === "list" ? " options-grid--list" : ""}`}>
       {options.map((option) => {
         const chosen = feedback && option.id === selectedOptionId;
         const hit = chosen && feedback.correct;
@@ -100,7 +101,7 @@ export function OptionsGrid({ options, selectedOptionId, feedback, disabled, onS
  * Ao tocar em Próximo ela desce primeiro e só então avança (onAnimationEnd).
  * A frase é sorteada das listas de acerto/erro do painel (/app-config); com evento de XP ativo, a pílula mostra o multiplicador.
  */
-export function FeedbackSheet({ feedback, onNext, isLast }) {
+export function FeedbackSheet({ feedback, onNext, isLast, explanation = "" }) {
   const { leaving, startLeaving, handleAnimationEnd } = useExitAnimation(onNext);
   const { pickFeedbackPhrase, xpEvent } = useAppConfig();
   const sheetRef = useRef(null);
@@ -134,6 +135,8 @@ export function FeedbackSheet({ feedback, onNext, isLast }) {
     <section ref={sheetRef} className={classes.join(" ")} aria-live="assertive" onAnimationEnd={handleAnimationEnd}>
       <h2 className="feedback-sheet__title">{phrase.title}</h2>
       {phrase.text && <p className="feedback-sheet__text">{phrase.text}</p>}
+      {/* Teoria: a explicação ensina por que a resposta é essa. */}
+      {explanation && <p className="feedback-sheet__explanation">{explanation}</p>}
       {correct && (
         <span className="xp-pill">
           +{formatCompact(feedback.xpForQuestion)}xp{xpEvent && feedback.xpForQuestion > 0 ? ` · ${formatMultiplier(xpEvent.multiplier)}` : ""}

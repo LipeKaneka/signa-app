@@ -67,6 +67,12 @@ export async function getSignBySlug(slug) {
   return toPublicSign(sign);
 }
 
+/**
+ * Palavras que costumam ser só a forma da pergunta ("COMO faço o sinal de sapo em LIBRAS?"), mas também são verbetes.
+ * Só contam se a pergunta não citar nenhum outro sinal (assim "qual o sinal de quem?" ainda acha "Quem").
+ */
+const QUESTION_FRAME_SLUGS = new Set(["como", "qual", "quem", "onde", "quando", "o-que", "por-que", "porque", "libras", "nome"]);
+
 /** Palavras curtas comuns que não viram busca por "começa com" (achariam verbetes demais). */
 const PREFIX_STOPWORDS = new Set(["como", "para", "qual", "quais", "onde", "quando", "porque", "fala", "falar", "fazer", "sinal", "libras"]);
 
@@ -93,7 +99,9 @@ export async function findSignsMentionedIn(text, maxResults = 5, { prefix = true
   const prefixes = prefix ? [...new Set(words.filter((word) => word.length >= 3 && !PREFIX_STOPWORDS.has(word)))] : [];
 
   const active = { active: { $ne: false } };
-  const exactSigns = await SignModel.find({ ...active, slug: { $in: [...exact] } }).limit(maxResults).lean();
+  const exactFound = await SignModel.find({ ...active, slug: { $in: [...exact] } }).lean();
+  const content = exactFound.filter((sign) => !QUESTION_FRAME_SLUGS.has(sign.slug));
+  const exactSigns = (content.length > 0 || prefixes.some((word) => !QUESTION_FRAME_SLUGS.has(word)) ? content : exactFound).slice(0, maxResults);
   let signs = exactSigns;
   if (signs.length < maxResults && prefixes.length > 0) {
     const pattern = `^(${prefixes.map(escapeRegExp).join("|")})`;

@@ -1,11 +1,173 @@
 [
     {
-        "slug": "alfabetizacao",
-        "title": "Alfabetização",
-        "description": "Alfabeto manual, vogais, consoantes e números",
-        "icon": "🔤",
+        "slug": "fundamentos",
+        "title": "Fundamentos da Libras e Cultura Surda",
+        "description": "O que é a Libras, os 5 parâmetros, o alfabeto manual e as primeiras saudações",
+        "icon": "🤟",
         "level": 1,
         "activities": [
+            {
+                "title": "Libras e cultura surda",
+                "description": "O que é a Libras, quem é a pessoa surda e como se comunicar bem com ela",
+                "questions": [
+                    {
+                        "type": "true_false",
+                        "prompt": "A Libras é reconhecida por lei no Brasil como meio legal de comunicação e expressão.",
+                        "answer": true,
+                        "explanation": "A Lei 10.436/2002 reconhece a Libras, e o Decreto 5.626/2005 a regulamenta, inclusive na formação de professores."
+                    },
+                    {
+                        "type": "true_false",
+                        "prompt": "A língua de sinais é a mesma no mundo inteiro.",
+                        "answer": false,
+                        "explanation": "Cada país tem a sua: no Brasil é a Libras, nos Estados Unidos a ASL, em Portugal a LGP."
+                    },
+                    {
+                        "type": "true_false",
+                        "prompt": "A Libras é o português feito com as mãos.",
+                        "answer": false,
+                        "explanation": "A Libras é uma língua completa, com gramática própria. Não é mímica nem tradução palavra por palavra do português."
+                    },
+                    {
+                        "type": "single_choice",
+                        "prompt": "Qual é a forma adequada de se referir ao aluno?",
+                        "options": [
+                            "Surdo ou pessoa surda",
+                            "Surdo-mudo",
+                            "Mudinho",
+                            "Deficiente da fala"
+                        ],
+                        "correct": 0,
+                        "explanation": "\"Surdo-mudo\" é incorreto: a maioria das pessoas surdas não tem problema na voz. O termo respeitoso é surdo ou pessoa surda."
+                    },
+                    {
+                        "type": "single_choice",
+                        "prompt": "Como chamar a atenção de um aluno surdo que está de costas?",
+                        "options": [
+                            "Tocar de leve no ombro ou acenar no campo de visão dele",
+                            "Chamar o nome dele bem alto",
+                            "Bater palmas atrás dele",
+                            "Esperar ele virar sozinho"
+                        ],
+                        "correct": 0,
+                        "explanation": "A comunicação é visual: toque leve no ombro, aceno no campo de visão ou piscar a luz da sala."
+                    },
+                    {
+                        "type": "single_choice",
+                        "prompt": "Para que serve o alfabeto manual (datilologia)?",
+                        "options": [
+                            "Soletrar nomes próprios e palavras que ainda não têm sinal",
+                            "Substituir todos os sinais da Libras",
+                            "Conversar mais rápido",
+                            "Ensinar o português escrito"
+                        ],
+                        "correct": 0,
+                        "explanation": "A datilologia é um apoio: nomes, siglas e termos técnicos. A conversa acontece com sinais."
+                    },
+                    {
+                        "type": "true_false",
+                        "prompt": "Na comunidade surda, cada pessoa costuma receber um sinal-nome, dado por pessoas surdas.",
+                        "answer": true,
+                        "explanation": "O sinal-nome identifica a pessoa sem precisar soletrar o nome toda vez."
+                    },
+                    {
+                        "type": "single_choice",
+                        "prompt": "Na sala de aula, o intérprete de Libras...",
+                        "options": [
+                            "Faz a mediação entre a Libras e o português",
+                            "Substitui o professor regente",
+                            "É responsável pela nota do aluno surdo",
+                            "Só traduz as provas"
+                        ],
+                        "correct": 0,
+                        "explanation": "O intérprete media a comunicação. O ensino e a avaliação continuam com o professor."
+                    }
+                ]
+            },
+            {
+                "title": "Os 5 parâmetros",
+                "description": "Configuração de mão, ponto de articulação, movimento, orientação e expressões",
+                "questions": [
+                    {
+                        "type": "single_choice",
+                        "prompt": "Qual parâmetro é o formato que a mão assume ao fazer o sinal?",
+                        "options": [
+                            "Configuração de mão (CM)",
+                            "Ponto de articulação (PA)",
+                            "Movimento (M)",
+                            "Orientação (O)"
+                        ],
+                        "correct": 0,
+                        "explanation": "A configuração de mão é o formato da mão: dedos abertos, fechados, letras do alfabeto e muitas outras."
+                    },
+                    {
+                        "type": "single_choice",
+                        "prompt": "O lugar do corpo ou do espaço onde o sinal é feito é o...",
+                        "options": [
+                            "Ponto de articulação (PA)",
+                            "Movimento (M)",
+                            "Orientação (O)",
+                            "Configuração de mão (CM)"
+                        ],
+                        "correct": 0,
+                        "explanation": "O ponto de articulação pode ser no corpo (testa, peito, queixo) ou no espaço à frente de quem sinaliza."
+                    },
+                    {
+                        "type": "single_choice",
+                        "prompt": "Para onde a palma da mão está virada (para cima, para baixo, para frente) é o parâmetro...",
+                        "options": [
+                            "Orientação (O)",
+                            "Movimento (M)",
+                            "Ponto de articulação (PA)",
+                            "Expressão não manual (ENM)"
+                        ],
+                        "correct": 0,
+                        "explanation": "A orientação da palma também muda o sentido de alguns sinais."
+                    },
+                    {
+                        "type": "single_choice",
+                        "prompt": "Expressão facial e corporal fazem parte de qual parâmetro?",
+                        "options": [
+                            "Expressões não manuais (ENM)",
+                            "Configuração de mão (CM)",
+                            "Ponto de articulação (PA)",
+                            "Movimento (M)"
+                        ],
+                        "correct": 0,
+                        "explanation": "As expressões não manuais marcam perguntas, negação, intensidade e emoção. Sem elas a frase pode mudar de sentido."
+                    },
+                    {
+                        "type": "true_false",
+                        "prompt": "Dois sinais podem ter a mesma configuração de mão e mudar de sentido só pelo lugar onde são feitos.",
+                        "answer": true,
+                        "explanation": "Exemplo clássico: APRENDER e SÁBADO usam a mesma configuração de mão; um é feito na testa e o outro perto da boca."
+                    },
+                    {
+                        "type": "true_false",
+                        "prompt": "Na Libras, o rosto serve apenas para mostrar emoções, sem papel na gramática.",
+                        "answer": false,
+                        "explanation": "O rosto faz parte da gramática: as sobrancelhas, por exemplo, mostram que a frase é uma pergunta."
+                    },
+                    {
+                        "type": "single_choice",
+                        "prompt": "O deslocamento da mão durante o sinal (reto, circular, repetido) é o...",
+                        "options": [
+                            "Movimento (M)",
+                            "Orientação (O)",
+                            "Ponto de articulação (PA)",
+                            "Configuração de mão (CM)"
+                        ],
+                        "correct": 0,
+                        "explanation": "O movimento pode ser único ou repetido, rápido ou lento, e às vezes indica intensidade."
+                    },
+                    {
+                        "type": "true_false",
+                        "prompt": "Quando um parâmetro muda, o sinal pode virar outra palavra.",
+                        "answer": true,
+                        "explanation": "Por isso é importante prestar atenção nos cinco ao aprender um sinal."
+                    }
+                ]
+            },
             {
                 "title": "Alfabeto: parte 1",
                 "description": "As letras de A a M no alfabeto manual. Soletrar serve para nomes e palavras sem sinal",
@@ -115,74 +277,402 @@
                 }
             },
             {
-                "title": "Vogais",
-                "description": "A, E, I, O e U. Atenção: E e O são parecidos",
-                "prompt": "Qual vogal é essa?",
-                "signs": [
-                    "a",
-                    "e",
-                    "i",
-                    "o",
-                    "u",
-                    "e",
-                    "o"
-                ],
-                "tips": {
-                    "e": "O E e o O são parecidos: preste atenção no formato da mão.",
-                    "o": "O E e o O são parecidos: preste atenção no formato da mão."
-                },
-                "distractorPool": [
-                    "a",
-                    "e",
-                    "i",
-                    "o",
-                    "u"
+                "title": "Alfabeto na câmera",
+                "description": "Faça as letras paradas do alfabeto na frente da câmera e o app confere",
+                "type": "camera",
+                "questionsPerAttempt": 8,
+                "note": "As letras com movimento (H, J, K, X, Z e Ç) ficam de fora: a câmera ainda não confere movimento.",
+                "targets": [
+                    "A",
+                    "B",
+                    "C",
+                    "D",
+                    "E",
+                    "F",
+                    "G",
+                    "I",
+                    "L",
+                    "M",
+                    "N",
+                    "O",
+                    "P",
+                    "Q",
+                    "R",
+                    "S",
+                    "T",
+                    "U",
+                    "V",
+                    "W",
+                    "Y"
                 ]
             },
             {
-                "title": "Consoantes",
-                "description": "As outras letras do alfabeto manual, incluindo o Ç",
-                "prompt": "Qual letra é essa?",
+                "title": "Saudações e apresentações",
+                "description": "Bom dia, tudo bem, nome, prazer e outras formas de começar uma conversa",
+                "prompt": "Qual saudação é essa?",
                 "signs": [
-                    "b",
-                    "c",
-                    "d",
-                    "f",
-                    "g",
-                    "h",
-                    "j",
-                    "k",
-                    "l",
-                    "m",
-                    "n",
-                    "p",
-                    "q",
-                    "r",
-                    "s",
-                    "t",
-                    "v",
-                    "w",
-                    "x",
-                    "y",
-                    "z",
-                    "c-ce-cedilha"
+                    "oi",
+                    "ola",
+                    "bom-dia",
+                    "boa-tarde",
+                    "boa-noite",
+                    "tudo-bem",
+                    "nome",
+                    "prazer",
+                    "bem-vindo",
+                    "obrigado",
+                    "por-favor",
+                    "com-licenca",
+                    "desculpa",
+                    "tchau"
                 ],
-                "tips": {
-                    "h": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
-                    "j": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
-                    "k": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
-                    "x": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
-                    "y": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
-                    "z": "Esta letra costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
-                    "c-ce-cedilha": "O Ç costuma ter movimento: repare no gesto do avatar, não só no formato da mão.",
-                    "f": "F e T são parecidos: compare com cuidado.",
-                    "t": "F e T são parecidos: compare com cuidado.",
-                    "u": "U e V são parecidos: compare com cuidado.",
-                    "v": "U e V são parecidos: compare com cuidado."
-                }
+                "distractorPool": [
+                    "oi",
+                    "ola",
+                    "bom-dia",
+                    "boa-tarde",
+                    "boa-noite",
+                    "tudo-bem",
+                    "nome",
+                    "prazer",
+                    "bem-vindo",
+                    "obrigado",
+                    "por-favor",
+                    "com-licenca",
+                    "desculpa",
+                    "tchau"
+                ],
+                "questions": [
+                    {
+                        "type": "single_choice",
+                        "prompt": "Para se apresentar a um aluno surdo, o mais adequado é...",
+                        "options": [
+                            "Soletrar o nome no alfabeto manual e depois mostrar o seu sinal-nome, se tiver",
+                            "Falar o nome bem devagar",
+                            "Escrever o nome e ir embora",
+                            "Fazer qualquer gesto"
+                        ],
+                        "correct": 0,
+                        "explanation": "Na apresentação se soletra o nome e, se a pessoa tiver, mostra o sinal-nome."
+                    }
+                ]
             },
             {
-                "title": "Números",
+                "title": "Revisão do módulo",
+                "description": "Letras, saudações e conceitos misturados",
+                "prompt": "Qual é esse sinal?",
+                "questionsPerAttempt": 10,
+                "signs": [
+                    "a",
+                    "e",
+                    "l",
+                    "m",
+                    "s",
+                    "c-ce-cedilha",
+                    "bom-dia",
+                    "tudo-bem",
+                    "nome",
+                    "obrigado",
+                    "desculpa",
+                    "libras",
+                    "surdo"
+                ],
+                "questions": [
+                    {
+                        "type": "true_false",
+                        "prompt": "A datilologia substitui os sinais na conversa do dia a dia.",
+                        "answer": false,
+                        "explanation": "Ela é usada para nomes e palavras sem sinal; o resto da conversa é feito com sinais."
+                    },
+                    {
+                        "type": "single_choice",
+                        "prompt": "Qual parâmetro mostra que uma frase é pergunta?",
+                        "options": [
+                            "Expressões não manuais (rosto e corpo)",
+                            "Configuração de mão",
+                            "Ponto de articulação",
+                            "Orientação"
+                        ],
+                        "correct": 0,
+                        "explanation": "As sobrancelhas e o corpo marcam a pergunta."
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "slug": "rotina-sala-de-aula",
+        "title": "Rotina e Comandos de Sala de Aula",
+        "description": "Pessoas e materiais da escola, comandos do dia a dia, perguntas e calendário",
+        "icon": "🏫",
+        "level": 1,
+        "activities": [
+            {
+                "title": "Pessoas da escola",
+                "description": "Professor, aluno, diretor, colega, turma e intérprete",
+                "prompt": "Qual sinal é esse?",
+                "signs": [
+                    "professor",
+                    "aluno",
+                    "escola",
+                    "sala",
+                    "diretor",
+                    "colega",
+                    "turma",
+                    "interprete",
+                    "amigo"
+                ],
+                "distractorPool": [
+                    "professor",
+                    "aluno",
+                    "escola",
+                    "sala",
+                    "diretor",
+                    "colega",
+                    "turma",
+                    "interprete",
+                    "amigo"
+                ]
+            },
+            {
+                "title": "Materiais didáticos",
+                "description": "Caderno, livro, lápis, caneta, borracha, tesoura e mais",
+                "prompt": "Qual material é esse?",
+                "signs": [
+                    "caderno",
+                    "livro",
+                    "lapis",
+                    "caneta",
+                    "borracha",
+                    "computador",
+                    "tesoura",
+                    "cola",
+                    "mochila"
+                ],
+                "distractorPool": [
+                    "caderno",
+                    "livro",
+                    "lapis",
+                    "caneta",
+                    "borracha",
+                    "computador",
+                    "tesoura",
+                    "cola",
+                    "mochila"
+                ]
+            },
+            {
+                "title": "Comandos do dia a dia",
+                "description": "Sentar, levantar, olhar, silêncio, entender, ajudar, esperar, escrever e ler",
+                "prompt": "Qual comando é esse?",
+                "signs": [
+                    "sentar",
+                    "levantar",
+                    "olhar",
+                    "silencio",
+                    "entender",
+                    "ajudar",
+                    "esperar",
+                    "escrever",
+                    "ler"
+                ],
+                "distractorPool": [
+                    "sentar",
+                    "levantar",
+                    "olhar",
+                    "silencio",
+                    "entender",
+                    "ajudar",
+                    "esperar",
+                    "escrever",
+                    "ler"
+                ],
+                "questions": [
+                    {
+                        "type": "single_choice",
+                        "prompt": "Para pedir que a turma preste atenção, com um aluno surdo na sala, o melhor é...",
+                        "options": [
+                            "Fazer o sinal de OLHAR e esperar todos olharem para você",
+                            "Falar mais alto",
+                            "Bater na mesa",
+                            "Começar a explicar mesmo assim"
+                        ],
+                        "correct": 0,
+                        "explanation": "Para a pessoa surda, prestar atenção é olhar: espere o contato visual antes de explicar."
+                    }
+                ]
+            },
+            {
+                "title": "Perguntas frequentes",
+                "description": "Dúvida, terminou, tarefa, prova e repetir: e como perguntar com o rosto",
+                "prompt": "Qual sinal é esse?",
+                "signs": [
+                    "duvida",
+                    "terminar",
+                    "tarefa",
+                    "prova",
+                    "repetir",
+                    "entender"
+                ],
+                "distractorPool": [
+                    "duvida",
+                    "terminar",
+                    "tarefa",
+                    "prova",
+                    "repetir",
+                    "entender",
+                    "explicar",
+                    "responder"
+                ],
+                "questions": [
+                    {
+                        "type": "single_choice",
+                        "prompt": "Para perguntar \"Entendeu?\" (resposta sim ou não), o rosto deve...",
+                        "options": [
+                            "Levantar as sobrancelhas",
+                            "Franzir a testa e fechar os olhos",
+                            "Ficar neutro",
+                            "Sorrir sempre"
+                        ],
+                        "correct": 0,
+                        "explanation": "Em perguntas de sim ou não as sobrancelhas sobem; o sinal sozinho, sem o rosto, parece uma afirmação."
+                    },
+                    {
+                        "type": "single_choice",
+                        "prompt": "Em \"Qual é a dúvida?\" (pergunta com qual, onde, quem...), as sobrancelhas costumam...",
+                        "options": [
+                            "Franzir (se aproximar)",
+                            "Subir bem alto",
+                            "Ficar paradas",
+                            "Piscar várias vezes"
+                        ],
+                        "correct": 0,
+                        "explanation": "Perguntas com pronome interrogativo usam as sobrancelhas franzidas."
+                    },
+                    {
+                        "type": "true_false",
+                        "prompt": "Para saber se o aluno terminou a tarefa, basta fazer o sinal de TERMINAR com cara de pergunta.",
+                        "answer": true,
+                        "explanation": "A expressão de pergunta transforma o sinal em \"Terminou?\"."
+                    }
+                ]
+            },
+            {
+                "title": "Calendário",
+                "description": "Hoje, ontem, amanhã, dias da semana e mês",
+                "prompt": "Qual sinal é esse?",
+                "signs": [
+                    "hoje",
+                    "ontem",
+                    "amanha",
+                    "segunda-feira",
+                    "terca-feira",
+                    "quarta-feira",
+                    "quinta-feira",
+                    "sexta-feira",
+                    "sabado",
+                    "domingo",
+                    "semana",
+                    "mes"
+                ],
+                "distractorPool": [
+                    "hoje",
+                    "ontem",
+                    "amanha",
+                    "segunda-feira",
+                    "terca-feira",
+                    "quarta-feira",
+                    "quinta-feira",
+                    "sexta-feira",
+                    "sabado",
+                    "domingo",
+                    "semana",
+                    "mes"
+                ],
+                "questions": [
+                    {
+                        "type": "true_false",
+                        "prompt": "Na Libras, o tempo da frase (passado ou futuro) costuma ser marcado por sinais como ONTEM e AMANHÃ, e não por mudar o verbo.",
+                        "answer": true,
+                        "explanation": "Diferente do português, o verbo não muda de forma: o tempo aparece com sinais de tempo, geralmente no começo da frase."
+                    }
+                ]
+            },
+            {
+                "title": "Comunicação na sala",
+                "description": "Onde o aluno senta, como falar e como usar o quadro",
+                "questions": [
+                    {
+                        "type": "single_choice",
+                        "prompt": "Onde é melhor o aluno surdo sentar?",
+                        "options": [
+                            "Na frente, de onde veja bem o professor, o quadro e o intérprete",
+                            "No fundo, para não atrapalhar",
+                            "Perto da janela",
+                            "Ao lado da porta"
+                        ],
+                        "correct": 0,
+                        "explanation": "A informação chega pelos olhos: ele precisa ver o professor, o quadro e o intérprete ao mesmo tempo."
+                    },
+                    {
+                        "type": "true_false",
+                        "prompt": "Explicar a matéria virado para o quadro, de costas para a turma, não atrapalha o aluno surdo.",
+                        "answer": false,
+                        "explanation": "De costas não há expressão nem leitura labial. Escreva, vire-se e então explique."
+                    },
+                    {
+                        "type": "single_choice",
+                        "prompt": "Ao passar uma tarefa, o que mais ajuda o aluno surdo?",
+                        "options": [
+                            "Mostrar um exemplo visual e dar uma instrução de cada vez",
+                            "Ditar o enunciado em voz alta",
+                            "Explicar tudo de uma vez só",
+                            "Pedir para ele copiar do colega"
+                        ],
+                        "correct": 0,
+                        "explanation": "Recursos visuais e instruções curtas, em sequência, deixam claro o que fazer."
+                    },
+                    {
+                        "type": "true_false",
+                        "prompt": "O português escrito costuma ser a segunda língua do aluno surdo, depois da Libras.",
+                        "answer": true,
+                        "explanation": "Por isso enunciados longos e cheios de expressões podem confundir: prefira frases curtas e diretas."
+                    }
+                ]
+            },
+            {
+                "title": "Revisão do módulo",
+                "description": "Pessoas, materiais, comandos e calendário",
+                "prompt": "Qual é esse sinal?",
+                "questionsPerAttempt": 10,
+                "signs": [
+                    "professor",
+                    "aluno",
+                    "caderno",
+                    "caneta",
+                    "sentar",
+                    "olhar",
+                    "silencio",
+                    "ajudar",
+                    "duvida",
+                    "terminar",
+                    "hoje",
+                    "amanha",
+                    "segunda-feira",
+                    "semana"
+                ]
+            }
+        ]
+    },
+    {
+        "slug": "interacao-pedagogica",
+        "title": "Interação Pedagógica e Numerais",
+        "description": "Números, ordinais, disciplinas, perguntas e reforço positivo",
+        "icon": "🔢",
+        "level": 2,
+        "activities": [
+            {
+                "title": "Números de 0 a 10",
                 "description": "De zero a dez, na forma usada para contar",
                 "prompt": "Qual número é esse?",
                 "note": "Esta é a forma usada para contar. Para quantidade e para ordem (1º, 2º) a forma pode mudar.",
@@ -201,198 +691,504 @@
                 ]
             },
             {
-                "title": "Revisão",
-                "description": "Letras parecidas, letras com movimento e números misturados",
-                "prompt": "Qual é esse sinal?",
+                "title": "Ordinais e chamada",
+                "description": "Primeiro, segundo, terceiro... para filas, chamada e páginas",
+                "prompt": "Qual sinal é esse?",
                 "signs": [
-                    "e",
-                    "o",
-                    "f",
-                    "t",
-                    "u",
-                    "v",
-                    "j",
-                    "z",
-                    "a",
-                    "s",
-                    "dois",
-                    "cinco",
+                    "primeiro",
+                    "segundo",
+                    "terceiro",
+                    "quarto",
+                    "quinto",
+                    "ultimo"
+                ],
+                "distractorPool": [
+                    "primeiro",
+                    "segundo",
+                    "terceiro",
+                    "quarto",
+                    "quinto",
+                    "ultimo"
+                ],
+                "questions": [
+                    {
+                        "type": "single_choice",
+                        "prompt": "\"Abram o livro na página 5\" usa o número como...",
+                        "options": [
+                            "Cardinal (quantidade ou número da página)",
+                            "Ordinal (posição numa sequência)",
+                            "Sinal-nome",
+                            "Datilologia"
+                        ],
+                        "correct": 0,
+                        "explanation": "Página, idade e quantidade usam cardinais. Posição numa fila ou classificação usa ordinais."
+                    },
+                    {
+                        "type": "single_choice",
+                        "prompt": "\"Você é o terceiro da fila\" usa o número como...",
+                        "options": [
+                            "Ordinal (posição numa sequência)",
+                            "Cardinal (quantidade)",
+                            "Datilologia",
+                            "Expressão facial"
+                        ],
+                        "correct": 0,
+                        "explanation": "Ordinais indicam a posição: primeiro, segundo, terceiro."
+                    }
+                ]
+            },
+            {
+                "title": "Disciplinas",
+                "description": "Matemática, Português, Ciências, História, Geografia, Artes e Educação Física",
+                "prompt": "Qual disciplina é essa?",
+                "signs": [
+                    "matematica",
+                    "portugues",
+                    "ciencias",
+                    "historia",
+                    "geografia",
+                    "artes",
+                    "educacao-fisica"
+                ],
+                "distractorPool": [
+                    "matematica",
+                    "portugues",
+                    "ciencias",
+                    "historia",
+                    "geografia",
+                    "artes",
+                    "educacao-fisica"
+                ]
+            },
+            {
+                "title": "Perguntas e interrogações",
+                "description": "O quê, quem, onde, quando, como, por quê e qual",
+                "prompt": "Qual pergunta é essa?",
+                "signs": [
+                    "o-que",
+                    "quem",
+                    "onde",
+                    "quando",
+                    "como",
+                    "por-que",
+                    "qual"
+                ],
+                "distractorPool": [
+                    "o-que",
+                    "quem",
+                    "onde",
+                    "quando",
+                    "como",
+                    "por-que",
+                    "qual"
+                ],
+                "questions": [
+                    {
+                        "type": "true_false",
+                        "prompt": "Em perguntas com O QUÊ, QUEM, ONDE, QUANDO, COMO e POR QUÊ, as sobrancelhas ficam franzidas.",
+                        "answer": true,
+                        "explanation": "É a expressão não manual das perguntas com pronome interrogativo."
+                    },
+                    {
+                        "type": "true_false",
+                        "prompt": "Na Libras, o sinal de pergunta costuma aparecer no fim da frase.",
+                        "answer": true,
+                        "explanation": "É comum, por exemplo: \"VOCÊ MORAR ONDE?\"."
+                    }
+                ]
+            },
+            {
+                "title": "Reforço positivo",
+                "description": "Parabéns, muito bom, certo, errado, tentar de novo e ótimo",
+                "prompt": "Qual sinal é esse?",
+                "signs": [
+                    "parabens",
+                    "muito-bom",
+                    "certo",
+                    "errado",
+                    "tentar",
+                    "otimo"
+                ],
+                "distractorPool": [
+                    "parabens",
+                    "muito-bom",
+                    "certo",
+                    "errado",
+                    "tentar",
+                    "otimo"
+                ],
+                "questions": [
+                    {
+                        "type": "single_choice",
+                        "prompt": "O aluno errou a conta. Qual devolutiva é mais adequada?",
+                        "options": [
+                            "Mostrar onde errou e sinalizar TENTAR de novo, com expressão de incentivo",
+                            "Só fazer o sinal de ERRADO",
+                            "Corrigir sem olhar para ele",
+                            "Pedir para o colega explicar"
+                        ],
+                        "correct": 0,
+                        "explanation": "O elogio e o incentivo também passam pelo rosto: a expressão faz parte da mensagem."
+                    }
+                ]
+            },
+            {
+                "title": "Revisão do módulo",
+                "description": "Números, disciplinas, perguntas e incentivo",
+                "prompt": "Qual é esse sinal?",
+                "questionsPerAttempt": 10,
+                "signs": [
+                    "tres",
                     "sete",
-                    "dez"
-                ],
-                "tips": {
-                    "j": "Esta letra costuma ter movimento: repare no gesto do avatar.",
-                    "z": "Esta letra costuma ter movimento: repare no gesto do avatar."
-                }
+                    "primeiro",
+                    "ultimo",
+                    "matematica",
+                    "ciencias",
+                    "onde",
+                    "quando",
+                    "por-que",
+                    "parabens",
+                    "tentar",
+                    "otimo"
+                ]
             }
         ]
     },
     {
-        "slug": "algumas-palavrinhas",
-        "title": "Algumas palavrinhas",
-        "description": "Cores, animais e cumprimentos do dia a dia",
-        "icon": "💬",
-        "level": 1,
+        "slug": "conflitos-e-inclusao",
+        "title": "Gestão de Conflitos e Inclusão Social",
+        "description": "Emoções, socialização e mediação de conflitos entre surdos e ouvintes",
+        "icon": "🤝",
+        "level": 2,
         "activities": [
             {
-                "title": "Cores",
-                "description": "As cores mais usadas, com cinza e marrom",
-                "prompt": "Qual cor é essa?",
-                "note": "Os sinais de cores mudam de região para região: este é um deles.",
+                "title": "Emoções e sentimentos",
+                "description": "Feliz, triste, cansado, com raiva, nervoso, calmo e com medo",
+                "prompt": "Qual sentimento é esse?",
                 "signs": [
-                    "azul",
-                    "vermelho",
-                    "amarelo",
-                    "verde",
-                    "branco",
-                    "preto",
-                    "rosa",
-                    "laranja",
-                    "roxo",
-                    "cinza",
-                    "marrom"
+                    "feliz",
+                    "triste",
+                    "cansado",
+                    "raiva",
+                    "nervoso",
+                    "calmo",
+                    "medo"
+                ],
+                "distractorPool": [
+                    "feliz",
+                    "triste",
+                    "cansado",
+                    "raiva",
+                    "nervoso",
+                    "calmo",
+                    "medo"
+                ],
+                "questions": [
+                    {
+                        "type": "true_false",
+                        "prompt": "Ao sinalizar FELIZ ou TRISTE, o rosto precisa acompanhar o sentimento.",
+                        "answer": true,
+                        "explanation": "Sinal de TRISTE com rosto sorridente confunde: a expressão completa o sentido."
+                    }
                 ]
             },
             {
-                "title": "Animais",
-                "description": "Bichos de casa, da fazenda e da natureza",
-                "prompt": "Qual animal é esse?",
+                "title": "Socialização",
+                "description": "Brincar, amigo, ajudar, compartilhar, respeito, juntos e grupo",
+                "prompt": "Qual sinal é esse?",
                 "signs": [
-                    "cachorro",
-                    "gato",
-                    "passaro",
-                    "peixe",
-                    "coelho",
-                    "cavalo",
-                    "vaca",
-                    "porco",
-                    "galinha",
-                    "pato",
-                    "macaco",
-                    "elefante",
-                    "girafa",
-                    "leao"
+                    "brincar",
+                    "amigo",
+                    "ajudar",
+                    "compartilhar",
+                    "respeito",
+                    "juntos",
+                    "grupo"
+                ],
+                "distractorPool": [
+                    "brincar",
+                    "amigo",
+                    "ajudar",
+                    "compartilhar",
+                    "respeito",
+                    "juntos",
+                    "grupo"
+                ],
+                "questions": [
+                    {
+                        "type": "single_choice",
+                        "prompt": "O que mais ajuda o aluno surdo a se integrar com a turma ouvinte?",
+                        "options": [
+                            "Ensinar sinais básicos para toda a turma",
+                            "Deixar ele sempre com o intérprete",
+                            "Fazer atividades só individuais",
+                            "Separar uma mesa só para ele"
+                        ],
+                        "correct": 0,
+                        "explanation": "Quando os colegas aprendem sinais simples, a convivência acontece também no recreio e nos trabalhos em grupo."
+                    }
                 ]
             },
             {
-                "title": "Cumprimentos",
-                "description": "Oi, tchau, bom dia e boas maneiras. Para chamar a atenção, acene no campo de visão",
-                "prompt": "Qual cumprimento é esse?",
+                "title": "Mediação de conflitos",
+                "description": "Brigar, conversar, regra, desculpa e respeito: e como mediar",
+                "prompt": "Qual sinal é esse?",
                 "signs": [
-                    "oi",
-                    "ola",
-                    "tchau",
-                    "bom-dia",
-                    "boa-tarde",
-                    "boa-noite",
-                    "tudo-bem",
-                    "obrigado",
-                    "por-favor",
+                    "brigar",
+                    "conversar",
+                    "regra",
                     "desculpa",
-                    "com-licenca",
-                    "prazer",
-                    "bem-vindo"
+                    "respeito",
+                    "calmo"
                 ],
-                "tips": {
-                    "oi": "Para chamar a atenção de uma pessoa surda, acene no campo de visão dela ou toque de leve no ombro.",
-                    "ola": "Comece a sinalizar só depois de ter o contato visual da pessoa.",
-                    "boa-tarde": "Boa tarde é feito com dois sinais: BOA + TARDE.",
-                    "tudo-bem": "Na pergunta, a expressão do rosto faz parte do sinal.",
-                    "prazer": "Ao se apresentar, use o seu sinal de nome: ele é dado pela comunidade surda, não inventado por você."
-                }
+                "distractorPool": [
+                    "brigar",
+                    "conversar",
+                    "regra",
+                    "desculpa",
+                    "respeito",
+                    "calmo",
+                    "ajudar",
+                    "amigo"
+                ],
+                "questions": [
+                    {
+                        "type": "single_choice",
+                        "prompt": "Dois alunos (um surdo e um ouvinte) brigaram. Qual o primeiro passo?",
+                        "options": [
+                            "Separar com calma e ouvir cada um, garantindo que o surdo também possa se expressar",
+                            "Ouvir só o aluno ouvinte, que fala mais rápido",
+                            "Dar a mesma bronca nos dois sem perguntar",
+                            "Deixar que se resolvam sozinhos"
+                        ],
+                        "correct": 0,
+                        "explanation": "Os dois lados precisam ser ouvidos: o aluno surdo em Libras (com intérprete, se houver)."
+                    },
+                    {
+                        "type": "true_false",
+                        "prompt": "Muitos conflitos entre surdos e ouvintes começam por falha de comunicação, e não por maldade.",
+                        "answer": true,
+                        "explanation": "Mal-entendidos são comuns: esclarecer o que cada um quis dizer resolve muita coisa."
+                    },
+                    {
+                        "type": "single_choice",
+                        "prompt": "Uma boa forma de prevenir conflitos é...",
+                        "options": [
+                            "Combinar regras de convivência visuais, com sinais e desenhos, junto com a turma",
+                            "Só lembrar das regras quando alguém briga",
+                            "Ter regras apenas faladas",
+                            "Deixar as regras com a coordenação"
+                        ],
+                        "correct": 0,
+                        "explanation": "Regras combinadas e visíveis valem para todos, inclusive para quem não ouve."
+                    }
+                ]
             },
             {
-                "title": "Revisão",
-                "description": "Cores, animais e cumprimentos misturados",
+                "title": "Revisão do módulo",
+                "description": "Emoções, socialização e mediação",
                 "prompt": "Qual é esse sinal?",
+                "questionsPerAttempt": 10,
                 "signs": [
-                    "oi",
-                    "azul",
-                    "gato",
-                    "bom-dia",
-                    "vermelho",
-                    "cavalo",
-                    "obrigado",
-                    "verde",
-                    "pato",
-                    "tchau",
-                    "amarelo",
-                    "elefante"
+                    "feliz",
+                    "triste",
+                    "nervoso",
+                    "calmo",
+                    "brincar",
+                    "amigo",
+                    "compartilhar",
+                    "respeito",
+                    "brigar",
+                    "conversar",
+                    "regra",
+                    "desculpa"
                 ]
             }
         ]
     },
     {
-        "slug": "treino-com-a-camera",
-        "title": "Treino com a câmera",
-        "description": "Faça os sinais na frente da câmera e o app confere",
-        "icon": "📷",
-        "level": 1,
+        "slug": "pratica-contextualizada",
+        "title": "Adaptação de Materiais e Prática Contextualizada",
+        "description": "A gramática da Libras na prática: instruções, histórias e enunciados",
+        "icon": "📚",
+        "level": 3,
         "activities": [
             {
-                "title": "Vogais na câmera",
-                "description": "Faça A, E, I, O e U com a mão parada",
-                "type": "camera",
-                "targets": [
-                    "A",
-                    "E",
-                    "I",
-                    "O",
-                    "U"
+                "title": "Estrutura da frase em Libras",
+                "description": "Ordem dos sinais, uso do espaço e verbos que mudam de direção",
+                "questions": [
+                    {
+                        "type": "true_false",
+                        "prompt": "A Libras segue exatamente a mesma ordem de palavras do português.",
+                        "answer": false,
+                        "explanation": "A Libras tem estrutura própria. É comum apresentar primeiro o assunto (tópico) e depois o que se diz dele."
+                    },
+                    {
+                        "type": "true_false",
+                        "prompt": "Artigos e preposições do português (o, a, de, para) geralmente não aparecem como sinais separados.",
+                        "answer": true,
+                        "explanation": "\"Eu vou para a escola\" fica algo como \"EU IR ESCOLA\"."
+                    },
+                    {
+                        "type": "single_choice",
+                        "prompt": "Ao contar uma história, quem sinaliza pode colocar cada personagem num ponto do espaço e depois apontar para ele. Isso é...",
+                        "options": [
+                            "O uso do espaço para referência",
+                            "Datilologia",
+                            "Um erro de sinalização",
+                            "Mímica"
+                        ],
+                        "correct": 0,
+                        "explanation": "Os pontos no espaço funcionam como \"ele\" e \"ela\": depois basta apontar ou dirigir o sinal para o lugar."
+                    },
+                    {
+                        "type": "single_choice",
+                        "prompt": "Em sinais como AJUDAR, a direção do movimento mostra...",
+                        "options": [
+                            "Quem ajuda quem",
+                            "Que a frase está no passado",
+                            "Que é uma pergunta",
+                            "Que é um nome próprio"
+                        ],
+                        "correct": 0,
+                        "explanation": "São verbos direcionais: o movimento sai de quem faz e vai até quem recebe a ação."
+                    },
+                    {
+                        "type": "true_false",
+                        "prompt": "Classificadores são configurações de mão que representam a forma ou o movimento de pessoas, animais e objetos.",
+                        "answer": true,
+                        "explanation": "Com eles dá para mostrar um carro andando ou uma pessoa subindo a escada sem soletrar nada."
+                    }
                 ]
             },
             {
-                "title": "Letras na câmera: A a I",
-                "description": "As primeiras letras do alfabeto manual",
-                "type": "camera",
-                "targets": [
-                    "A",
-                    "B",
-                    "C",
-                    "D",
-                    "E",
-                    "F",
-                    "G",
-                    "I"
+                "title": "Instruções passo a passo",
+                "description": "Abrir o livro, ler, responder, desenhar, explicar, em dupla ou em grupo",
+                "prompt": "Qual sinal é esse?",
+                "signs": [
+                    "abrir",
+                    "livro",
+                    "pagina",
+                    "ler",
+                    "responder",
+                    "escrever",
+                    "desenhar",
+                    "explicar",
+                    "dupla",
+                    "grupo"
+                ],
+                "distractorPool": [
+                    "abrir",
+                    "livro",
+                    "pagina",
+                    "ler",
+                    "responder",
+                    "escrever",
+                    "desenhar",
+                    "explicar",
+                    "dupla",
+                    "grupo"
+                ],
+                "questions": [
+                    {
+                        "type": "single_choice",
+                        "prompt": "Qual a melhor forma de dar uma instrução com várias etapas?",
+                        "options": [
+                            "Uma etapa de cada vez, mostrando e conferindo antes da próxima",
+                            "Todas as etapas de uma vez, bem rápido",
+                            "Só escrever as etapas no quadro",
+                            "Pedir para o intérprete decidir"
+                        ],
+                        "correct": 0,
+                        "explanation": "Etapas curtas e mostradas na ordem evitam que o aluno se perca."
+                    }
                 ]
             },
             {
-                "title": "Letras na câmera: L a Y",
-                "description": "Sorteio de 8 letras de L a Y a cada tentativa",
-                "type": "camera",
-                "targets": [
-                    "L",
-                    "M",
-                    "N",
-                    "O",
-                    "P",
-                    "Q",
-                    "R",
-                    "S",
-                    "T",
-                    "U",
-                    "V",
-                    "W",
-                    "Y"
-                ],
-                "questionsPerAttempt": 8
+                "title": "Histórias e enunciados",
+                "description": "Como contar histórias curtas e explicar enunciados de prova",
+                "questions": [
+                    {
+                        "type": "single_choice",
+                        "prompt": "Para explicar o enunciado de uma prova ao aluno surdo, é melhor...",
+                        "options": [
+                            "Explicar a ideia da pergunta em Libras, sem dar a resposta",
+                            "Ler o enunciado em voz alta, devagar",
+                            "Traduzir palavra por palavra",
+                            "Responder junto com ele"
+                        ],
+                        "correct": 0,
+                        "explanation": "O objetivo é que ele entenda o que se pede, como os colegas entendem lendo o português."
+                    },
+                    {
+                        "type": "true_false",
+                        "prompt": "Ao contar uma história em Libras, expressões faciais e o corpo ajudam a mostrar os personagens e as emoções.",
+                        "answer": true,
+                        "explanation": "Quem conta \"vira\" o personagem: muda o olhar, o rosto e a postura."
+                    },
+                    {
+                        "type": "single_choice",
+                        "prompt": "Que recurso ajuda mais numa história para a turma com aluno surdo?",
+                        "options": [
+                            "Imagens, objetos e sinais, com o professor de frente para a turma",
+                            "Ler o livro sem mostrar as figuras",
+                            "Áudio de história gravada",
+                            "Apenas legenda pequena no projetor"
+                        ],
+                        "correct": 0,
+                        "explanation": "Recursos visuais funcionam para toda a turma, surdos e ouvintes."
+                    },
+                    {
+                        "type": "true_false",
+                        "prompt": "Adaptar um material para o aluno surdo significa sempre deixá-lo mais fácil.",
+                        "answer": false,
+                        "explanation": "Adaptar é tornar acessível (visual, em Libras, com frases claras), sem tirar o conteúdo nem baixar a exigência."
+                    }
+                ]
             },
             {
-                "title": "Palavras na câmera",
-                "description": "Sinais com movimento: comece com as mãos abaixadas",
-                "type": "camera",
-                "targets": [
-                    "Amarelo",
-                    "Cinco",
-                    "Banheiro",
-                    "Sapo",
-                    "Maçã",
-                    "Medo",
-                    "Filho",
-                    "Aluno"
+                "title": "Revisão final",
+                "description": "Um pouco de tudo da trilha",
+                "prompt": "Qual é esse sinal?",
+                "questionsPerAttempt": 12,
+                "signs": [
+                    "bom-dia",
+                    "nome",
+                    "professor",
+                    "caderno",
+                    "olhar",
+                    "entender",
+                    "terminar",
+                    "hoje",
+                    "primeiro",
+                    "matematica",
+                    "onde",
+                    "parabens",
+                    "feliz",
+                    "respeito",
+                    "explicar",
+                    "dupla"
                 ],
-                "questionsPerAttempt": 5,
-                "note": "Comece com as mãos abaixadas, faça o sinal inteiro e abaixe as mãos no fim."
+                "questions": [
+                    {
+                        "type": "true_false",
+                        "prompt": "A Libras é uma língua com gramática própria, reconhecida por lei no Brasil.",
+                        "answer": true,
+                        "explanation": "Lei 10.436/2002."
+                    },
+                    {
+                        "type": "single_choice",
+                        "prompt": "Para perguntar \"Entendeu?\", além do sinal ENTENDER é preciso...",
+                        "options": [
+                            "Levantar as sobrancelhas (expressão de pergunta sim/não)",
+                            "Soletrar a palavra",
+                            "Repetir o sinal três vezes",
+                            "Falar em voz alta"
+                        ],
+                        "correct": 0,
+                        "explanation": "Sem a expressão de pergunta, o sinal vira afirmação."
+                    }
+                ]
             }
         ]
     }

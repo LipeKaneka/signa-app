@@ -190,13 +190,16 @@ test("versão do conteúdo só cresce; rodar o seed de novo não desfaz ediçõe
 
 test("unidade com sorteio: cada tentativa traz só as perguntas sorteadas e a nota vale sobre elas", async () => {
   const userId = await registerUser();
-  await playFirstActivityPerfectly(userId);
-  // A atividade com sorteio é a terceira: marca a segunda (Alfabeto: parte 2) como concluída para liberar.
+  // A primeira unidade com sorteio ("Letras aleatórias"): marca as anteriores como concluídas para liberar.
   const { UserModel } = await import("../src/models/model-user.js");
   const opened = await request(app).get(`/internal/v1/users/${userId}/trail`).set(withKey());
-  await UserModel.updateOne({ _id: userId }, { $push: { completedActivities: { activity: opened.body.modules[0].activities[1].id, bestScore: 100 } }, $inc: { completedActivitiesCount: 1 } });
+  const units = opened.body.modules[0].activities;
+  const drawnIndex = (await Promise.all(units.map((unit) => models.ActivityModel.findById(unit.id).lean()))).findIndex((unit) => unit.questionsPerAttempt);
+  await UserModel.updateOne({ _id: userId }, {
+    $set: { completedActivities: units.slice(0, drawnIndex).map((unit) => ({ activity: unit.id, bestScore: 100 })), completedActivitiesCount: drawnIndex },
+  });
   const trail = await request(app).get(`/internal/v1/users/${userId}/trail`).set(withKey());
-  const drawn = trail.body.modules[0].activities[2];
+  const drawn = trail.body.modules[0].activities[drawnIndex];
   const activity = await models.ActivityModel.findById(drawn.id).lean();
   assert.ok(activity.questionsPerAttempt < activity.questions.length);
   assert.equal(drawn.questionCount, activity.questionsPerAttempt);

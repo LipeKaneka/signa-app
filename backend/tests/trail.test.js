@@ -52,7 +52,17 @@ test("trilha nova: só a primeira atividade do primeiro módulo está liberada",
 test("perguntas chegam sem gabarito e com a glosa do avatar", async () => {
   const user = await registerTestUser(app);
   const [firstModule] = await readTrail(user.token);
-  const started = await request(app).post(`/api/v1/activities/${firstModule.activities[0].id}/attempts`).set(authorized(user.token));
+  // A primeira unidade é de teoria (texto): sem gabarito e sem avatar.
+  const theory = await request(app).post(`/api/v1/activities/${firstModule.activities[0].id}/attempts`).set(authorized(user.token));
+  assert.ok(theory.body.activity.questions.every((q) => q.correctOptionId === undefined && q.avatar === null && q.explanation === undefined));
+
+  // Unidade de sinais ("Alfabeto: parte 1"): libera marcando as anteriores e confere a glosa do avatar.
+  const { UserModel } = await import("../../server/src/models/model-user.js");
+  const { readUserIdFromToken } = await import("../src/utils/util-tokens.js");
+  const signUnit = firstModule.activities.find((activity) => activity.title.startsWith("Alfabeto: parte 1"));
+  const before = firstModule.activities.slice(0, firstModule.activities.indexOf(signUnit));
+  await UserModel.updateOne({ _id: readUserIdFromToken(user.token) }, { $set: { completedActivities: before.map((unit) => ({ activity: unit.id, bestScore: 100 })) } });
+  const started = await request(app).post(`/api/v1/activities/${signUnit.id}/attempts`).set(authorized(user.token));
 
   const [question] = started.body.activity.questions;
   assert.equal(question.correctOptionId, undefined);

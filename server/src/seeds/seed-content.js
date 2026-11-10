@@ -14,6 +14,7 @@ import { clearSettingsCache } from "../services/service-settings.js";
 import { clearEventsCache } from "../services/service-event.js";
 import { slugify } from "../utils/util-text.js";
 import { splitAlphabetActivity } from "./migrate-split-alphabet.js";
+import { moveToTeacherTrail, linkTeacherTrail } from "./migrate-teacher-trail.js";
 import { CAMERA_CORRECT_OPTION, CAMERA_OPTIONS, findCameraTarget } from "../config/camera-targets.js";
 import { VLIBRAS_SOURCE } from "../config/sign-source.js";
 
@@ -149,11 +150,51 @@ function buildCameraQuestion(label, signsBySlug, questionIndex, { prompt, note }
 }
 
 /**
+ * Pergunta de teoria (sem avatar) escrita direto em trail.json:
+ * - {"type": "true_false", "prompt": "...", "answer": true|false, "explanation": "..."}
+ * - {"type": "single_choice", "prompt": "...", "options": ["certa", "errada", ...], "correct": 0, "explanation": "..."}
+ *   (as alternativas são embaralhadas com a semente, para a certa não ficar sempre no mesmo lugar).
+ * @param {object} data
+ * @param {() => number} random
+ * @param {number} questionIndex
+ * @returns {object} pergunta no formato do ActivityModel.
+ */
+function buildTextQuestion(data, random, questionIndex) {
+  const key = `q${questionIndex + 1}`;
+  if (data.type === "true_false") {
+    return {
+      key,
+      type: "true_false",
+      prompt: data.prompt,
+      sign: null,
+      options: [{ id: "a", text: "Verdadeiro" }, { id: "b", text: "Falso" }],
+      correctOptionId: data.answer ? "a" : "b",
+      explanation: data.explanation ?? "",
+    };
+  }
+  if (data.type !== "single_choice" || !Array.isArray(data.options) || data.options.length < 2 || data.options.length > OPTION_IDS.length) {
+    throw new Error(`Pergunta de teoria inválida: ${data.prompt}`);
+  }
+  const order = shuffle(data.options.map((text, index) => ({ text, index })), random);
+  const options = order.map((option, index) => ({ id: OPTION_IDS[index], text: option.text }));
+  return {
+    key,
+    type: "single_choice",
+    prompt: data.prompt,
+    sign: null,
+    options,
+    correctOptionId: options[order.findIndex((option) => option.index === data.correct)].id,
+    explanation: data.explanation ?? "",
+  };
+}
+
+/**
  * Cria a atividade do módulo (uma pergunta por sinal listado) se ela ainda não existir.
  * Atividade de câmera em trail.json: {"type": "camera", "targets": ["A", "E", ...]} em vez de "signs".
  * Campos opcionais da atividade em trail.json: prompt (enunciado), note (vai em toda explicação),
  * tips ({slug: dica} para sinais específicos), distractorPool (slugs de onde saem as alternativas erradas) e
  * questionsPerAttempt (sorteia essa quantidade de perguntas a cada tentativa, em ordem aleatória).
+ * Teoria: "questions" (veja buildTextQuestion), sozinhas ou depois das perguntas de sinais da mesma atividade.
  */
 async function upsertActivity(module, activityData, order, signsBySlug) {
   const allSigns = [...signsBySlug.values()];
@@ -164,9 +205,9 @@ async function upsertActivity(module, activityData, order, signsBySlug) {
   };
   const activityPool = activityData.distractorPool ? activityData.distractorPool.map(findSign) : null;
   const random = createSeededRandom(order * 7919 + module.order * 104729);
-  const questions = activityData.type === "camera"
+  const signQuestions = activityData.type === "camera"
     ? activityData.targets.map((label, index) => buildCameraQuestion(label, signsBySlug, index, { prompt: activityData.prompt, note: activityData.note }))
-    : activityData.signs.map((slug, index) =>
+    : (activityData.signs ?? []).map((slug, index) =>
         buildSignChoiceQuestion(findSign(slug), allSigns, random, index, {
           prompt: activityData.prompt,
           tip: activityData.tips?.[slug],
@@ -174,6 +215,9 @@ async function upsertActivity(module, activityData, order, signsBySlug) {
           activityPool,
         }),
       );
+  const textQuestions = (activityData.questions ?? []).map((question, index) => buildTextQuestion(question, random, signQuestions.length + index));
+  const questions = [...signQuestions, ...textQuestions];
+  if (questions.length === 0) throw new Error(`Atividade sem perguntas: ${activityData.title}`);
 
   await ActivityModel.findOneAndUpdate(
     { module: module._id, order },
@@ -195,8 +239,7 @@ async function upsertActivity(module, activityData, order, signsBySlug) {
  * Cria módulos e atividades de data/trail.json que ainda não existem; cada módulo novo exige o anterior.
  * @returns {Promise<number>} quantidade de módulos.
  */
-async function upsertTrail(signsBySlug) {
-  const modules = await readSeedFile("trail.json");
+async function upsertTrail(signsBySlug, modules) {
   let previousModule = null;
 
   for (const [moduleIndex, moduleData] of modules.entries()) {
@@ -263,8 +306,12 @@ async function insertMissingLevels() {
  */
 export async function seedContent() {
   const signsBySlug = await upsertSigns();
-  await splitAlphabetActivity(); // antes do upsertTrail: as atividades são identificadas pela ordem no módulo
-  const moduleCount = await upsertTrail(signsBySlug);
+  const trail = await readSeedFile("trail.json");
+  // Migrações de bancos com a trilha antiga, antes do upsertTrail (as atividades são identificadas pela ordem no módulo).
+  await splitAlphabetActivity();
+  await moveToTeacherTrail(trail);
+  const moduleCount = await upsertTrail(signsBySlug, trail);
+  await linkTeacherTrail(trail);
   const achievements = await insertMissingAchievements();
   const levels = await insertMissingLevels();
   clearAchievementsCache();

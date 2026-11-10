@@ -44,15 +44,17 @@ async function registerUser() {
   return response.body.id;
 }
 
-test("seed cria as atividades de câmera no módulo Treino com a câmera", async () => {
-  const module = await models.ModuleModel.findOne({ slug: "treino-com-a-camera" }).lean();
-  const activities = await models.ActivityModel.find({ module: module._id }).lean();
-  assert.equal(activities.length, 4);
+test("seed cria a unidade de câmera do alfabeto no módulo 1 (só letras paradas)", async () => {
+  const module = await models.ModuleModel.findOne({ slug: "fundamentos" }).lean();
+  const activities = await models.ActivityModel.find({ module: module._id, title: "Alfabeto na câmera" }).lean();
+  assert.equal(activities.length, 1);
+  assert.equal(activities[0].questionsPerAttempt, 8);
   for (const activity of activities) {
     for (const question of activity.questions) {
       assert.equal(question.type, "camera_sign");
       assert.ok(question.target);
       assert.equal(question.correctOptionId, "done");
+      assert.equal(question.target.length, 1); // letras (a câmera ainda não confere palavras com movimento aqui)
     }
   }
 });

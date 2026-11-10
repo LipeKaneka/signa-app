@@ -118,7 +118,14 @@ export function ActivityResult({ result, levelUp, reviewItems, earnedDuringActiv
 
       {/* Avisos de conquista/nível só depois da abertura, para não brigar com a animação. */}
       <AchievementToast items={introDone ? toasts : []} />
-      {openItem && <SignDialog word={openItem.answer} avatar={openItem.avatar} onClose={() => setOpenItem(null)} />}
+      {openItem && (
+        <SignDialog
+          word={openItem.prompt ? `Resposta: ${openItem.answer}` : openItem.answer}
+          avatar={openItem.avatar}
+          description={openItem.prompt ? `${openItem.prompt} ${openItem.explanation ?? ""}`.trim() : undefined}
+          onClose={() => setOpenItem(null)}
+        />
+      )}
     </main>
     </div>
   );
