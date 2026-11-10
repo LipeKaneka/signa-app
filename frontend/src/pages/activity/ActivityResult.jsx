@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "../../components/Icon.jsx";
 import { SignDialog } from "../../components/SignDialog.jsx";
+import { prefersReducedMotion } from "../../utils/motion.js";
 import { AchievementToast } from "../../components/AchievementToast.jsx";
 import { formatMultiplier } from "../../components/EventBanner.jsx";
 import { useAppConfig } from "../../context/AppConfigContext.jsx";
@@ -32,8 +33,26 @@ function WrongMark() {
  * Conquistas novas e nível novo aparecem como aviso no topo (AchievementToast) e ficam listados na tela.
  * earnedDuringActivity = conquistas já avisadas durante a atividade (só listadas aqui, sem aviso de novo).
  */
+/** Duração da abertura (círculo + título + subtítulo + resto), como na animação do protótipo. */
+const INTRO_MS = 3000;
+
 export function ActivityResult({ result, levelUp, reviewItems, earnedDuringActivity = [], onContinue, onBack }) {
   const [openItem, setOpenItem] = useState(null);
+  // Abertura animada: um toque na tela pula direto para o fim (e não aciona nada escondido durante ela).
+  const [introDone, setIntroDone] = useState(() => prefersReducedMotion());
+  useEffect(() => {
+    if (introDone) return undefined;
+    const timer = setTimeout(() => setIntroDone(true), INTRO_MS);
+    return () => clearTimeout(timer);
+  }, [introDone]);
+  const skipIntro = (event) => {
+    if (introDone) return;
+    event.stopPropagation();
+    event.preventDefault();
+    setIntroDone(true);
+  };
+  const seen = reviewItems.length || result.totalQuestions;
+  const allCorrect = result.correctAnswers >= result.totalQuestions && result.totalQuestions > 0;
   const { minScoreToPass } = useAppConfig();
   const multiplier = result.xpMultiplier ?? 1;
   const toasts = [
@@ -42,14 +61,20 @@ export function ActivityResult({ result, levelUp, reviewItems, earnedDuringActiv
   ];
 
   return (
-    <main className="screen activity-result">
+    <div className="result-stage">
+    <main className={`screen activity-result${introDone ? " activity-result--ready" : ""}`} onClickCapture={skipIntro}>
       <button type="button" className="icon-button activity-result__back" onClick={onBack} aria-label="Voltar para a trilha">
         <Icon name="back" size={22} />
       </button>
       {/* Conta também as perguntas de câmera puladas (elas foram vistas, só não entram na nota). */}
-      <h1 className="activity-result__title">Você viu {reviewItems.length || result.totalQuestions} sinais nessa atividade</h1>
+      <h1 className="activity-result__title">Você viu nessa atividade {seen} {seen === 1 ? "sinal diferente" : "sinais diferentes"}</h1>
       <p className="activity-result__subtitle">
-        Você acertou {result.correctAnswers}. Toque em um sinal para rever.
+        {allCorrect
+          ? "Você acertou todos!"
+          : result.correctAnswers === 0
+            ? "Você não acertou nenhum."
+            : `Você acertou apenas ${result.correctAnswers}.`}{" "}
+        Toque abaixo para rever.
       </p>
 
       <ul className="review-grid">
@@ -91,8 +116,10 @@ export function ActivityResult({ result, levelUp, reviewItems, earnedDuringActiv
         Continuar
       </button>
 
-      <AchievementToast items={toasts} />
+      {/* Avisos de conquista/nível só depois da abertura, para não brigar com a animação. */}
+      <AchievementToast items={introDone ? toasts : []} />
       {openItem && <SignDialog word={openItem.answer} avatar={openItem.avatar} onClose={() => setOpenItem(null)} />}
     </main>
+    </div>
   );
 }

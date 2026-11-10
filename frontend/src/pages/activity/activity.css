@@ -531,3 +531,63 @@
 @media (prefers-reduced-motion: reduce) {
   .camera-question__done { animation: none; }
 }
+
+/*
+ * Abertura do resultado (animação do protótipo "aniomação pro app"): um círculo cresce do centro até cobrir a tela,
+ * o título aparece crescendo com um leve "pulo", depois o subtítulo, e por fim o resto da tela.
+ * Um toque pula para o fim (.activity-result--ready). Sem animação para quem pede menos movimento.
+ */
+.activity-result {
+  background: var(--background);
+  animation: result-reveal 1.3s cubic-bezier(0.45, 0, 0.2, 1) both;
+}
+
+/* Fundo escuro atrás do círculo (o "preto" do vídeo); fica fora do recorte do círculo. */
+.result-stage {
+  min-height: 100dvh;
+  background: #07031a;
+}
+
+.activity-result__title {
+  animation: result-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 1.4s both;
+  transform-origin: left center;
+}
+
+.activity-result__subtitle {
+  animation: result-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 2.2s both;
+  transform-origin: left center;
+}
+
+.activity-result > :not(.activity-result__title):not(.activity-result__subtitle):not(.achievement-toast-area):not(.sign-dialog) {
+  animation: result-rise 0.45s ease-out 2.6s both;
+}
+
+@keyframes result-reveal {
+  from { clip-path: circle(0.6% at 50% 50%); }
+  to { clip-path: circle(150% at 50% 50%); }
+}
+
+@keyframes result-pop {
+  0% { opacity: 0; transform: scale(0.55); }
+  60% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes result-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Pulou (toque) ou terminou: tudo no estado final. */
+.activity-result--ready,
+.activity-result--ready > * {
+  animation: none !important;
+  clip-path: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activity-result,
+  .activity-result > * {
+    animation: none !important;
+  }
+}
