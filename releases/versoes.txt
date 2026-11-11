@@ -1,0 +1,18 @@
+1.0.0|97cc94c|02/11/2026|v1.0
+1.0.1|6d3b8ae|03/11/2026|Interface: cabeçalhos fixos, assistente reorganizado e margens
+1.0.2|6c8b4d8|03/11/2026|Servidor dormindo no Render e histórico do assistente fora de ordem
+1.0.3|f6708bc|04/11/2026|Atividades com câmera: pergunta "Faça o sinal" (camera_sign)
+1.0.4|0977668|05/11/2026|Eventos com aparência personalizável, sem teto de XP; ranking sem duplicar
+1.0.5|056bf4a|05/11/2026|Banimento com motivo e prazo; faixa de evento atualiza sem reabrir o app
+1.0.6|5d634d9|05/11/2026|Login com Google e recuperação de senha pela API do Mailtrap
+1.0.7|2cb2144|05/11/2026|Números grandes no app com K, M, B, T, Q (1,5K, 2,3M...)
+1.0.8|a2ea888|05/11/2026|Trilha: "Módulo completado!" no fim do módulo e caminho termina na última unidade
+1.0.9|923c260|06/11/2026|App Android: nome Signa, ícone com a logo colorida e abertura com a logo
+1.0.10|b3caffc|09/11/2026|App: chama e barras de XP com a arte nova (signa elementos)
+1.0.11|b353a48|09/11/2026|Painel: números grandes com K, M, B, T, Qd, Qn... (app com os mesmos sufixos)
+1.0.12|cd31815|09/11/2026|Conquistas na hora durante a atividade, conquistas secretas e botão voltar do Android
+1.0.13|5096908|10/11/2026|App: animação de abertura no resultado de cada atividade
+1.0.14|196d11e|10/11/2026|Trilha para professores do Fundamental 1: 5 módulos, teoria e 81 sinais novos
+1.0.15|76b6d00|10/11/2026|App: abre mais rápido e faz menos requisições
+1.0.16|5238f7c|11/11/2026|App: dados guardados no aparelho para abrir telas sem esperar o servidor
+1.1.0|c40dac9|11/11/2026|Aviso de APK novo: tela de atualização configurada pelo painel (versão 1.1)

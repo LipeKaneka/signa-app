@@ -9,7 +9,8 @@
     "build": "vite build",
     "preview": "vite preview --host",
     "build:android": "vite build --mode android && cap sync android",
-    "apk:debug": "npm run build:android && cd android && gradlew assembleDebug"
+    "apk:debug": "npm run build:android && cd android && gradlew assembleDebug",
+    "release": "node scripts/release.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",
