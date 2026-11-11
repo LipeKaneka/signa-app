@@ -6,6 +6,15 @@ import { useAppVersion } from "./useAppVersion.js";
 import "./update-gate.css";
 
 /**
+ * Link do Google Drive "de compartilhar" (abre uma página de visualização) → link que baixa o arquivo direto.
+ * Outros links passam sem mudança.
+ */
+export function directDownloadUrl(url) {
+  const driveFile = /^https:\/\/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:[^#]*&)?id=)([\w-]+)/.exec(url);
+  return driveFile ? `https://drive.google.com/uc?export=download&id=${driveFile[1]}` : url;
+}
+
+/**
  * Tela de atualização do APK. Os dados vêm do painel (Configurações → Atualização do app, em /app-config):
  * - versão nova maior que a instalada: mostra a tela, com "Depois" (fecha só até o app ser fechado: toda vez
  *   que o app abrir desatualizado, a tela aparece de novo);
@@ -52,7 +61,7 @@ export function UpdateGate() {
   const notes = text("app.update.notes").trim();
   const later = () => setDismissed(latest);
   // Link externo: o Capacitor abre no navegador do celular (o app continua aberto por trás).
-  const update = () => window.location.assign(url);
+  const update = () => window.location.assign(directDownloadUrl(url));
 
   return (
     <div className="update-gate" role="alertdialog" aria-modal="true" aria-labelledby="update-gate-title" aria-describedby="update-gate-text">

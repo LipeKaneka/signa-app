@@ -104,7 +104,7 @@ export const SETTING_DEFINITIONS = Object.freeze([
   },
   {
     key: "app.update.downloadUrl",
-    label: "Link para baixar o APK novo (https)",
+    label: "Link para baixar o APK novo (https; do Google Drive pode colar o link de compartilhar, com acesso \"qualquer pessoa com o link\")",
     type: "url",
     maxLength: 500,
     allowEmpty: true,
