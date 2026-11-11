@@ -28,6 +28,8 @@ const FALLBACK_SETTINGS = Object.freeze({
  * Além disso, o app pergunta ao trocar de tela (App.jsx) e ao voltar para o app.
  */
 const REFRESH_INTERVAL_MS = 15 * 1000;
+/** Textos e níveis mudam pouco: são buscados de novo no máximo uma vez por minuto (os eventos, a cada consulta). */
+const CONFIG_REFRESH_MS = 60 * 1000;
 /** Ao trocar de tela, não pergunta de novo se a última resposta tem menos que isto. */
 const NAVIGATION_REFRESH_MIN_MS = 3 * 1000;
 /** Recalcula se o evento ainda vale (ele pode terminar enquanto a tela está aberta). */
@@ -75,11 +77,18 @@ export function AppConfigProvider({ children }) {
   const [now, setNow] = useState(() => Date.now());
 
   const lastRefreshAt = useRef(0);
+  const lastConfigAt = useRef(0);
 
   const refresh = useCallback(async () => {
     lastRefreshAt.current = Date.now();
-    const [config, active] = await Promise.allSettled([ContentApi.fetchAppConfig(), ContentApi.fetchActiveEvents()]);
-    if (config.status === "fulfilled") {
+    const withConfig = Date.now() - lastConfigAt.current >= CONFIG_REFRESH_MS;
+    if (withConfig) lastConfigAt.current = Date.now();
+    const [config, active] = await Promise.allSettled([
+      withConfig ? ContentApi.fetchAppConfig() : Promise.resolve(null),
+      ContentApi.fetchActiveEvents(),
+    ]);
+    if (config.status === "rejected") lastConfigAt.current = 0; // falhou: tenta de novo na próxima
+    if (config.status === "fulfilled" && config.value) {
       setSettings({ ...FALLBACK_SETTINGS, ...config.value.settings });
       setLevels(config.value.levels ?? []);
     }

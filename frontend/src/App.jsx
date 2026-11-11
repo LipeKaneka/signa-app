@@ -5,19 +5,24 @@ import { useAuth } from "./context/AuthContext.jsx";
 import { useAppConfig } from "./context/AppConfigContext.jsx";
 import { SplashScreen } from "./components/SplashScreen.jsx";
 import { LoginPage } from "./pages/auth/LoginPage.jsx";
-import { RegisterPage } from "./pages/auth/RegisterPage.jsx";
 import { OnboardingPage, wasOnboardingSeen } from "./pages/auth/OnboardingPage.jsx";
-import { TermsPage } from "./pages/auth/TermsPage.jsx";
-import { ForgotPasswordPage, NewPasswordPage, ResetCodePage } from "./pages/auth/PasswordRecoveryPages.jsx";
 import { TrailPage } from "./pages/trail/TrailPage.jsx";
 import { ModulePage } from "./pages/trail/ModulePage.jsx";
 import { ActivityPage } from "./pages/activity/ActivityPage.jsx";
-import { RankingPage } from "./pages/ranking/RankingPage.jsx";
-import { AssistantPage } from "./pages/assistant/AssistantPage.jsx";
-import { ProfilePage } from "./pages/profile/ProfilePage.jsx";
-import { AchievementsPage } from "./pages/achievements/AchievementsPage.jsx";
-import { DictionaryPage } from "./pages/dictionary/DictionaryPage.jsx";
-import { SettingsPage } from "./pages/settings/SettingsPage.jsx";
+
+/** Carrega uma tela só quando ela é aberta (o app abre mais leve; trilha, módulo e atividade já vêm prontos). */
+const lazyPage = (load, name) => lazy(() => load().then((module) => ({ default: module[name] })));
+const RegisterPage = lazyPage(() => import("./pages/auth/RegisterPage.jsx"), "RegisterPage");
+const TermsPage = lazyPage(() => import("./pages/auth/TermsPage.jsx"), "TermsPage");
+const ForgotPasswordPage = lazyPage(() => import("./pages/auth/PasswordRecoveryPages.jsx"), "ForgotPasswordPage");
+const ResetCodePage = lazyPage(() => import("./pages/auth/PasswordRecoveryPages.jsx"), "ResetCodePage");
+const NewPasswordPage = lazyPage(() => import("./pages/auth/PasswordRecoveryPages.jsx"), "NewPasswordPage");
+const RankingPage = lazyPage(() => import("./pages/ranking/RankingPage.jsx"), "RankingPage");
+const AssistantPage = lazyPage(() => import("./pages/assistant/AssistantPage.jsx"), "AssistantPage");
+const ProfilePage = lazyPage(() => import("./pages/profile/ProfilePage.jsx"), "ProfilePage");
+const AchievementsPage = lazyPage(() => import("./pages/achievements/AchievementsPage.jsx"), "AchievementsPage");
+const DictionaryPage = lazyPage(() => import("./pages/dictionary/DictionaryPage.jsx"), "DictionaryPage");
+const SettingsPage = lazyPage(() => import("./pages/settings/SettingsPage.jsx"), "SettingsPage");
 
 // A câmera carrega o MediaPipe (pesado): só baixa quando a pessoa abre o tradutor.
 const CameraPage = lazy(() => import("./pages/camera/CameraPage.jsx"));
@@ -101,6 +106,7 @@ function LoginOrOnboarding() {
 
 function PublicRoutes() {
   return (
+    <Suspense fallback={<SplashScreen message="Carregando…" />}>
     <Routes>
       <Route path="/boas-vindas" element={<OnboardingPage />} />
       <Route path="/termos" element={<TermsPage />} />
@@ -111,6 +117,7 @@ function PublicRoutes() {
       <Route path="/esqueci-senha/nova-senha" element={<NewPasswordPage />} />
       <Route path="*" element={<Navigate to="/entrar" replace />} />
     </Routes>
+    </Suspense>
   );
 }
 
