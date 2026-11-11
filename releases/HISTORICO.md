@@ -8,6 +8,7 @@ recriar qualquer um, faça checkout da tag e gere o APK, ou rode `npm run releas
 
 | Versão | Data | versionCode | Tag | O que mudou |
 |---|---|---|---|---|
+| **1.3.0** | 11/11/2026 | 4 | `v1.3.0` | Trilha decorada; aviso de atualização a cada abertura; link do Google Drive baixa direto |
 | **1.2.0** | 11/11/2026 | 3 | `v1.2.0` | Tema escolhido aparece marcado nas configurações |
 | **1.1.0** | 11/11/2026 | 2 | `v1.1.0` (c40dac9) | Aviso de APK novo: tela de atualização configurada pelo painel (versão 1.1) |
 | **1.0.16** | 11/11/2026 | 1 | `v1.0.16` (5238f7c) | App: dados guardados no aparelho para abrir telas sem esperar o servidor |
