@@ -133,3 +133,67 @@ export function DashedConnector({ flip }) {
     </svg>
   );
 }
+
+/** Desenhos em traço (48x48) dos espaços entre os módulos, um tema por módulo. */
+const DOODLES = {
+  clock: (
+    <>
+      <circle cx="24" cy="26" r="13" />
+      <path d="M24 19 V26 L29.5 29.5" />
+      <path d="M11 15.5 A6 6 0 0 1 18.5 8.5 M37 15.5 A6 6 0 0 0 29.5 8.5" />
+      <path d="M15 37 L12 41.5 M33 37 L36 41.5" />
+    </>
+  ),
+  chat: (
+    <>
+      <path d="M8 8 H28 A4 4 0 0 1 32 12 V22 A4 4 0 0 1 28 26 H17 L11 31 V26 H8 A4 4 0 0 1 4 22 V12 A4 4 0 0 1 8 8 Z" />
+      <path d="M36 18 H40 A4 4 0 0 1 44 22 V31 A4 4 0 0 1 40 35 H39 V40 L33 35 H25 A4 4 0 0 1 21 31 V30" />
+      <circle cx="12" cy="17" r="1.3" className="trail-doodle__fill" />
+      <circle cx="18" cy="17" r="1.3" className="trail-doodle__fill" />
+      <circle cx="24" cy="17" r="1.3" className="trail-doodle__fill" />
+    </>
+  ),
+  heart: (
+    <>
+      <path d="M24 40 C 11 31, 6 23, 9.5 16 C 13 9.5, 20.5 10, 24 16 C 27.5 10, 35 9.5, 38.5 16 C 42 23, 37 31, 24 40 Z" />
+      <path d="M14.5 17.5 C 15.5 15, 17.5 14, 19.5 14.2" />
+    </>
+  ),
+  pencil: (
+    <>
+      <path d="M9 37 L12 28 L31 9 L37 15 L18 34 Z" />
+      <path d="M12 28 L18 34 M27 13 L33 19" />
+      <path d="M17 43 C 21 40, 25 45, 29 42 S 37 44, 41 41" />
+    </>
+  ),
+  book: (
+    <>
+      <path d="M24 14 C 19 10, 11 10, 6 12 V37 C 11 35, 19 35, 24 39 C 29 35, 37 35, 42 37 V12 C 37 10, 29 10, 24 14 Z" />
+      <path d="M24 14 V39" />
+    </>
+  ),
+  star: <path d="M24 7 L28.6 18.6 L41 19.4 L31.4 27.3 L34.5 39.5 L24 32.8 L13.5 39.5 L16.6 27.3 L7 19.4 L19.4 18.6 Z" />,
+};
+
+/** Brilho de 4 pontas (centro em 0,0; raio 6). */
+const SPARKLE = "M0 -6 C 0.8 -1.2, 1.2 -0.8, 6 0 C 1.2 0.8, 0.8 1.2, 0 6 C -0.8 1.2, -1.2 0.8, -6 0 C -1.2 -0.8, -0.8 -1.2, 0 -6 Z";
+
+/**
+ * Decoração dos espaços entre os módulos: um desenho em traço (no estilo da linha tracejada) com o tema do próximo
+ * módulo, rodeado de brilhos dourados. Fica do lado livre da linha. Só decoração (escondido do leitor de tela).
+ */
+export function TrailDoodle({ kind, side = "left" }) {
+  return (
+    <svg className={`trail-doodle trail-doodle--${side}`} viewBox="0 0 76 120" aria-hidden="true">
+      <g className="trail-doodle__art" transform="translate(8 30) scale(1.25)" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        {DOODLES[kind] ?? DOODLES.star}
+      </g>
+      <g className="trail-doodle__sparkles">
+        <path d={SPARKLE} transform="translate(68 24)" />
+        <path d={SPARKLE} transform="translate(6 22) scale(0.6)" />
+        <path d={SPARKLE} transform="translate(66 104) scale(0.75)" />
+        <circle cx="12" cy="106" r="2" />
+      </g>
+    </svg>
+  );
+}

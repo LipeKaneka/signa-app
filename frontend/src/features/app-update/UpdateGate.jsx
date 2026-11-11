@@ -1,24 +1,43 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { useAppConfig } from "../../context/AppConfigContext.jsx";
-import { readPreference, storePreference } from "../../utils/session-storage.js";
 import { AppIcon } from "../../components/illustrations.jsx";
 import { useAppVersion } from "./useAppVersion.js";
 import "./update-gate.css";
 
-const DISMISSED_KEY = "update-dismissed";
-
 /**
  * Tela de atualização do APK. Os dados vêm do painel (Configurações → Atualização do app, em /app-config):
- * - versão nova maior que a instalada: mostra a tela, com "Depois" (não volta a aparecer para essa mesma versão);
+ * - versão nova maior que a instalada: mostra a tela, com "Depois" (fecha só até o app ser fechado: toda vez
+ *   que o app abrir desatualizado, a tela aparece de novo);
  * - versão instalada menor que a mínima: a tela não fecha até atualizar.
  * "Atualizar agora" abre o link do APK no navegador do celular, que baixa o arquivo; a pessoa instala por cima
  * (os dados da conta ficam no servidor). Só aparece no APK; no navegador não faz nada.
  * Usado por: App.jsx (sobre qualquer tela).
  */
 export function UpdateGate() {
-  const { text } = useAppConfig();
+  const { text, refreshIfStale } = useAppConfig();
   const installed = useAppVersion();
-  const [dismissed, setDismissed] = useState(() => Number(readPreference(DISMISSED_KEY, 0)) || 0);
+  // Guardado só na memória: some ao fechar o app, então a tela volta na próxima abertura.
+  const [dismissed, setDismissed] = useState(0);
+
+  // O Android mantém o app na memória: voltar a ele (de outro app ou da tela inicial) também conta como abrir.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return undefined;
+    let listener = null;
+    let removed = false;
+    import("@capacitor/app").then(async ({ App }) => {
+      const handle = await App.addListener("resume", () => {
+        setDismissed(0);
+        refreshIfStale(); // confere no painel se saiu versão nova enquanto o app estava parado
+      });
+      if (removed) handle.remove();
+      else listener = handle;
+    });
+    return () => {
+      removed = true;
+      listener?.remove();
+    };
+  }, [refreshIfStale]);
 
   const latest = Number(text("app.update.latestVersionCode")) || 0;
   const minimum = Number(text("app.update.minVersionCode")) || 0;
@@ -31,10 +50,7 @@ export function UpdateGate() {
 
   const versionName = text("app.update.versionName").trim();
   const notes = text("app.update.notes").trim();
-  const later = () => {
-    storePreference(DISMISSED_KEY, latest);
-    setDismissed(latest);
-  };
+  const later = () => setDismissed(latest);
   // Link externo: o Capacitor abre no navegador do celular (o app continua aberto por trás).
   const update = () => window.location.assign(url);
 

@@ -252,7 +252,8 @@
 }
 
 .trail-connector {
-  height: 110px;
+  position: relative;
+  height: 150px;
   margin: -2px 0;
   color: var(--color-primary);
   pointer-events: none;
@@ -267,6 +268,75 @@
 
 .dashed-connector--flip {
   transform: scaleX(-1);
+}
+
+/* Desenho + brilhos em cada espaço entre os módulos: só decoração, no lado livre da linha tracejada. */
+.trail-doodle {
+  position: absolute;
+  top: 50%;
+  width: 76px;
+  height: 120px;
+  overflow: visible;
+  transform: translateY(-50%);
+}
+
+.trail-doodle--left {
+  left: 14px;
+}
+
+.trail-doodle--right {
+  right: 0;
+}
+
+.trail-doodle__art {
+  color: var(--color-primary);
+  opacity: 0.7;
+}
+
+.trail-doodle--left .trail-doodle__art {
+  rotate: -8deg;
+  transform-origin: 38px 60px;
+}
+
+.trail-doodle--right .trail-doodle__art {
+  rotate: 8deg;
+  transform-origin: 36px 60px;
+}
+
+.trail-doodle__fill {
+  fill: currentColor;
+  stroke: none;
+}
+
+.trail-doodle__sparkles {
+  fill: #f5b82e;
+}
+
+.trail-doodle__sparkles circle {
+  fill: var(--color-primary);
+  opacity: 0.35;
+}
+
+:root[data-theme="dark"] .trail-doodle__art {
+  color: var(--color-primary-soft);
+  opacity: 0.7;
+}
+
+/* Brilhos piscam devagar (sem movimento para quem pediu menos animação). */
+@media (prefers-reduced-motion: no-preference) {
+  .trail-doodle__sparkles path {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: trail-sparkle 2.8s ease-in-out infinite;
+  }
+
+  .trail-doodle__sparkles path:nth-child(2) { animation-delay: 0.9s; }
+  .trail-doodle__sparkles path:nth-child(3) { animation-delay: 1.8s; }
+}
+
+@keyframes trail-sparkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
 }
 
 /* Cartão (módulo e unidade). */

@@ -6,8 +6,24 @@ import { BottomNav, ErrorState, LoadingState } from "../../components/layout.jsx
 import { Icon } from "../../components/Icon.jsx";
 import { EventBanner } from "../../components/EventBanner.jsx";
 import { TrailIcon } from "../../components/trail-icons.jsx";
-import { DashedConnector, StatusPill, TimelineNode, TrailHeader, percentOf, useOpenWithAnimation } from "./trail-parts.jsx";
+import { DashedConnector, TrailDoodle, StatusPill, TimelineNode, TrailHeader, percentOf, useOpenWithAnimation } from "./trail-parts.jsx";
 import "./trail.css";
+
+/**
+ * Desenho do espaço antes de cada módulo, escolhido pelo título (módulos novos do painel caem na estrela).
+ * Os nomes são as chaves de DOODLES em trail-parts.jsx.
+ */
+const MODULE_DOODLES = [
+  [/rotina|sala de aula|comando/i, "clock"],
+  [/intera|pedag|numera/i, "chat"],
+  [/conflit|inclus|gest/i, "heart"],
+  [/material|materiais|pr[aá]tica|contex/i, "pencil"],
+  [/fundament|alfabet|cultura/i, "book"],
+];
+
+function doodleForModule(module) {
+  return MODULE_DOODLES.find(([pattern]) => pattern.test(module.title))?.[1] ?? "star";
+}
 
 /** Situação lida pelo leitor de tela (módulo sem atividades = "em breve"). */
 function describeModuleStatus(module, empty) {
@@ -75,6 +91,8 @@ export function TrailPage() {
               {index > 0 && (
                 <li className="trail-connector" aria-hidden="true">
                   <DashedConnector flip={index % 2 === 0} />
+                  {/* Alterna o lado, sempre no espaço livre ao lado da linha tracejada. */}
+                  <TrailDoodle kind={doodleForModule(module)} side={index % 2 === 1 ? "left" : "right"} />
                 </li>
               )}
               <ModuleCard
