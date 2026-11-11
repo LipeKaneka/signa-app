@@ -72,39 +72,58 @@
   transform: translateX(22px);
 }
 
+/* Seletor de tema: duas opções numa pílula; a escolhida fica preenchida de roxo com o ícone branco. */
 .theme-switch {
   display: flex;
-  gap: 0;
-  margin-right: -6px;
+  gap: 2px;
+  margin-right: -10px;
+  padding: 3px;
+  border: 1px solid #c9c0ee;
+  border-radius: 999px;
+  background: #f2efff;
+}
+
+:root[data-theme="dark"] .theme-switch {
+  border-color: #4b3a9a;
+  background: #1a0f52;
 }
 
 .theme-switch__option {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 28px;
-  min-height: 32px;
+  width: 34px;
+  height: 30px;
   border: 0;
-  border-radius: 50%;
+  border-radius: 999px;
   background: transparent;
-  color: #111;
-}
-
-/* Como no protótipo: sol sempre roxo, lua na cor do texto; a opção que não está ativa fica mais apagada. */
-.theme-switch__option:first-child {
-  color: var(--color-primary);
+  color: #7a6fa8;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 :root[data-theme="dark"] .theme-switch__option {
+  color: #a99be0;
+}
+
+.theme-switch__option[aria-checked="true"],
+:root[data-theme="dark"] .theme-switch__option[aria-checked="true"] {
+  background: var(--color-primary);
   color: #fff;
+  box-shadow: 0 1px 4px rgba(30, 10, 101, 0.35);
 }
 
-:root[data-theme="dark"] .theme-switch__option:first-child {
-  color: #8f74ff;
+:root[data-theme="dark"] .theme-switch__option[aria-checked="true"] {
+  background: #6b4dff;
 }
 
-.theme-switch__option[aria-checked="false"] {
-  opacity: 0.55;
+.theme-switch__option:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-switch__option { transition: none; }
 }
 
 .font-slider {
