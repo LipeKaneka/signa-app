@@ -89,12 +89,12 @@ export function DictionaryPage() {
   const [openSign, setOpenSign] = useState(null);
   const debouncedSearch = useDebouncedValue(search.trim(), SEARCH_DELAY_MS);
 
-  const categories = useAsyncData(ContentApi.fetchDictionaryCategories);
+  const categories = useAsyncData(ContentApi.fetchDictionaryCategories, [], { cacheKey: "dictionary:categories" });
   const loadResults = useCallback(
     () => (debouncedSearch ? ContentApi.searchDictionary({ search: debouncedSearch }) : Promise.resolve(null)),
     [debouncedSearch],
   );
-  const results = useAsyncData(loadResults, [loadResults]);
+  const results = useAsyncData(loadResults, [loadResults], { cacheKey: debouncedSearch ? `dictionary:search:${debouncedSearch.toLowerCase()}` : null });
 
   return (
     <ScreenWithNav

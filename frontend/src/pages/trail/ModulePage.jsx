@@ -76,7 +76,7 @@ export function ModulePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { selectedId, openingId, tap, openWithAnimation } = useOpenWithAnimation();
-  const { data, error, loading, reload } = useAsyncData(TrailApi.fetchTrail);
+  const { data, error, loading, refreshing, reload } = useAsyncData(TrailApi.fetchTrail, [], { cacheKey: "trail" });
   const goBack = () => navigate("/trilha");
 
   // Enquanto carrega (ou se falhar), o cabeçalho e a navegação continuam na tela, como na trilha.
@@ -95,6 +95,16 @@ export function ModulePage() {
   const modules = data.modules;
   const position = modules.findIndex((module) => module.id === moduleId);
   const module = modules[position];
+  // Trilha guardada pode estar velha (ex.: acabou de liberar este módulo): espera a nova antes de mandar de volta.
+  if ((!module || module.status === "locked") && refreshing) {
+    return (
+      <div className="screen screen--with-nav trail-screen">
+        <TrailHeader user={user} onBack={goBack} title="Módulo" percent={0} progressLabel="Progresso no módulo" />
+        <main className="trail-content"><LoadingState message="Carregando o módulo…" /></main>
+        <BottomNav />
+      </div>
+    );
+  }
   if (!module || module.status === "locked") return <Navigate to="/trilha" replace />;
 
   const activityPath = (activity) => `/atividade/${activity.id}?modulo=${module.id}`;

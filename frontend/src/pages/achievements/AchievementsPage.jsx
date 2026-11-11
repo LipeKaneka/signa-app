@@ -9,7 +9,7 @@ import "./achievements.css";
  * O catálogo vem do backend (GET /profile): conquistas criadas no painel aparecem sem atualizar o app.
  */
 export function AchievementsPage() {
-  const { data, error, loading, reload } = useAsyncData(UserApi.fetchProfile);
+  const { data, error, loading, reload } = useAsyncData(UserApi.fetchProfile, [], { cacheKey: "profile" });
   const unlocked = data ? sortByUnlockDate(data.achievements) : [];
   const locked = data ? data.achievements.filter((achievement) => !achievement.unlocked) : [];
 

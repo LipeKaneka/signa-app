@@ -152,7 +152,7 @@ export function RankingPage() {
   const [metricId, setMetricId] = useState("activities");
   const metric = METRICS.find((item) => item.id === metricId);
   const loadRanking = useCallback(() => ContentApi.fetchRanking(metricId), [metricId]);
-  const { data, error, loading, reload } = useAsyncData(loadRanking, [loadRanking]);
+  const { data, error, loading, reload } = useAsyncData(loadRanking, [loadRanking], { cacheKey: `ranking:${metricId}` });
 
   return (
     <ScreenWithNav title="Ranking" backTo={-1}>

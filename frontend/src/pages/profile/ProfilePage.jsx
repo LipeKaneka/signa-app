@@ -176,7 +176,7 @@ const SHORTCUTS = [
  */
 export function ProfilePage() {
   const { setUser } = useAuth();
-  const { data, error, loading, reload, setData } = useAsyncData(UserApi.fetchProfile);
+  const { data, error, loading, reload, setData } = useAsyncData(UserApi.fetchProfile, [], { cacheKey: "profile" });
   const [editing, setEditing] = useState(false);
   // No perfil, só as conquistas desbloqueadas mais recentes; a lista completa fica na tela Conquistas.
   const recentAchievements = data ? sortByUnlockDate(data.achievements).slice(0, RECENT_ACHIEVEMENTS) : [];

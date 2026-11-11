@@ -56,7 +56,7 @@ function ModuleCard({ module, position, selected, opening, onTap }) {
 export function TrailPage() {
   const { user } = useAuth();
   const { selectedId, openingId, tap } = useOpenWithAnimation();
-  const { data, error, loading, reload } = useAsyncData(TrailApi.fetchTrail);
+  const { data, error, loading, reload } = useAsyncData(TrailApi.fetchTrail, [], { cacheKey: "trail" });
   const modules = data?.modules ?? [];
   const done = modules.reduce((sum, module) => sum + module.completedActivities, 0);
   const total = modules.reduce((sum, module) => sum + module.totalActivities, 0);
