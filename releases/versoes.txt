@@ -16,3 +16,4 @@
 1.0.15|76b6d00|10/11/2026|App: abre mais rápido e faz menos requisições
 1.0.16|5238f7c|11/11/2026|App: dados guardados no aparelho para abrir telas sem esperar o servidor
 1.1.0|c40dac9|11/11/2026|Aviso de APK novo: tela de atualização configurada pelo painel (versão 1.1)
+1.2.0|1d1a159|11/11/2026|Tema escolhido aparece marcado nas configurações

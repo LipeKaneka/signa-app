@@ -49,7 +49,8 @@ const run = (command, cwd = frontend) => execSync(command, { cwd, env, stdio: "i
 run("npx vite build --mode android");
 run("npx cap sync android");
 const android = join(frontend, "android");
-run(process.platform === "win32" ? "gradlew.bat assembleDebug -q" : "./gradlew assembleDebug -q", android);
+// Caminho completo: no Windows o cmd nem sempre procura o gradlew.bat na pasta atual.
+run(process.platform === "win32" ? `"${join(android, "gradlew.bat")}" assembleDebug -q` : "./gradlew assembleDebug -q", android);
 const apkDir = join(android, "app", "build", "outputs", "apk", "debug");
 const apk = readdirSync(apkDir).find((name) => name.endsWith(".apk"));
 if (!apk) throw new Error("APK não encontrado");
@@ -58,7 +59,8 @@ if (!apk) throw new Error("APK não encontrado");
 const target = join(releases, `Signa-${label}.apk`);
 copyFileSync(join(apkDir, apk), target);
 const date = new Date().toLocaleDateString("pt-BR");
-appendFileSync(listFile, `${label}|(commit)|${date}|${summary}\n`);
+const commit = execSync("git rev-parse --short HEAD", { cwd: frontend }).toString().trim();
+appendFileSync(listFile, `${label}|${commit}|${date}|${summary}\n`);
 if (existsSync(historyFile)) {
   const history = readFileSync(historyFile, "utf8");
   const header = "|---|---|---|---|---|\n";
