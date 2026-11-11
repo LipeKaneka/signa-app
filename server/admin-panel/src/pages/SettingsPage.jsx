@@ -34,7 +34,7 @@ function SettingRow({ setting, editable, onSaved }) {
       onSaved();
     }, "Voltou ao padrão.");
 
-  const defaultText = setting.type === "phrases" ? `${setting.default.length} frases` : setting.default;
+  const defaultText = setting.type === "phrases" ? `${setting.default.length} frases` : setting.default === "" ? "(vazio)" : setting.default;
   const hint = setting.type === "phrases"
     ? `Uma frase por linha: "Título | texto". O app sorteia uma a cada resposta. Padrão: ${defaultText}${setting.customized ? ` · alterado em ${formatDateTime(setting.updatedAt)}` : ""}`
     : `Padrão: ${defaultText}${setting.customized ? ` · alterado em ${formatDateTime(setting.updatedAt)}` : ""}`;
@@ -45,6 +45,10 @@ function SettingRow({ setting, editable, onSaved }) {
           <input type="number" min={setting.min} max={setting.max} value={value} disabled={!editable} onChange={(e) => setValue(e.target.value)} />
         ) : setting.type === "phrases" ? (
           <textarea rows={Math.min(14, value.split("\n").length + 1)} value={value} disabled={!editable} onChange={(e) => setValue(e.target.value)} />
+        ) : setting.type === "text" ? (
+          <textarea rows={4} maxLength={setting.maxLength} value={value} disabled={!editable} onChange={(e) => setValue(e.target.value)} />
+        ) : setting.type === "url" ? (
+          <input type="url" placeholder="https://..." maxLength={setting.maxLength} value={value} disabled={!editable} onChange={(e) => setValue(e.target.value)} />
         ) : (
           <input value={value} maxLength={setting.maxLength} disabled={!editable} onChange={(e) => setValue(e.target.value)} />
         )}
@@ -66,7 +70,15 @@ export function SettingsPage() {
   const { data, error, loading, reload } = useLoad(() => api("/settings"), []);
   const groups = [
     { title: "Pontuação e regras", prefix: "progress." },
-    { title: "Textos do app", prefix: "app." },
+    { title: "Textos do app", prefix: "app.feedback." },
+    {
+      title: "Atualização do app (APK)",
+      prefix: "app.update.",
+      intro:
+        "Para avisar uma versão nova: coloque o APK num link público (ex.: GitHub Releases ou Google Drive), preencha o link e "
+        + "o número da versão nova (versionCode do APK). Quem tiver uma versão menor vê a tela de atualização. Com o número mínimo, "
+        + "versões abaixo dele ficam bloqueadas até atualizar.",
+    },
   ];
   return (
     <section>
@@ -76,6 +88,7 @@ export function SettingsPage() {
         groups.map((group) => (
           <div className="card" key={group.prefix}>
             <h2>{group.title}</h2>
+            {group.intro && <p className="muted">{group.intro}</p>}
             {data.settings.filter((setting) => setting.key.startsWith(group.prefix)).map((setting) => (
               <SettingRow key={setting.key} setting={setting} editable={can("manage")} onSaved={reload} />
             ))}

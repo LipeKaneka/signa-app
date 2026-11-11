@@ -4,6 +4,7 @@ import { Capacitor } from "@capacitor/core";
 import { useAuth } from "./context/AuthContext.jsx";
 import { useAppConfig } from "./context/AppConfigContext.jsx";
 import { SplashScreen } from "./components/SplashScreen.jsx";
+import { UpdateGate } from "./features/app-update/UpdateGate.jsx";
 import { LoginPage } from "./pages/auth/LoginPage.jsx";
 import { OnboardingPage, wasOnboardingSeen } from "./pages/auth/OnboardingPage.jsx";
 import { TrailPage } from "./pages/trail/TrailPage.jsx";
@@ -146,6 +147,16 @@ function PrivateRoutes() {
 }
 
 export function App() {
+  return (
+    <>
+      <AppScreens />
+      {/* Aviso de APK novo (configurado no painel), por cima de qualquer tela, inclusive do login. */}
+      <UpdateGate />
+    </>
+  );
+}
+
+function AppScreens() {
   const { status, retryConnection } = useAuth();
   if (status === "loading") return <SplashScreen slowHint="Conectando ao servidor… na primeira vez do dia isso pode levar até 1 minuto." />;
   if (status === "offline") {

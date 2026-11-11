@@ -510,3 +510,20 @@ test("eventos que se repetem: toda semana e todo ano entram e saem sozinhos", as
     await admin.patch(`/admin/api/v1/events/${event.body.event.id}`).set(PANEL).send({ active: false });
   }
 });
+
+test("atualização do app: painel define versão e link (só https) e o app recebe em /app-config", async () => {
+  const admin = await signIn("admin");
+  const put = (key, value) => admin.put(`/admin/api/v1/settings/${encodeURIComponent(key)}`).set(PANEL).send({ value });
+  assert.equal((await put("app.update.downloadUrl", "http://exemplo.test/signa.apk")).status, 400);
+  assert.equal((await put("app.update.downloadUrl", "https://exemplo.test/Signa-1.2.apk")).status, 200);
+  assert.equal((await put("app.update.latestVersionCode", 3)).status, 200);
+  assert.equal((await put("app.update.versionName", "1.2")).status, 200);
+  assert.equal((await put("app.update.notes", "Trilha nova\nCorreções")).status, 200);
+  assert.equal((await put("app.update.notes", "")).status, 200); // opcional: pode ficar vazio
+
+  const config = await request(app).get("/internal/v1/app-config").set(withKey());
+  assert.equal(config.body.settings["app.update.latestVersionCode"], 3);
+  assert.equal(config.body.settings["app.update.downloadUrl"], "https://exemplo.test/Signa-1.2.apk");
+  assert.equal(config.body.settings["app.update.versionName"], "1.2");
+  assert.equal(config.body.settings["app.update.minVersionCode"], 0);
+});

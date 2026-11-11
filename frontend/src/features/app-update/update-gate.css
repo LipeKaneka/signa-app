@@ -1,0 +1,90 @@
+/* Tela de atualização do APK: cobre o app inteiro. */
+.update-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
+  background: rgba(10, 4, 40, 0.75);
+  animation: update-gate-in 0.2s ease-out both;
+}
+
+.update-gate__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 360px;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 24px 20px 18px;
+  border-radius: var(--radius-medium);
+  background: var(--color-card);
+  color: var(--color-card-text);
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(10, 4, 40, 0.35);
+}
+
+.update-gate__title {
+  margin: 14px 0 6px;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.update-gate__text {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--color-card-muted);
+}
+
+.update-gate__notes {
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--color-primary-faint);
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.update-gate__notes strong {
+  color: var(--color-primary);
+}
+
+.update-gate__notes p {
+  margin: 4px 0 0;
+  white-space: pre-line;
+}
+
+.update-gate__button {
+  width: 100%;
+  margin-top: 18px;
+}
+
+.update-gate__later {
+  margin-top: 8px;
+  padding: 8px 16px;
+  border: 0;
+  background: none;
+  color: var(--color-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.update-gate__hint {
+  margin: 10px 0 0;
+  font-size: 0.75rem;
+  color: var(--color-card-muted);
+}
+
+@keyframes update-gate-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .update-gate { animation: none; }
+}

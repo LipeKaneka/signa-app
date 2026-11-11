@@ -4,7 +4,8 @@ import { CORRECT_PHRASES, WRONG_PHRASES } from "./feedback-phrases.js";
 /**
  * Configurações que podem ser alteradas pelo painel (coleção "settings").
  * - key: chave no banco. default: valor usado quando o banco não tem a chave (o comportamento de hoje).
- * - type: "integer" (min/max), "string" (maxLength) ou "phrases" (lista de {title, text}, até maxItems).
+ * - type: "integer" (min/max), "string" (maxLength), "text" (várias linhas, maxLength), "url" (só https) ou "phrases"
+ *   (lista de {title, text}, até maxItems). allowEmpty: aceita texto vazio (campo opcional).
  * - validação ao salvar segue o type. public: vai para o app em GET /app-config.
  * - rule: nome da regra em PROGRESS_RULES que esta chave substitui (para getProgressRules()).
  * Para criar uma configuração nova: acrescente aqui e leia com getSetting(key).
@@ -71,6 +72,52 @@ export const SETTING_DEFINITIONS = Object.freeze([
     type: "phrases",
     maxItems: 40,
     default: WRONG_PHRASES,
+    public: true,
+  },
+  // Atualização do APK: o app compara o próprio versionCode (android/app/build.gradle) com estes números.
+  {
+    key: "app.update.latestVersionCode",
+    label: "Número da versão nova (versionCode do APK; 0 = não avisar)",
+    type: "integer",
+    min: 0,
+    max: 2100000000,
+    default: 0,
+    public: true,
+  },
+  {
+    key: "app.update.minVersionCode",
+    label: "Número mínimo exigido (abaixo dele, a atualização é obrigatória; 0 = nunca obrigar)",
+    type: "integer",
+    min: 0,
+    max: 2100000000,
+    default: 0,
+    public: true,
+  },
+  {
+    key: "app.update.versionName",
+    label: "Nome da versão nova (ex.: 1.2)",
+    type: "string",
+    maxLength: 30,
+    allowEmpty: true,
+    default: "",
+    public: true,
+  },
+  {
+    key: "app.update.downloadUrl",
+    label: "Link para baixar o APK novo (https)",
+    type: "url",
+    maxLength: 500,
+    allowEmpty: true,
+    default: "",
+    public: true,
+  },
+  {
+    key: "app.update.notes",
+    label: "Novidades da versão (aparecem na tela de atualização)",
+    type: "text",
+    maxLength: 600,
+    allowEmpty: true,
+    default: "",
     public: true,
   },
 ]);

@@ -156,3 +156,10 @@
   width: auto;
   background: var(--color-wrong-border);
 }
+
+.settings-version {
+  margin: -6px 0 12px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}

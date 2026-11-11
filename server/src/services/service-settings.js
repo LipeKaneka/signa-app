@@ -102,10 +102,15 @@ function validateSettingValue(definition, value) {
     return value;
   }
   if (definition.type === "phrases") return readPhrases(definition, value);
-  if (typeof value !== "string" || value.trim() === "" || value.length > definition.maxLength) {
-    throw badRequest(`${definition.label}: texto de 1 a ${definition.maxLength} caracteres.`);
+  const minLength = definition.allowEmpty ? 0 : 1;
+  if (typeof value !== "string" || value.trim().length < minLength || value.length > definition.maxLength) {
+    throw badRequest(`${definition.label}: texto de ${minLength} a ${definition.maxLength} caracteres.`);
   }
-  return value.trim();
+  const text = value.trim();
+  if (definition.type === "url" && text && !/^https:\/\/\S+$/i.test(text)) {
+    throw badRequest(`${definition.label}: use um link começando com https://`);
+  }
+  return text;
 }
 
 /**

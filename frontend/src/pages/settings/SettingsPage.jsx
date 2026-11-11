@@ -7,6 +7,7 @@ import { ScreenWithNav, Toggle } from "../../components/layout.jsx";
 import { Icon } from "../../components/Icon.jsx";
 import { AppIcon } from "../../components/illustrations.jsx";
 import "./settings.css";
+import { useAppVersion } from "../../features/app-update/useAppVersion.js";
 
 /** Linhas na ordem do protótipo. type: toggle | theme | fontSize. */
 const SETTING_ROWS = [
@@ -89,6 +90,7 @@ function DeleteAccountForm({ onCancel }) {
 
 export function SettingsPage() {
   const { settings, updateSetting } = useSettings();
+  const version = useAppVersion();
   const { signOut } = useAuth();
   const [showHelp, setShowHelp] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -96,6 +98,7 @@ export function SettingsPage() {
   return (
     <ScreenWithNav title="Configurações" backTo={-1} contentClassName="settings-content">
       <div className="settings-icon"><AppIcon size={100} /></div>
+      {version && <p className="settings-version">Versão {version.name} ({version.code})</p>}
 
       <ul className="settings-list">
         {SETTING_ROWS.map((row) => (
