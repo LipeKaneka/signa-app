@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useAppEvents } from "../../features/achievements/AppEventsContext.jsx";
 import { Link } from "react-router-dom";
 import * as ContentApi from "../../api/api-content.js";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -58,6 +59,7 @@ function ChatMessage({ message, onOpenSign }) {
 }
 
 export function AssistantPage() {
+  const { track } = useAppEvents();
   const { user } = useAuth();
   // Histórico por conta: outra pessoa entrando no mesmo aparelho não vê a conversa.
   const historyKey = `assistant-history:${user.publicId}`;
@@ -102,6 +104,7 @@ export function AssistantPage() {
     setQuestion("");
     setSending(true);
     try {
+      track("assistant_message");
       const reply = await ContentApi.askAssistant(text, history);
       setMessages((current) => [...current, createMessage("assistant", reply.answer, reply.signs)]);
     } catch (askError) {

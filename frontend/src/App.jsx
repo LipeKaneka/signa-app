@@ -5,6 +5,7 @@ import { useAuth } from "./context/AuthContext.jsx";
 import { useAppConfig } from "./context/AppConfigContext.jsx";
 import { SplashScreen } from "./components/SplashScreen.jsx";
 import { UpdateGate } from "./features/app-update/UpdateGate.jsx";
+import { AppEventsProvider } from "./features/achievements/AppEventsContext.jsx";
 import { LoginPage } from "./pages/auth/LoginPage.jsx";
 import { OnboardingPage, wasOnboardingSeen } from "./pages/auth/OnboardingPage.jsx";
 import { TrailPage } from "./pages/trail/TrailPage.jsx";
@@ -168,7 +169,11 @@ function AppScreens() {
       <ScrollToTopOnNavigate />
       <HardwareBackButton signedIn={status === "signedIn"} />
       <RefreshConfigOnNavigate />
-      {status === "signedIn" ? <PrivateRoutes /> : <PublicRoutes />}
+      {status === "signedIn" ? (
+        <AppEventsProvider>
+          <PrivateRoutes />
+        </AppEventsProvider>
+      ) : <PublicRoutes />}
     </HashRouter>
   );
 }

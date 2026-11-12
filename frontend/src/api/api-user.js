@@ -38,6 +38,14 @@ export function fetchProfile() {
 }
 
 /**
+ * POST /profile/events: ações do app que valem conquista. @param {object[]} events - [{type, count?} | {type: "sign_view", sign}]
+ * @returns {Promise<{newAchievements: {id: string, title: string}[]}>} Usado por: AppEventsProvider.
+ */
+export function sendAppEvents(events) {
+  return requestApi("/profile/events", { method: "POST", body: { events } });
+}
+
+/**
  * PATCH /profile. @param {{nickname?, city?, showInRanking?, email?, password?, currentPassword?}} changes
  * @returns {Promise<{user}>} Usado por: ProfilePage (editar nome/cidade).
  */

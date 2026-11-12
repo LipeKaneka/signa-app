@@ -66,6 +66,15 @@ export async function getProfile(req, res) {
   res.json(profile);
 }
 
+/**
+ * POST /profile/events — ações do app que valem conquista. Corpo {events: [...]}; responde {newAchievements}.
+ * Só confere que é uma lista; tipos e limites são validados no servidor.
+ */
+export async function recordEvents(req, res) {
+  if (!Array.isArray(req.body?.events)) throw badRequest("Envie {events: [...]}.");
+  res.json(await UserService.recordAppEvents(req.userId, req.body.events));
+}
+
 const EDITABLE_FIELDS = ["nickname", "email", "password", "city", "showInRanking", "avatar", "avatarThumb", "currentPassword"];
 
 /**

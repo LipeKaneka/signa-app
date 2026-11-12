@@ -4,6 +4,7 @@ import { Icon } from "../../components/Icon.jsx";
 import { Flame, LogoHand, XpBarVertical } from "../../components/illustrations.jsx";
 import { prefersReducedMotion } from "../../utils/motion.js";
 import { formatCompact, formatFull } from "../../utils/format-number.js";
+import { useAppEvents } from "../../features/achievements/AppEventsContext.jsx";
 
 /** Duração da animação do cartão tocado antes de trocar de tela (igual a .trail-item--opening no CSS). */
 const OPEN_ANIMATION_MS = 280;
@@ -69,6 +70,30 @@ export function TrailProgress({ percent, label }) {
 
 /** Selo "XP" do cabeçalho (desenho do protótipo: termômetro com o selo XP). */
 /**
+ * Ícone do topo que pode ser tocado: dá um pulinho e conta o toque para as conquistas ("toque X vezes no fogo"...).
+ * event = tipo enviado ao servidor (tap_logo, tap_flame, tap_xp).
+ */
+function TapTarget({ className, event, label, children }) {
+  const { track } = useAppEvents();
+  const [bouncing, setBouncing] = useState(false);
+  return (
+    <button
+      type="button"
+      className={`${className} trail-header__tap${bouncing ? " trail-header__tap--bounce" : ""}`}
+      onClick={() => {
+        track(event);
+        setBouncing(true);
+      }}
+      onAnimationEnd={() => setBouncing(false)}
+      aria-label={label}
+      title={label}
+    >
+      {children}
+    </button>
+  );
+}
+
+/**
  * Cabeçalho roxo arredondado: logo, ofensiva (D = dias) e XP (P = pontos), título e progresso.
  * onBack = seta de voltar antes da marca (tela das unidades, com o título à esquerda). Ofensiva e XP aparecem nas duas telas.
  */
@@ -81,19 +106,19 @@ export function TrailHeader({ user, title, percent, progressLabel, onBack }) {
             <Icon name="back" size={26} strokeWidth={2.2} />
           </button>
         )}
-        <span className="trail-header__brand">
+        <TapTarget className="trail-header__brand" event="tap_logo" label="Signa">
           <LogoHand size={30} color="#fff" />
           <span>Signa</span>
-        </span>
+        </TapTarget>
         <span className="trail-header__stats">
-          <span className="trail-header__stat" title={`${formatFull(user.streak)} dias seguidos`}>
+          <TapTarget className="trail-header__stat" event="tap_flame" label={`Ofensiva: ${formatFull(user.streak)} dias seguidos`}>
             <span className="trail-header__icon"><Flame size={26} /></span>
             {formatCompact(user.streak)}<small>D</small>
-          </span>
-          <span className="trail-header__stat" title={`${formatFull(user.xp)} pontos de XP`}>
+          </TapTarget>
+          <TapTarget className="trail-header__stat" event="tap_xp" label={`${formatFull(user.xp)} pontos de XP`}>
             <span className="trail-header__icon"><XpBarVertical size={40} /></span>
             {formatCompact(user.xp)}<small>P</small>
-          </span>
+          </TapTarget>
         </span>
       </div>
       <h1 className="trail-header__title">{title}</h1>

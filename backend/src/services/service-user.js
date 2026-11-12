@@ -112,3 +112,14 @@ export async function confirmPasswordReset(email, code, password) {
   await callServer("/auth/password-reset/confirm", { method: "POST", body: { email, code, password } });
   return signIn({ email, password });
 }
+
+/**
+ * Envia ações do app que valem conquista (toques, sinais vistos no dicionário...) ao servidor.
+ * @param {string} userId
+ * @param {object[]} events - [{type, count?}] ou [{type: "sign_view", sign}] (o servidor valida).
+ * @returns {Promise<{newAchievements: {id: string, title: string}[]}>}
+ * Usado por: POST /profile/events.
+ */
+export function recordAppEvents(userId, events) {
+  return callServer(userPath(userId, "/events"), { method: "POST", body: { events } });
+}

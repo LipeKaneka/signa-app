@@ -53,6 +53,44 @@
   font-size: 1.125rem;
 }
 
+/* Logo, fogo e XP do topo são botões (contam toques para conquistas), sem cara de botão. */
+.trail-header__tap {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.trail-header__stat.trail-header__tap {
+  color: #bdb3ea;
+  font-size: 1.125rem;
+}
+
+.trail-header__brand.trail-header__tap {
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+
+.trail-header__tap:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .trail-header__tap--bounce {
+    animation: trail-tap-bounce 0.28s ease-out;
+  }
+}
+
+@keyframes trail-tap-bounce {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(1.18); }
+}
+
 .trail-header__stat small {
   font-size: 0.625rem;
   margin-bottom: 3px;

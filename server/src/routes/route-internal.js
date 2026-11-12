@@ -28,6 +28,7 @@ const userRoutes = Router({ mergeParams: true });
 userRoutes.use(loadUser);
 userRoutes.get("/session", UserController.getSession);
 userRoutes.get("/profile", asyncHandler(UserController.getProfile));
+userRoutes.post("/events", asyncHandler(UserController.recordEvents));
 userRoutes.patch("/", asyncHandler(UserController.updateProfile));
 userRoutes.delete("/", asyncHandler(UserController.deleteUser));
 userRoutes.get("/trail", asyncHandler(ProgressController.getTrail));

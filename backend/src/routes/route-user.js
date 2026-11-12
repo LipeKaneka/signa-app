@@ -15,5 +15,6 @@ userRouter.post("/auth/password-reset/confirm", authLimiter, asyncHandler(UserCo
 
 userRouter.get("/auth/session", requireAuth, UserController.getSession);
 userRouter.get("/profile", requireAuth, asyncHandler(UserController.getProfile));
+userRouter.post("/profile/events", requireAuth, asyncHandler(UserController.recordEvents));
 userRouter.patch("/profile", requireAuth, asyncHandler(UserController.updateProfile));
 userRouter.delete("/profile", requireAuth, asyncHandler(UserController.deleteAccount));

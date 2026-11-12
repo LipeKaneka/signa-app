@@ -1,4 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useTrackOnMount } from "../../features/achievements/AppEventsContext.jsx";
 import * as ContentApi from "../../api/api-content.js";
 import { useAsyncData } from "../../hooks/useAsyncData.js";
 import { ErrorState, LoadingState, ScreenWithNav } from "../../components/layout.jsx";
@@ -149,6 +150,7 @@ function RankingList({ ranking, metric }) {
  * Ranking por atividades, XP ou ofensiva (GET /ranking), com posição, variação e vizinhos.
  */
 export function RankingPage() {
+  useTrackOnMount("ranking_open");
   const [metricId, setMetricId] = useState("activities");
   const metric = METRICS.find((item) => item.id === metricId);
   const loadRanking = useCallback(() => ContentApi.fetchRanking(metricId), [metricId]);

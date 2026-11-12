@@ -42,7 +42,14 @@ function AchievementForm({ achievement, metrics, onClose, onSaved }) {
         <div className="form__row">
           <Field label="O que mede">
             <select value={form.metric} onChange={(e) => set({ metric: e.target.value })}>
-              {metrics.map((metric) => <option key={metric.id} value={metric.id}>{metric.label}</option>)}
+              {/* Agrupado como no servidor (Progresso, Dicionário, Toques em ícones, Uso do app). */}
+              {[...new Set(metrics.map((metric) => metric.group ?? "Outras"))].map((group) => (
+                <optgroup key={group} label={group}>
+                  {metrics.filter((metric) => (metric.group ?? "Outras") === group).map((metric) => (
+                    <option key={metric.id} value={metric.id}>{metric.label}</option>
+                  ))}
+                </optgroup>
+              ))}
             </select>
           </Field>
           <Field label="Meta"><input type="number" min={1} value={form.goal} onChange={(e) => set({ goal: e.target.value })} required /></Field>

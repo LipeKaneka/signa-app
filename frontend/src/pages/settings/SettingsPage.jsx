@@ -8,6 +8,7 @@ import { Icon } from "../../components/Icon.jsx";
 import { AppIcon } from "../../components/illustrations.jsx";
 import "./settings.css";
 import { useAppVersion } from "../../features/app-update/useAppVersion.js";
+import { useAppEvents } from "../../features/achievements/AppEventsContext.jsx";
 
 /** Linhas na ordem do protótipo. type: toggle | theme | fontSize. */
 const SETTING_ROWS = [
@@ -90,6 +91,7 @@ function DeleteAccountForm({ onCancel }) {
 
 export function SettingsPage() {
   const { settings, updateSetting } = useSettings();
+  const { track } = useAppEvents();
   const version = useAppVersion();
   const { signOut } = useAuth();
   const [showHelp, setShowHelp] = useState(false);
@@ -104,7 +106,14 @@ export function SettingsPage() {
         {SETTING_ROWS.map((row) => (
           <li key={row.key} className="settings-row">
             {row.label}
-            <SettingControl row={row} value={settings[row.key]} onChange={(value) => updateSetting(row.key, value)} />
+            <SettingControl
+              row={row}
+              value={settings[row.key]}
+              onChange={(value) => {
+                if (row.key === "theme" && value !== settings.theme) track("theme_change");
+                updateSetting(row.key, value);
+              }}
+            />
           </li>
         ))}
         <li>

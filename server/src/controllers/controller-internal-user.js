@@ -1,5 +1,6 @@
 import * as UserService from "../services/service-user.js";
 import { hideLockedSecrets } from "../services/service-achievement.js";
+import { recordAppEvents } from "../services/service-app-events.js";
 import * as PasswordResetService from "../services/service-password-reset.js";
 import {
   readRequiredString,
@@ -54,6 +55,14 @@ export async function googleSignIn(req, res) {
  */
 export function getSession(_req, res) {
   res.json({ active: true });
+}
+
+/**
+ * POST /internal/v1/users/:userId/events — ações do app que valem conquista.
+ * Corpo: {events: [{type, count?} | {type: "sign_view", sign}]}. Responde {newAchievements}.
+ */
+export async function recordEvents(req, res) {
+  res.json(await recordAppEvents(req.user, req.body?.events));
 }
 
 /** GET /internal/v1/users/:userId/profile — {user, achievements}. */

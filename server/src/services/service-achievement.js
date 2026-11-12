@@ -1,28 +1,56 @@
 import { AchievementModel } from "../models/model-achievement.js";
+import { SignModel } from "../models/model-sign.js";
 import { DEFAULT_ACHIEVEMENTS } from "../config/achievements.js";
+import { APP_EVENT_METRICS } from "../config/achievement-metrics.js";
 import { createTimedCache } from "../utils/util-timed-cache.js";
 import { readCurrentStreak } from "./service-streak.js";
+import { countCompletedModules } from "./service-trail.js";
 
 const CATALOG_CACHE_MS = 30 * 1000;
 const cache = createTimedCache(CATALOG_CACHE_MS);
+
+/** Total de sinais ativos do dicionário (para "% do dicionário visto"); muda pouco, então fica 30 s em cache. */
+export function countActiveSigns() {
+  return cache.get("active-signs", () => SignModel.countDocuments({ active: { $ne: false } }));
+}
 
 /**
  * Reúne os números do usuário que as conquistas medem (uma entrada por métrica de ACHIEVEMENT_METRICS).
  * @param {object} user - documento do usuário (UserModel).
  * @param {number} [completedModules=0] - módulos concluídos (vem de countCompletedModules, da trilha).
- * @returns {{streak: number, completedModules: number, totalCorrectAnswers: number, completedActivities: number, xp: number}}
+ * @param {number} [totalSigns=0] - sinais ativos do dicionário (vem de countActiveSigns).
+ * @returns {Record<string, number>}
  * streak usa o maior entre a ofensiva atual e a máxima (uma conquista de ofensiva não "some" se a ofensiva zerar).
- * Usado por: service-user.js (perfil) e service-attempt.js (antes/depois de concluir).
+ * dictionaryPercent conta só sinais que ainda existem e arredonda para baixo (100 = viu todos).
+ * Usado por: readUserAchievementMetrics (perfil, tentativas e ações do app).
  * Para uma métrica nova: acrescente o campo aqui e em config/achievement-metrics.js. Veja docs/CONQUISTAS.md.
  */
-export function readAchievementMetrics(user, completedModules = 0) {
+export function readAchievementMetrics(user, completedModules = 0, totalSigns = 0) {
+  const viewedSigns = user.viewedSigns?.length ?? 0;
+  const actions = Object.fromEntries(
+    Object.entries(APP_EVENT_METRICS).map(([type, metric]) => [metric, user.actionCounts?.get?.(type) ?? 0]),
+  );
   return {
     streak: Math.max(user.maxStreak, readCurrentStreak(user)),
     completedModules,
     totalCorrectAnswers: user.totalCorrectAnswers,
     completedActivities: user.completedActivitiesCount,
+    perfectActivities: (user.completedActivities ?? []).filter((item) => item.bestScore >= 100).length,
     xp: user.xp,
+    dictionarySignsViewed: viewedSigns,
+    dictionaryPercent: totalSigns > 0 ? Math.floor((Math.min(viewedSigns, totalSigns) / totalSigns) * 100) : 0,
+    ...actions,
   };
+}
+
+/**
+ * readAchievementMetrics com os totais que vêm do banco (módulos concluídos e sinais do dicionário).
+ * @param {object} user
+ * @returns {Promise<Record<string, number>>}
+ */
+export async function readUserAchievementMetrics(user) {
+  const [completedModules, totalSigns] = await Promise.all([countCompletedModules(user), countActiveSigns()]);
+  return readAchievementMetrics(user, completedModules, totalSigns);
 }
 
 /**

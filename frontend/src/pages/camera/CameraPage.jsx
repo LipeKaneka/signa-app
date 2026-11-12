@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTrackOnMount } from "../../features/achievements/AppEventsContext.jsx";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Icon } from "../../components/Icon.jsx";
 import { HandDrawing } from "../../components/illustrations.jsx";
@@ -165,6 +166,7 @@ function CameraScreen() {
 
 /** Na primeira vez, antes de traduzir, abre a análise da mão (pode ser pulada). */
 export default function CameraPage() {
+  useTrackOnMount("camera_open");
   if (!readHandProfile() && !wasHandAnalysisSeen()) return <Navigate to="/camera/analise" replace />;
   return <CameraScreen />;
 }

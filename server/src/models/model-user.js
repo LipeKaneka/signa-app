@@ -89,6 +89,11 @@ const userSchema = new mongoose.Schema(
       type: [{ _id: false, key: { type: String, required: true }, unlockedAt: { type: Date, required: true } }],
       default: [],
     },
+    // Ações no app que valem conquista (toques em ícones, perguntas ao assistente...): tipo → total.
+    // Os tipos aceitos estão em APP_EVENT_METRICS (config/achievement-metrics.js).
+    actionCounts: { type: Map, of: Number, default: () => new Map() },
+    // Sinais (slug) já abertos no dicionário, cada um uma vez: conquistas "ver X sinais" / "ver o dicionário todo".
+    viewedSigns: { type: [String], default: [] },
     rankingPositions: {
       activities: { type: rankingPositionSchema, default: () => ({}) },
       xp: { type: rankingPositionSchema, default: () => ({}) },

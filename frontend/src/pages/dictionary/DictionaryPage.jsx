@@ -5,6 +5,7 @@ import { ErrorState, LoadingState, ScreenWithNav } from "../../components/layout
 import { Icon } from "../../components/Icon.jsx";
 import { SignLanguageHands } from "../../components/illustrations.jsx";
 import { SignDialog } from "../../components/SignDialog.jsx";
+import { useAppEvents } from "../../features/achievements/AppEventsContext.jsx";
 import "./dictionary.css";
 
 const SEARCH_DELAY_MS = 300;
@@ -86,7 +87,13 @@ function CategoryAccordion({ category, onOpenSign }) {
 
 export function DictionaryPage() {
   const [search, setSearch] = useState("");
-  const [openSign, setOpenSign] = useState(null);
+  const [openSign, setOpenSignState] = useState(null);
+  const { trackSignView } = useAppEvents();
+  // Cada sinal aberto conta para as conquistas "ver X sinais" e "ver o dicionário todo".
+  const setOpenSign = useCallback((sign) => {
+    if (sign?.slug) trackSignView(sign.slug);
+    setOpenSignState(sign);
+  }, [trackSignView]);
   const debouncedSearch = useDebouncedValue(search.trim(), SEARCH_DELAY_MS);
 
   const categories = useAsyncData(ContentApi.fetchDictionaryCategories, [], { cacheKey: "dictionary:categories" });

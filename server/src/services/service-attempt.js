@@ -5,9 +5,9 @@ import { getXpMultiplier } from "./service-event.js";
 import { describeLevel } from "./service-level.js";
 import { notFound, conflict, badRequest } from "../utils/util-http-error.js";
 import { UserModel } from "../models/model-user.js";
-import { findUnlockedActivity, countCompletedModules } from "./service-trail.js";
+import { findUnlockedActivity } from "./service-trail.js";
 import { registerActivityDay } from "./service-streak.js";
-import { readAchievementMetrics, readAchievementOverrides, findNewlyUnlocked, listAchievementsWithProgress, recordUnlockDates } from "./service-achievement.js";
+import { readUserAchievementMetrics, readAchievementOverrides, findNewlyUnlocked, listAchievementsWithProgress, recordUnlockDates } from "./service-achievement.js";
 import { toPublicProfile } from "./service-user.js";
 import { CAMERA_UNAVAILABLE_OPTION, findCameraTarget } from "../config/camera-targets.js";
 
@@ -170,7 +170,7 @@ export async function answerQuestion(user, attemptId, questionKey, optionId) {
  * @returns {Promise<{id: string, title: string}[]>}
  */
 async function countCorrectAnswerNow(user) {
-  const metricsBefore = readAchievementMetrics(user, await countCompletedModules(user));
+  const metricsBefore = await readUserAchievementMetrics(user);
   const updated = await UserModel.findOneAndUpdate({ _id: user._id }, { $inc: { totalCorrectAnswers: 1 } }, { returnDocument: "after" })
     .select("totalCorrectAnswers")
     .lean();
@@ -249,7 +249,7 @@ export async function finishAttempt(user, attemptId) {
   const passed = score >= rules.MIN_SCORE_TO_PASS;
   const alreadyCompleted = user.completedActivities.some((item) => String(item.activity) === String(closed.activity));
 
-  const metricsBefore = readAchievementMetrics(user, await countCompletedModules(user));
+  const metricsBefore = await readUserAchievementMetrics(user);
   const xpEarned = passed ? computeXp(correctAnswers, totalQuestions, alreadyCompleted, rules, multiplier) : 0;
 
   user.xp += xpEarned;
@@ -259,7 +259,7 @@ export async function finishAttempt(user, attemptId) {
   if (passed) saveBestScore(user, closed.activity, score);
   await user.save();
 
-  const metricsAfter = readAchievementMetrics(user, await countCompletedModules(user));
+  const metricsAfter = await readUserAchievementMetrics(user);
   const overrides = readAchievementOverrides(user);
   const newAchievements = await findNewlyUnlocked(metricsBefore, metricsAfter, overrides);
   if (recordUnlockDates(user, await listAchievementsWithProgress(metricsAfter, overrides))) await user.save();
