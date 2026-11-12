@@ -486,3 +486,72 @@ input:disabled, select:disabled { background: var(--off-bg); }
 /* Lista de usuários: a linha inteira abre o usuário */
 .table__row--link { cursor: pointer; }
 .table__row--link:hover td { background: var(--primary-faint); }
+
+/* ---------- Aparência de conquista (prévia igual ao cartão do app) ---------- */
+.ach-preview { display: grid; gap: 12px; padding: 14px; border-radius: var(--radius); background: #f3f0ff; }
+.ach-image-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ach-card {
+  position: relative; overflow: hidden; display: flex; align-items: center; gap: 14px; min-height: 78px;
+  padding: 10px 12px; border: 2px solid var(--ach-accent, #777); border-radius: 16px; background: #fff; color: #1b1530;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+}
+.ach-card--compact { min-height: 0; padding: 6px 8px; gap: 10px; border-radius: 12px; box-shadow: none; }
+.ach-card__body { display: grid; gap: 2px; min-width: 0; }
+.ach-card__body strong { font-size: 0.95rem; }
+.ach-card__body span:last-child { font-size: 0.72rem; color: #6c6880; }
+.ach-card--compact .ach-card__body strong { font-size: 0.85rem; }
+.ach-card--locked { border-color: #b9b6c4; background: #f7f5fd; color: #8c8a99; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.1); }
+.ach-card--locked .ach-badge { filter: grayscale(0.85); opacity: 0.55; }
+.ach-card--locked .ach-tier { filter: grayscale(1); opacity: 0.7; }
+.ach-badge {
+  position: relative; display: grid; place-items: center; flex: none; border-radius: 12px;
+  background: linear-gradient(135deg, var(--ach-from, #4f31bb), var(--ach-to, #4f31bb));
+}
+.ach-badge__image { width: 86%; height: 86%; object-fit: contain; border-radius: 8px; }
+.ach-badge__emoji { line-height: 1; }
+.ach-badge__secret { color: #fff; font-weight: 800; font-size: 1.5rem; }
+.ach-badge:has(.ach-badge__secret) { background: #9e8ee0; }
+.ach-badge__sparkles { position: absolute; inset: -8px; pointer-events: none; }
+.ach-badge__sparkles i {
+  position: absolute; width: 9px; height: 9px; background: #ffd25a;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+}
+.ach-badge__sparkles i:nth-child(1) { top: 0; right: 2px; }
+.ach-badge__sparkles i:nth-child(2) { bottom: 4px; left: -1px; width: 7px; height: 7px; }
+.ach-badge__sparkles i:nth-child(3) { top: 40%; right: -4px; width: 6px; height: 6px; }
+.ach-card--locked .ach-badge__sparkles { display: none; }
+.ach-tier {
+  justify-self: start; padding: 1px 8px; border-radius: 999px; font-size: 0.62rem; font-weight: 800;
+  letter-spacing: 0.04em; text-transform: uppercase;
+}
+.ach-tier--common { background: #e6e4ee; color: #4e4b5c; }
+.ach-tier--rare { background: #dbeafe; color: #1d4ed8; }
+.ach-tier--epic { background: #ede4ff; color: #6b2fd6; }
+.ach-tier--legendary { background: linear-gradient(90deg, #ffe08a, #f5b82e); color: #6b4300; }
+@media (prefers-reduced-motion: no-preference) {
+  .ach-card--fx-shine::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none; transform: translateX(-120%);
+    background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.6) 50%, transparent 65%);
+    animation: ach-shine 3.2s ease-in-out infinite;
+  }
+  .ach-card--fx-glow { animation: ach-glow 2.4s ease-in-out infinite; }
+  .ach-badge__sparkles i { animation: ach-twinkle 1.8s ease-in-out infinite; }
+  .ach-badge__sparkles i:nth-child(2) { animation-delay: 0.6s; }
+  .ach-badge__sparkles i:nth-child(3) { animation-delay: 1.2s; }
+  .ach-card--fx-rainbow {
+    border-color: transparent;
+    background: linear-gradient(#fff, #fff) padding-box, linear-gradient(90deg, #ff5f6d, #ffc371, #47e891, #4facfe, #a66cff, #ff5f6d) border-box;
+    background-size: 100% 100%, 300% 100%;
+    animation: ach-rainbow 4s linear infinite;
+  }
+  .ach-card--fx-float .ach-badge { animation: ach-float 2.6s ease-in-out infinite; }
+}
+@keyframes ach-shine { 0%, 55% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+@keyframes ach-glow {
+  0%, 100% { box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2), 0 0 0 0 color-mix(in srgb, var(--ach-accent, #8b6cf0) 0%, transparent); }
+  50% { box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2), 0 0 18px 3px color-mix(in srgb, var(--ach-accent, #8b6cf0) 60%, transparent); }
+}
+@keyframes ach-twinkle { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.2; transform: scale(0.6); } }
+@keyframes ach-rainbow { to { background-position: 0 0, 300% 0; } }
+@keyframes ach-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+.ach-row { display: flex; align-items: center; gap: 10px; }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Modal } from "./ui.jsx";
+import { AchievementPreviewCard } from "./AchievementLook.jsx";
 import { formatCompact } from "../format-number.jsx";
 import logoBranca from "../assets/brand/logo-branca.svg";
 import fogo from "../assets/app/fogo.webp";
@@ -26,13 +27,15 @@ function initials(nickname) {
 function AchievementItem({ achievement, showDate }) {
   return (
     <li className="phone-achievement">
-      <div className={`phone-achievement__card${achievement.unlocked ? "" : " phone-achievement__card--locked"}`}>
-        <span className="phone-achievement__medal" aria-hidden="true">{achievement.hiddenSecret ? "?" : "🏅"}</span>
-        <div>
-          <strong>{achievement.title}</strong>
-          <span>{achievement.description}</span>
-        </div>
-      </div>
+      {/* Mesmo cartão do app: cores, imagem/emoji, raridade e efeito escolhidos na tela Conquistas. */}
+      <AchievementPreviewCard
+        title={achievement.title}
+        description={achievement.description}
+        appearance={achievement.appearance}
+        unlocked={achievement.unlocked}
+        hidden={achievement.hiddenSecret}
+        compact
+      />
       {showDate && achievement.unlocked && achievement.unlockedAt && <p className="phone-achievement__date">{formatUnlock(achievement.unlockedAt)}</p>}
     </li>
   );

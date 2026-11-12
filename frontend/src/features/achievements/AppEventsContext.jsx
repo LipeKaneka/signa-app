@@ -51,6 +51,7 @@ export function AppEventsProvider({ children }) {
           id: `achievement-${achievement.id}`,
           kind: "achievement",
           title: achievement.title,
+          appearance: achievement.appearance,
         }))]);
       })
       .catch(() => {});

@@ -194,7 +194,7 @@ export function ActivityPage() {
           explanation={isTextQuestion(question) ? feedback.explanation : ""}
         />
       )}
-      <AchievementToast items={liveAchievements.map((achievement) => ({ id: `achievement-${achievement.id}`, kind: "achievement", title: achievement.title }))} />
+      <AchievementToast items={liveAchievements.map((achievement) => ({ id: `achievement-${achievement.id}`, kind: "achievement", title: achievement.title, appearance: achievement.appearance }))} />
     </div>
   );
 }

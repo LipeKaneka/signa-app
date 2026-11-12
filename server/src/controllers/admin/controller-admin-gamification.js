@@ -6,6 +6,7 @@ import { readActor } from "../../middlewares/admin-auth-middleware.js";
 import { readRequiredString, readOptionalString, readBoolean, readInteger, readDate } from "../../utils/util-validators.js";
 import { badRequest } from "../../utils/util-http-error.js";
 import { readEventAppearance } from "../../config/event-appearance.js";
+import { readAchievementAppearance } from "../../config/achievement-appearance.js";
 import { readEventSchedule } from "../../config/event-schedule.js";
 
 /**
@@ -26,6 +27,14 @@ function readAchievementFields(body, creating) {
     // Secreta: no app, enquanto bloqueada, não mostra título, descrição nem progresso.
     secret: readBoolean(body?.secret, "Secreta") ?? (creating ? false : undefined),
   };
+  // Aparência: o painel manda o objeto inteiro (imagem, cores, raridade, efeito).
+  if (body?.appearance !== undefined) {
+    try {
+      fields.appearance = readAchievementAppearance(body.appearance);
+    } catch (error) {
+      throw badRequest(error.message);
+    }
+  }
   if (creating) {
     const key = readRequiredString(body?.key, "a chave", 60);
     if (!/^[a-z0-9_]+$/.test(key)) throw badRequest("Chave: use só letras minúsculas, números e _.");

@@ -23,15 +23,40 @@
 
 .achievement-card__medal {
   display: flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
-  width: 52px;
-  height: 52px;
-  border-radius: 10px;
-  background: var(--color-primary);
 }
 
+.achievement-card__body {
+  min-width: 0;
+}
+
+/* Medalha: cores da conquista (--ach-from/--ach-to); sem aparência, o roxo da marca. */
+.achievement-badge {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--ach-from, var(--color-primary)), var(--ach-to, var(--color-primary)));
+  overflow: visible;
+}
+
+.achievement-badge__image {
+  width: 86%;
+  height: 86%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.achievement-badge__emoji {
+  line-height: 1;
+}
+
+.achievement-badge__secret {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+}
 
 .achievement-card__title {
   margin: 0;
@@ -53,8 +78,16 @@
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.12);
 }
 
-.achievement-card--locked .achievement-card__medal {
+/* Bloqueada: medalha apagada (mantém a forma, sem as cores) e sem efeitos. */
+.achievement-card--locked .achievement-badge {
+  filter: grayscale(0.85);
+  opacity: 0.55;
+}
+
+.achievement-card--locked:not(.achievement-card--custom) .achievement-badge {
   background: #9e8ee0;
+  filter: none;
+  opacity: 1;
 }
 
 .achievement-card--locked .achievement-card__description {
@@ -93,12 +126,129 @@
   font-style: italic;
 }
 
-.achievement-card__secret {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  font-size: 1.6rem;
+
+
+/* ---------- Aparência do painel (desbloqueada) ---------- */
+.achievement-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.achievement-card--custom:not(.achievement-card--locked) {
+  border-color: var(--ach-accent, #777);
+  border-width: 2px;
+}
+
+/* Selo de raridade acima do título. */
+.achievement-tier {
+  display: inline-block;
+  margin-bottom: 3px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.625rem;
   font-weight: 800;
-  color: #fff;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.achievement-tier--common { background: #e6e4ee; color: #4e4b5c; }
+.achievement-tier--rare { background: #dbeafe; color: #1d4ed8; }
+.achievement-tier--epic { background: #ede4ff; color: #6b2fd6; }
+.achievement-tier--legendary { background: linear-gradient(90deg, #ffe08a, #f5b82e); color: #6b4300; }
+
+.achievement-card--locked .achievement-tier {
+  filter: grayscale(1);
+  opacity: 0.7;
+}
+
+/* Brilhos em volta da medalha (efeito "sparkles"). */
+.achievement-badge__sparkles {
+  position: absolute;
+  inset: -8px;
+  pointer-events: none;
+}
+
+.achievement-badge__sparkles i {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: #ffd25a;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+}
+
+.achievement-badge__sparkles i:nth-child(1) { top: 0; right: 2px; }
+.achievement-badge__sparkles i:nth-child(2) { bottom: 4px; left: -1px; width: 7px; height: 7px; }
+.achievement-badge__sparkles i:nth-child(3) { top: 40%; right: -4px; width: 6px; height: 6px; }
+
+.achievement-card--locked .achievement-badge__sparkles {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Reflexo de luz que atravessa o cartão. */
+  .achievement-card--fx-shine::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.55) 50%, transparent 65%);
+    transform: translateX(-120%);
+    animation: achievement-shine 3.2s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  /* Brilho pulsando em volta, na cor de destaque. */
+  .achievement-card--fx-glow {
+    animation: achievement-glow 2.4s ease-in-out infinite;
+  }
+
+  .achievement-badge__sparkles i {
+    animation: achievement-twinkle 1.8s ease-in-out infinite;
+  }
+
+  .achievement-badge__sparkles i:nth-child(2) { animation-delay: 0.6s; }
+  .achievement-badge__sparkles i:nth-child(3) { animation-delay: 1.2s; }
+
+  /* Borda arco-íris girando. */
+  .achievement-card--fx-rainbow {
+    border: 2px solid transparent !important;
+    background:
+      linear-gradient(var(--color-card), var(--color-card)) padding-box,
+      linear-gradient(90deg, #ff5f6d, #ffc371, #47e891, #4facfe, #a66cff, #ff5f6d) border-box;
+    background-size: 100% 100%, 300% 100%;
+    animation: achievement-rainbow 4s linear infinite;
+  }
+
+  /* Medalha flutuando. */
+  .achievement-card--fx-float .achievement-badge {
+    animation: achievement-float 2.6s ease-in-out infinite;
+  }
+}
+
+/* Sem animação: o destaque continua, parado. */
+@media (prefers-reduced-motion: reduce) {
+  .achievement-card--fx-glow { box-shadow: 0 0 0 3px color-mix(in srgb, var(--ach-accent, #8b6cf0) 35%, transparent); }
+}
+
+@keyframes achievement-shine {
+  0%, 55% { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+
+@keyframes achievement-glow {
+  0%, 100% { box-shadow: 0 4px 0 rgba(0, 0, 0, 0.28), 0 0 0 0 color-mix(in srgb, var(--ach-accent, #8b6cf0) 0%, transparent); }
+  50% { box-shadow: 0 4px 0 rgba(0, 0, 0, 0.28), 0 0 18px 3px color-mix(in srgb, var(--ach-accent, #8b6cf0) 60%, transparent); }
+}
+
+@keyframes achievement-twinkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.2; transform: scale(0.6); }
+}
+
+@keyframes achievement-rainbow {
+  to { background-position: 0 0, 300% 0; }
+}
+
+@keyframes achievement-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }

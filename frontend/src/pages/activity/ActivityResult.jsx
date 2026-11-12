@@ -56,7 +56,7 @@ export function ActivityResult({ result, levelUp, reviewItems, earnedDuringActiv
   const { minScoreToPass } = useAppConfig();
   const multiplier = result.xpMultiplier ?? 1;
   const toasts = [
-    ...result.newAchievements.map((achievement) => ({ id: `achievement-${achievement.id}`, kind: "achievement", title: achievement.title })),
+    ...result.newAchievements.map((achievement) => ({ id: `achievement-${achievement.id}`, kind: "achievement", title: achievement.title, appearance: achievement.appearance })),
     ...(levelUp ? [{ id: `level-${levelUp.level}`, kind: "level", title: `Nível ${levelUp.level}: ${levelUp.title}` }] : []),
   ];
 
@@ -109,7 +109,7 @@ export function ActivityResult({ result, levelUp, reviewItems, earnedDuringActiv
       )}
       {levelUp && <p className="activity-result__achievement">⬆ Você subiu para o nível {levelUp.level}: {levelUp.title}</p>}
       {[...earnedDuringActivity, ...result.newAchievements].map((achievement) => (
-        <p key={achievement.id} className="activity-result__achievement">🏅 Conquista desbloqueada: {achievement.title}</p>
+        <p key={achievement.id} className="activity-result__achievement">{achievement.appearance?.emoji || "🏅"} Conquista desbloqueada: {achievement.title}</p>
       ))}
 
       <button type="button" className="button-primary button-large activity-result__continue" onClick={onContinue}>

@@ -3,6 +3,7 @@ import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { ActiveBadge, Badge, Field, LoadState, Modal, Notice, confirmAction, useAction, useLoad } from "../components/ui.jsx";
 import { Num } from "../format-number.jsx";
+import { AchievementAppearanceEditor, AchievementBadge, DEFAULT_ACHIEVEMENT_APPEARANCE, TIER_LABELS } from "../components/AchievementLook.jsx";
 
 /** Formulário de conquista. A métrica vem de uma lista fixa (cada métrica é um cálculo no servidor). */
 function AchievementForm({ achievement, metrics, onClose, onSaved }) {
@@ -15,9 +16,11 @@ function AchievementForm({ achievement, metrics, onClose, onSaved }) {
     icon: achievement?.icon ?? "medal",
     order: achievement?.order ?? 0,
     secret: achievement?.secret === true,
+    appearance: { ...DEFAULT_ACHIEVEMENT_APPEARANCE, ...(achievement?.appearance ?? {}) },
   });
   const { run, busy, message } = useAction();
   const set = (changes) => setForm({ ...form, ...changes });
+  const setAppearance = (changes) => setForm((current) => ({ ...current, appearance: { ...current.appearance, ...changes } }));
 
   const submit = (event) => {
     event.preventDefault();
@@ -58,6 +61,7 @@ function AchievementForm({ achievement, metrics, onClose, onSaved }) {
           <Field label="Ícone"><input value={form.icon} onChange={(e) => set({ icon: e.target.value })} maxLength={40} /></Field>
           <Field label="Ordem no perfil"><input type="number" min={0} value={form.order} onChange={(e) => set({ order: e.target.value })} /></Field>
         </div>
+        <AchievementAppearanceEditor value={form.appearance} onChange={setAppearance} title={form.title} description={form.description} />
         <label className="check secret-check">
           <input type="checkbox" checked={form.secret} onChange={(e) => set({ secret: e.target.checked })} />
           <span>
@@ -116,7 +120,17 @@ export function AchievementsPage() {
             {data.achievements.map((achievement) => (
               <tr key={achievement.id}>
                 <td className="table__order">{achievement.order}</td>
-                <td><strong>{achievement.title}</strong>{achievement.secret && <> <Badge tone="warn">Secreta</Badge></>}<div className="field__hint">{achievement.description} · {achievement.key}</div></td>
+                <td>
+                  <div className="ach-row">
+                    <AchievementBadge appearance={achievement.appearance} size={38} />
+                    <div>
+                      <strong>{achievement.title}</strong>
+                      {achievement.appearance?.tier && <> <Badge>{TIER_LABELS[achievement.appearance.tier]}</Badge></>}
+                      {achievement.secret && <> <Badge tone="warn">Secreta</Badge></>}
+                      <div className="field__hint">{achievement.description} · {achievement.key}</div>
+                    </div>
+                  </div>
+                </td>
                 <td>{metricLabel(achievement.metric)}</td>
                 <td><Num value={achievement.goal} /></td>
                 <td><ActiveBadge active={achievement.active} /></td>

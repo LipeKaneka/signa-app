@@ -64,6 +64,7 @@ test("toques no fogo somam e desbloqueiam a conquista uma vez só", async () => 
 
   const second = await sendEvents(userId, [{ type: "tap_flame", count: 2 }, { type: "tap_logo" }]);
   assert.deepEqual(second.body.newAchievements.map((achievement) => achievement.id), ["fogo_curioso"]);
+  assert.equal(second.body.newAchievements[0].appearance.effect, "none"); // o aviso traz a aparência
 
   const third = await sendEvents(userId, [{ type: "tap_flame" }]);
   assert.deepEqual(third.body.newAchievements, []);
@@ -92,6 +93,7 @@ test("dicionário: cada sinal conta uma vez, sinais que não existem são ignora
   assert.equal(findAchievement(profile.body, "explorador").current, 2);
   // Conquista secreta bloqueada continua escondida no app.
   assert.equal(findAchievement(profile.body, "enciclopedia").title, "Conquista secreta");
+  assert.equal(findAchievement(profile.body, "enciclopedia").appearance, null); // nem a aparência vaza
 });
 
 test("ver todos os sinais do dicionário desbloqueia a conquista de 100%", async () => {

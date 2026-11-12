@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { ACHIEVEMENT_METRICS } from "../config/achievement-metrics.js";
+import { ACHIEVEMENT_EFFECTS, ACHIEVEMENT_TIERS } from "../config/achievement-appearance.js";
 
 /**
  * Conquista do catálogo (coleção "achievements"), editável pelo painel.
@@ -8,6 +9,7 @@ import { ACHIEVEMENT_METRICS } from "../config/achievement-metrics.js";
  * - goal: meta; desbloqueia quando métrica >= goal.
  * - active: false = desativada (some do app, continua no painel). order: posição na lista do perfil.
  * - secret: true = conquista secreta: no app, enquanto bloqueada, não mostra título, descrição nem progresso.
+ * - appearance: imagem/emoji, cores, raridade e efeito no app (config/achievement-appearance.js); null = padrão.
  * Usado por: service-achievement.js.
  */
 const achievementSchema = new mongoose.Schema(
@@ -21,6 +23,19 @@ const achievementSchema = new mongoose.Schema(
     active: { type: Boolean, default: true },
     secret: { type: Boolean, default: false },
     order: { type: Number, default: 0 },
+    appearance: {
+      type: {
+        _id: false,
+        tier: { type: String, enum: ACHIEVEMENT_TIERS, default: "" },
+        colorFrom: String,
+        colorTo: String,
+        accentColor: String,
+        emoji: { type: String, maxlength: 8, default: "" },
+        image: { type: String, default: "" },
+        effect: { type: String, enum: ACHIEVEMENT_EFFECTS, default: "none" },
+      },
+      default: null,
+    },
   },
   { timestamps: true },
 );

@@ -543,3 +543,42 @@ test("atualização do app: painel define versão e link (só https) e o app rec
   assert.equal(config.body.settings["app.update.versionName"], "1.2");
   assert.equal(config.body.settings["app.update.minVersionCode"], 0);
 });
+
+test("conquista: aparência (raridade, cores, imagem/emoji, efeito) é validada e chega ao app", async () => {
+  const editor = await signIn("editor");
+  const base = {
+    key: `visual_${randomBytes(3).toString("hex")}`, title: "Visual", description: "Teste de aparência.",
+    metric: "xp", goal: 1, order: 900,
+  };
+  const bad = (appearance) => editor.post("/admin/api/v1/achievements").set(PANEL).send({ ...base, appearance });
+  assert.equal((await bad({ colorFrom: "roxo" })).status, 400);
+  assert.equal((await bad({ effect: "explosao" })).status, 400);
+  assert.equal((await bad({ tier: "mitica" })).status, 400);
+  assert.equal((await bad({ image: "data:image/svg+xml;base64,PHN2Zz4=" })).status, 400); // SVG nunca
+  assert.equal((await bad({ image: `data:image/png;base64,${"A".repeat(40000)}` })).status, 400); // grande demais
+
+  const image = `data:image/png;base64,${Buffer.from("imagem").toString("base64")}`;
+  const created = await editor.post("/admin/api/v1/achievements").set(PANEL)
+    .send({ ...base, appearance: { tier: "legendary", colorFrom: "#F5B82E", colorTo: "#e07b00", accentColor: "#f5b82e", effect: "sparkles", image } });
+  assert.equal(created.status, 201, created.body.error);
+  assert.equal(created.body.achievement.appearance.colorFrom, "#f5b82e"); // normalizada
+  assert.equal(created.body.achievement.appearance.emoji, "");
+
+  const edited = await editor.patch(`/admin/api/v1/achievements/${created.body.achievement.id}`).set(PANEL)
+    .send({ appearance: { ...created.body.achievement.appearance, image: "", emoji: "🔥", effect: "glow" } });
+  assert.equal(edited.status, 200, edited.body.error);
+  assert.equal(edited.body.achievement.appearance.image, "");
+  assert.equal(edited.body.achievement.appearance.emoji, "🔥");
+
+  // No app: a conquista (XP >= 1) vem com a aparência; a lista do painel traz o padrão para as antigas.
+  const account = await request(app).post("/internal/v1/auth/register").set(withKey())
+    .send({ nickname: "Visual", email: `visual_${randomBytes(3).toString("hex")}@exemplo.test`, password: `${randomBytes(6).toString("hex")}A1`, acceptedTerms: true });
+  const profile = await request(app).get(`/internal/v1/users/${account.body.id}/profile`).set(withKey());
+  const inApp = profile.body.achievements.find((achievement) => achievement.id === base.key);
+  assert.deepEqual(
+    { tier: inApp.appearance.tier, effect: inApp.appearance.effect, emoji: inApp.appearance.emoji },
+    { tier: "legendary", effect: "glow", emoji: "🔥" },
+  );
+  const list = await editor.get("/admin/api/v1/achievements").set(PANEL);
+  assert.ok(list.body.achievements.every((achievement) => achievement.appearance && achievement.appearance.effect));
+});

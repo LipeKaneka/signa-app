@@ -11,6 +11,7 @@ import { describeActiveChange } from "./service-admin-trail.js";
 import { listLevels } from "./service-level.js";
 import { setSetting } from "./service-settings.js";
 import { readEventAppearance, toPublicAppearance } from "../config/event-appearance.js";
+import { toPublicAchievementAppearance } from "../config/achievement-appearance.js";
 import { currentOccurrence, isRecurring, nextOccurrence } from "../config/event-schedule.js";
 
 /**
@@ -20,7 +21,13 @@ import { currentOccurrence, isRecurring, nextOccurrence } from "../config/event-
  */
 function toAdminAchievement(achievement) {
   const { _id, __v, createdAt, ...fields } = achievement;
-  return { id: String(_id), ...fields, active: achievement.active !== false, secret: achievement.secret === true };
+  return {
+    id: String(_id),
+    ...fields,
+    active: achievement.active !== false,
+    secret: achievement.secret === true,
+    appearance: toPublicAchievementAppearance(achievement.appearance),
+  };
 }
 
 /**
@@ -61,7 +68,7 @@ export async function updateAchievement(actor, achievementId, changes) {
   const achievement = await AchievementModel.findById(achievementId);
   if (!achievement) throw notFound("Conquista não encontrada.");
   const before = achievement.toObject();
-  for (const field of ["title", "description", "metric", "goal", "icon", "order", "active", "secret"]) {
+  for (const field of ["title", "description", "metric", "goal", "icon", "order", "active", "secret", "appearance"]) {
     if (changes[field] !== undefined) achievement[field] = changes[field];
   }
   await achievement.save();

@@ -2,6 +2,7 @@ import { AchievementModel } from "../models/model-achievement.js";
 import { SignModel } from "../models/model-sign.js";
 import { DEFAULT_ACHIEVEMENTS } from "../config/achievements.js";
 import { APP_EVENT_METRICS } from "../config/achievement-metrics.js";
+import { toPublicAchievementAppearance } from "../config/achievement-appearance.js";
 import { createTimedCache } from "../utils/util-timed-cache.js";
 import { readCurrentStreak } from "./service-streak.js";
 import { countCompletedModules } from "./service-trail.js";
@@ -96,6 +97,7 @@ export async function listAchievementsWithProgress(metrics, overrides = new Map(
       title: achievement.title,
       description: achievement.description,
       icon: achievement.icon,
+      appearance: toPublicAchievementAppearance(achievement.appearance),
       current: override === true ? achievement.goal : reached,
       goal: achievement.goal,
       unlocked: override ?? reached >= achievement.goal,
@@ -111,8 +113,8 @@ export async function listAchievementsWithProgress(metrics, overrides = new Map(
  * @param {ReturnType<typeof readAchievementMetrics>} metricsBefore
  * @param {ReturnType<typeof readAchievementMetrics>} metricsAfter
  * @param {Map<string, boolean>} [overrides] - ajustes manuais do painel (valem antes e depois).
- * @returns {Promise<{id: string, title: string}[]>}
- * Usado por: service-attempt.js (result.newAchievements na tela de resultado).
+ * @returns {Promise<{id: string, title: string, appearance: object}[]>}
+ * Usado por: service-attempt.js (result.newAchievements na tela de resultado) e service-app-events.js.
  */
 export async function findNewlyUnlocked(metricsBefore, metricsAfter, overrides = new Map()) {
   const before = await listAchievementsWithProgress(metricsBefore, overrides);
@@ -120,7 +122,7 @@ export async function findNewlyUnlocked(metricsBefore, metricsAfter, overrides =
   const after = await listAchievementsWithProgress(metricsAfter, overrides);
   return after
     .filter((achievement) => achievement.unlocked && !unlockedBefore.has(achievement.id))
-    .map(({ id, title }) => ({ id, title }));
+    .map(({ id, title, appearance }) => ({ id, title, appearance }));
 }
 
 /**
@@ -165,6 +167,7 @@ export function hideLockedSecrets(achievements) {
           title: "Conquista secreta",
           description: "Continue praticando para descobrir como desbloquear.",
           icon: "secret",
+          appearance: null,
           current: null,
           goal: null,
           unlocked: false,

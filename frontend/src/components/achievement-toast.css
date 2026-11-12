@@ -69,3 +69,21 @@
 @media (prefers-reduced-motion: reduce) {
   .achievement-toast { animation: none; }
 }
+
+/* Conquista com aparência do painel: a medalha já tem fundo próprio; a borda usa a cor de destaque. */
+.achievement-toast__medal:has(.achievement-badge) {
+  background: none;
+  border-radius: 12px;
+}
+
+.achievement-toast[style*="--ach-accent"] {
+  box-shadow: 0 0 0 2px var(--ach-accent), 0 10px 28px rgba(31, 18, 82, 0.35);
+}
+
+.achievement-toast__tier {
+  font-weight: 800;
+}
+
+.achievement-toast--tier-legendary .achievement-toast__tier { color: #ffd25a; }
+.achievement-toast--tier-epic .achievement-toast__tier { color: #d8c4ff; }
+.achievement-toast--tier-rare .achievement-toast__tier { color: #a9cbff; }
