@@ -3,10 +3,10 @@ import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { ActiveBadge, Badge, Field, LoadState, Modal, Notice, confirmAction, useAction, useLoad } from "../components/ui.jsx";
 import { Num } from "../format-number.jsx";
-import { AchievementAppearanceEditor, AchievementBadge, DEFAULT_ACHIEVEMENT_APPEARANCE, TIER_LABELS } from "../components/AchievementLook.jsx";
+import { AchievementAppearanceEditor, AchievementBadge, DEFAULT_ACHIEVEMENT_APPEARANCE, EFFECTS, RarityTag } from "../components/AchievementLook.jsx";
 
 /** Formulário de conquista. A métrica vem de uma lista fixa (cada métrica é um cálculo no servidor). */
-function AchievementForm({ achievement, metrics, onClose, onSaved }) {
+function AchievementForm({ achievement, metrics, tiers, onClose, onSaved }) {
   const [form, setForm] = useState({
     key: achievement?.key ?? "",
     title: achievement?.title ?? "",
@@ -61,7 +61,7 @@ function AchievementForm({ achievement, metrics, onClose, onSaved }) {
           <Field label="Ícone"><input value={form.icon} onChange={(e) => set({ icon: e.target.value })} maxLength={40} /></Field>
           <Field label="Ordem no perfil"><input type="number" min={0} value={form.order} onChange={(e) => set({ order: e.target.value })} /></Field>
         </div>
-        <AchievementAppearanceEditor value={form.appearance} onChange={setAppearance} title={form.title} description={form.description} />
+        <AchievementAppearanceEditor value={form.appearance} onChange={setAppearance} title={form.title} description={form.description} tiers={tiers} />
         <label className="check secret-check">
           <input type="checkbox" checked={form.secret} onChange={(e) => set({ secret: e.target.checked })} />
           <span>
@@ -76,6 +76,164 @@ function AchievementForm({ achievement, metrics, onClose, onSaved }) {
         </div>
       </form>
     </Modal>
+  );
+}
+
+const TIER_COLOR_FIELDS = [
+  ["tagBackground", "Fundo do selo"],
+  ["tagText", "Texto do selo"],
+];
+const PRESET_COLOR_FIELDS = [
+  ["colorFrom", "Medalha (início)"],
+  ["colorTo", "Medalha (fim)"],
+  ["accentColor", "Borda e brilho"],
+];
+
+/** Formulário de raridade: nome, cores do selo e a aparência que ela sugere para as conquistas. */
+function TierForm({ tier, onClose, onSaved }) {
+  const [form, setForm] = useState({
+    key: tier?.key ?? "",
+    label: tier?.label ?? "",
+    tagBackground: tier?.tagBackground ?? "#ede4ff",
+    tagText: tier?.tagText ?? "#4f31bb",
+    preset: { colorFrom: "#4f31bb", colorTo: "#4f31bb", accentColor: "#4f31bb", effect: "none", ...(tier?.preset ?? {}) },
+  });
+  const { run, busy, message } = useAction();
+  const set = (changes) => setForm((current) => ({ ...current, ...changes }));
+  const setPreset = (changes) => setForm((current) => ({ ...current, preset: { ...current.preset, ...changes } }));
+
+  const submit = (event) => {
+    event.preventDefault();
+    const body = { ...form };
+    if (tier) delete body.key;
+    run(async () => {
+      await api(tier ? `/achievement-tiers/${tier.id}` : "/achievement-tiers", { method: tier ? "PATCH" : "POST", body });
+      onSaved();
+    });
+  };
+
+  return (
+    <Modal title={tier ? "Editar raridade" : "Nova raridade"} onClose={onClose}>
+      <form className="form" onSubmit={submit}>
+        <div className="tier-form__preview">
+          <RarityTag rarity={{ label: form.label || "Nome", tagBackground: form.tagBackground, tagText: form.tagText }} />
+          <AchievementBadge appearance={form.preset} size={44} />
+        </div>
+        {!tier && (
+          <Field label="Chave" hint="Identificador fixo: letras minúsculas, números, _ ou - (ex.: mitica).">
+            <input value={form.key} onChange={(e) => set({ key: e.target.value })} maxLength={40} required pattern="[a-z0-9_\-]+" />
+          </Field>
+        )}
+        <Field label="Nome no selo">
+          <input value={form.label} onChange={(e) => set({ label: e.target.value })} maxLength={30} required placeholder="Mítica" />
+        </Field>
+        <div className="color-grid">
+          {TIER_COLOR_FIELDS.map(([field, label]) => (
+            <label key={field} className="color-field">
+              <input type="color" value={form[field]} onChange={(e) => set({ [field]: e.target.value })} />
+              <span>{label}<code>{form[field]}</code></span>
+            </label>
+          ))}
+        </div>
+        <fieldset className="appearance-editor">
+          <legend>Aparência sugerida para as conquistas</legend>
+          <p className="field__hint">Ao escolher esta raridade numa conquista, estas cores e o efeito são preenchidos (dá para mudar em cada conquista).</p>
+          <div className="color-grid">
+            {PRESET_COLOR_FIELDS.map(([field, label]) => (
+              <label key={field} className="color-field">
+                <input type="color" value={form.preset[field]} onChange={(e) => setPreset({ [field]: e.target.value })} />
+                <span>{label}<code>{form.preset[field]}</code></span>
+              </label>
+            ))}
+          </div>
+          <Field label="Efeito">
+            <select value={form.preset.effect} onChange={(e) => setPreset({ effect: e.target.value })}>
+              {EFFECTS.map(([effect, label]) => <option key={effect} value={effect}>{label}</option>)}
+            </select>
+          </Field>
+        </fieldset>
+        <Notice message={message} />
+        <div className="form__actions">
+          <button type="button" className="button button--ghost" onClick={onClose}>Cancelar</button>
+          <button className="button" disabled={busy}>Salvar</button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+/**
+ * Raridades em ordem: da mais comum (em cima) para a mais rara (embaixo). ↑/↓ mudam a posição na escala.
+ * Mostra quantas conquistas usam cada uma; apagar deixa essas conquistas sem raridade.
+ */
+function TiersSection({ tiers, achievements, onChanged }) {
+  const { can } = useAuth();
+  const [editing, setEditing] = useState(null);
+  const { run, busy, message } = useAction();
+  const usage = (key) => achievements.filter((achievement) => achievement.appearance?.tier === key).length;
+
+  const move = (index, step) => {
+    const ids = tiers.map((tier) => tier.id);
+    [ids[index], ids[index + step]] = [ids[index + step], ids[index]];
+    run(async () => {
+      await api("/achievement-tiers/order", { method: "PUT", body: { ids } });
+      onChanged();
+    });
+  };
+  const remove = (tier) => {
+    const used = usage(tier.key);
+    const extra = used > 0 ? ` ${used} conquista(s) vão ficar sem raridade.` : "";
+    if (!confirmAction(`Apagar a raridade "${tier.label}"?${extra}`, { destructive: true })) return;
+    run(async () => {
+      await api(`/achievement-tiers/${tier.id}`, { method: "DELETE" });
+      onChanged();
+    });
+  };
+
+  return (
+    <section className="tiers">
+      <div className="toolbar">
+        <h2>Raridades</h2>
+        {can("content") && <button className="button" onClick={() => setEditing("new")}>Nova raridade</button>}
+      </div>
+      <p className="muted">
+        Da mais comum (em cima) para a mais rara (embaixo). Use as setas para mudar qual é mais rara; uma raridade nova entra
+        como a mais rara.
+      </p>
+      <Notice message={message} />
+      <ol className="tier-list">
+        {tiers.map((tier, index) => (
+          <li key={tier.id} className="tier-list__item">
+            <span className="tier-list__rank">{index + 1}</span>
+            <AchievementBadge appearance={tier.preset} size={34} />
+            <RarityTag rarity={tier} />
+            <span className="field__hint">{tier.key} · {usage(tier.key)} conquista(s)</span>
+            {can("content") && (
+              <span className="tier-list__actions">
+                <button type="button" className="button button--ghost" disabled={busy || index === 0} onClick={() => move(index, -1)}
+                  aria-label={`Deixar ${tier.label} mais comum`} title="Mais comum">↑</button>
+                <button type="button" className="button button--ghost" disabled={busy || index === tiers.length - 1} onClick={() => move(index, 1)}
+                  aria-label={`Deixar ${tier.label} mais rara`} title="Mais rara">↓</button>
+                <button type="button" className="button button--ghost" onClick={() => setEditing(tier)}>Editar</button>
+                {can("manage") && tiers.length > 1 && (
+                  <button type="button" className="button button--danger" onClick={() => remove(tier)}>Apagar</button>
+                )}
+              </span>
+            )}
+          </li>
+        ))}
+      </ol>
+      {editing && (
+        <TierForm
+          tier={editing === "new" ? null : editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            onChanged();
+          }}
+        />
+      )}
+    </section>
   );
 }
 
@@ -125,7 +283,7 @@ export function AchievementsPage() {
                     <AchievementBadge appearance={achievement.appearance} size={38} />
                     <div>
                       <strong>{achievement.title}</strong>
-                      {achievement.appearance?.tier && <> <Badge>{TIER_LABELS[achievement.appearance.tier]}</Badge></>}
+                      {achievement.appearance?.tier && <> <RarityTag rarity={data.tiers.find((tier) => tier.key === achievement.appearance.tier)} /></>}
                       {achievement.secret && <> <Badge tone="warn">Secreta</Badge></>}
                       <div className="field__hint">{achievement.description} · {achievement.key}</div>
                     </div>
@@ -148,10 +306,12 @@ export function AchievementsPage() {
           </tbody>
         </table>
       )}
+      {data && <TiersSection tiers={data.tiers} achievements={data.achievements} onChanged={reload} />}
       {editing && (
         <AchievementForm
           achievement={editing === "new" ? null : editing}
           metrics={data.metrics}
+          tiers={data.tiers}
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);

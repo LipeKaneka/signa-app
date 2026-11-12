@@ -56,7 +56,7 @@ export function ActivityResult({ result, levelUp, reviewItems, earnedDuringActiv
   const { minScoreToPass } = useAppConfig();
   const multiplier = result.xpMultiplier ?? 1;
   const toasts = [
-    ...result.newAchievements.map((achievement) => ({ id: `achievement-${achievement.id}`, kind: "achievement", title: achievement.title, appearance: achievement.appearance })),
+    ...result.newAchievements.map((achievement) => ({ id: `achievement-${achievement.id}`, kind: "achievement", title: achievement.title, appearance: achievement.appearance, rarity: achievement.rarity })),
     ...(levelUp ? [{ id: `level-${levelUp.level}`, kind: "level", title: `Nível ${levelUp.level}: ${levelUp.title}` }] : []),
   ];
 

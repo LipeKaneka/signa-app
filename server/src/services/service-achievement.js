@@ -2,7 +2,8 @@ import { AchievementModel } from "../models/model-achievement.js";
 import { SignModel } from "../models/model-sign.js";
 import { DEFAULT_ACHIEVEMENTS } from "../config/achievements.js";
 import { APP_EVENT_METRICS } from "../config/achievement-metrics.js";
-import { toPublicAchievementAppearance } from "../config/achievement-appearance.js";
+import { DEFAULT_ACHIEVEMENT_TIERS, toPublicAchievementAppearance } from "../config/achievement-appearance.js";
+import { AchievementTierModel } from "../models/model-achievement-tier.js";
 import { createTimedCache } from "../utils/util-timed-cache.js";
 import { readCurrentStreak } from "./service-streak.js";
 import { countCompletedModules } from "./service-trail.js";
@@ -79,6 +80,38 @@ export function listActiveAchievements() {
 }
 
 /**
+ * Raridades, da mais comum para a mais rara. Na primeira vez (coleção vazia), grava as padrão no banco para o
+ * painel poder editar. O painel não deixa apagar a última, então a coleção só fica vazia num banco novo.
+ * @returns {Promise<{key: string, label: string, order: number, tagBackground: string, tagText: string, preset: object}[]>}
+ * Usado por: listAchievementsWithProgress (app) e painel.
+ */
+export function listAchievementTiers() {
+  return cache.get("tiers", async () => {
+    let tiers = await AchievementTierModel.find().sort({ order: 1, createdAt: 1 }).lean();
+    if (tiers.length === 0) {
+      await AchievementTierModel.bulkWrite(DEFAULT_ACHIEVEMENT_TIERS.map((tier, index) => ({
+        updateOne: { filter: { key: tier.key }, update: { $setOnInsert: { ...tier, order: index + 1 } }, upsert: true },
+      })));
+      tiers = await AchievementTierModel.find().sort({ order: 1, createdAt: 1 }).lean();
+    }
+    return tiers;
+  });
+}
+
+/**
+ * Raridade como o app usa: nome, cores do selo e posição na escala (rank 1 = mais comum; total = quantas existem).
+ * @param {string} key
+ * @param {object[]} tiers - de listAchievementTiers.
+ * @returns {{key: string, label: string, background: string, text: string, rank: number, total: number}|null}
+ */
+function describeRarity(key, tiers) {
+  const index = key ? tiers.findIndex((tier) => tier.key === key) : -1;
+  if (index < 0) return null;
+  const tier = tiers[index];
+  return { key: tier.key, label: tier.label, background: tier.tagBackground, text: tier.tagText, rank: index + 1, total: tiers.length };
+}
+
+/**
  * Todas as conquistas ativas com progresso limitado à meta e se foi desbloqueada.
  * Ajuste manual do painel (overrides) vence a meta: dada = desbloqueada (progresso cheio); tirada = bloqueada.
  * @param {ReturnType<typeof readAchievementMetrics>} metrics
@@ -88,7 +121,7 @@ export function listActiveAchievements() {
  * Usado por: perfil (GET /profile), findNewlyUnlocked e painel.
  */
 export async function listAchievementsWithProgress(metrics, overrides = new Map()) {
-  const catalog = await listActiveAchievements();
+  const [catalog, tiers] = await Promise.all([listActiveAchievements(), listAchievementTiers()]);
   return catalog.map((achievement) => {
     const override = overrides.get(achievement.key);
     const reached = Math.min(metrics[achievement.metric] ?? 0, achievement.goal);
@@ -98,6 +131,7 @@ export async function listAchievementsWithProgress(metrics, overrides = new Map(
       description: achievement.description,
       icon: achievement.icon,
       appearance: toPublicAchievementAppearance(achievement.appearance),
+      rarity: describeRarity(achievement.appearance?.tier, tiers),
       current: override === true ? achievement.goal : reached,
       goal: achievement.goal,
       unlocked: override ?? reached >= achievement.goal,
@@ -113,7 +147,7 @@ export async function listAchievementsWithProgress(metrics, overrides = new Map(
  * @param {ReturnType<typeof readAchievementMetrics>} metricsBefore
  * @param {ReturnType<typeof readAchievementMetrics>} metricsAfter
  * @param {Map<string, boolean>} [overrides] - ajustes manuais do painel (valem antes e depois).
- * @returns {Promise<{id: string, title: string, appearance: object}[]>}
+ * @returns {Promise<{id: string, title: string, appearance: object, rarity: object|null}[]>}
  * Usado por: service-attempt.js (result.newAchievements na tela de resultado) e service-app-events.js.
  */
 export async function findNewlyUnlocked(metricsBefore, metricsAfter, overrides = new Map()) {
@@ -122,7 +156,7 @@ export async function findNewlyUnlocked(metricsBefore, metricsAfter, overrides =
   const after = await listAchievementsWithProgress(metricsAfter, overrides);
   return after
     .filter((achievement) => achievement.unlocked && !unlockedBefore.has(achievement.id))
-    .map(({ id, title, appearance }) => ({ id, title, appearance }));
+    .map(({ id, title, appearance, rarity }) => ({ id, title, appearance, rarity }));
 }
 
 /**
@@ -168,6 +202,7 @@ export function hideLockedSecrets(achievements) {
           description: "Continue praticando para descobrir como desbloquear.",
           icon: "secret",
           appearance: null,
+          rarity: null,
           current: null,
           goal: null,
           unlocked: false,

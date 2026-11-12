@@ -12,6 +12,8 @@ import { listLevels } from "./service-level.js";
 import { setSetting } from "./service-settings.js";
 import { readEventAppearance, toPublicAppearance } from "../config/event-appearance.js";
 import { toPublicAchievementAppearance } from "../config/achievement-appearance.js";
+import { AchievementTierModel } from "../models/model-achievement-tier.js";
+import { listAchievementTiers } from "./service-achievement.js";
 import { currentOccurrence, isRecurring, nextOccurrence } from "../config/event-schedule.js";
 
 /**
@@ -31,13 +33,118 @@ function toAdminAchievement(achievement) {
 }
 
 /**
- * Todas as conquistas (ativas e desativadas) e as métricas que podem ser escolhidas.
- * @returns {Promise<{achievements: object[], metrics: {id: string, label: string}[]}>}
+ * Todas as conquistas (ativas e desativadas), as métricas que podem ser escolhidas e as raridades (da mais comum
+ * para a mais rara).
+ * @returns {Promise<{achievements: object[], metrics: {id: string, label: string}[], tiers: object[]}>}
  * Usado por: GET /admin/api/v1/achievements.
  */
 export async function listAchievements() {
-  const achievements = await AchievementModel.find().sort({ order: 1, createdAt: 1 }).lean();
-  return { achievements: achievements.map(toAdminAchievement), metrics: ACHIEVEMENT_METRICS };
+  const [achievements, tiers] = await Promise.all([
+    AchievementModel.find().sort({ order: 1, createdAt: 1 }).lean(),
+    listAchievementTiers(),
+  ]);
+  return { achievements: achievements.map(toAdminAchievement), metrics: ACHIEVEMENT_METRICS, tiers: tiers.map(toAdminTier) };
+}
+
+/** Raridade no formato do painel. */
+function toAdminTier(tier) {
+  const { _id, __v, createdAt, updatedAt, ...fields } = tier;
+  return { id: String(_id), ...fields, preset: { ...(tier.preset ?? {}) } };
+}
+
+/**
+ * Confere se a raridade escolhida numa conquista existe ("" = sem raridade).
+ * @throws {HttpError} 400 se não existir.
+ */
+async function ensureTierExists(appearance) {
+  const key = appearance?.tier;
+  if (!key) return;
+  const tiers = await listAchievementTiers(); // cria as padrão num banco novo
+  if (!tiers.some((tier) => tier.key === key)) throw badRequest(`A raridade "${key}" não existe.`);
+}
+
+/**
+ * Cria uma raridade no fim da escala (a mais rara); depois dá para reordenar.
+ * @param {object} actor
+ * @param {{key, label, tagBackground?, tagText?, preset?}} data - já validado (readTierFields).
+ * @returns {Promise<object>}
+ * @throws {HttpError} 409 se a chave já existir.
+ * Usado por: POST /admin/api/v1/achievement-tiers.
+ */
+export async function createTier(actor, data) {
+  await listAchievementTiers(); // garante as padrão antes da primeira criada
+  if (await AchievementTierModel.exists({ key: data.key })) throw conflict(`Já existe a raridade "${data.key}".`);
+  const last = await AchievementTierModel.findOne().sort({ order: -1 }).lean();
+  const tier = await AchievementTierModel.create({ ...data, order: (last?.order ?? 0) + 1 });
+  await publishContentChange();
+  await recordAudit(actor, { action: "create", entity: "achievement-tier", entityId: data.key, summary: `Raridade "${data.label}"`, after: tier });
+  return toAdminTier(tier.toObject());
+}
+
+/**
+ * Edita nome, cores do selo e aparência padrão de uma raridade (a chave não muda).
+ * @param {object} actor
+ * @param {string} tierId
+ * @param {object} changes - já validado (readTierFields).
+ * @returns {Promise<object>}
+ * Usado por: PATCH /admin/api/v1/achievement-tiers/:id.
+ */
+export async function updateTier(actor, tierId, changes) {
+  const tier = await AchievementTierModel.findById(tierId);
+  if (!tier) throw notFound("Raridade não encontrada.");
+  const before = tier.toObject();
+  for (const field of ["label", "tagBackground", "tagText", "preset"]) {
+    if (changes[field] !== undefined) tier[field] = changes[field];
+  }
+  await tier.save();
+  await publishContentChange();
+  await recordAudit(actor, { action: "update", entity: "achievement-tier", entityId: tier.key, summary: `Raridade "${tier.label}"`, before, after: tier });
+  return toAdminTier(tier.toObject());
+}
+
+/**
+ * Nova ordem da escala (da mais comum para a mais rara). Precisa ter todas as raridades, cada uma uma vez.
+ * @param {object} actor
+ * @param {unknown} ids - lista de ids (do painel).
+ * @returns {Promise<object[]>} as raridades na nova ordem.
+ * Usado por: PUT /admin/api/v1/achievement-tiers/order.
+ */
+export async function reorderTiers(actor, ids) {
+  const tiers = await AchievementTierModel.find().lean();
+  const known = new Set(tiers.map((tier) => String(tier._id)));
+  if (!Array.isArray(ids) || ids.length !== known.size || new Set(ids).size !== ids.length || !ids.every((id) => known.has(String(id)))) {
+    throw badRequest("Envie todas as raridades, cada uma uma vez, na nova ordem.");
+  }
+  await AchievementTierModel.bulkWrite(ids.map((id, index) => ({ updateOne: { filter: { _id: id }, update: { $set: { order: index + 1 } } } })));
+  await publishContentChange();
+  const byId = new Map(tiers.map((tier) => [String(tier._id), tier.label]));
+  await recordAudit(actor, { action: "update", entity: "achievement-tier", entityId: "order", summary: `Ordem das raridades: ${ids.map((id) => byId.get(String(id))).join(" < ")}` });
+  return (await listAchievementTiers()).map(toAdminTier);
+}
+
+/**
+ * Apaga uma raridade. As conquistas que usavam ficam sem raridade (o resto da aparência continua).
+ * Não apaga a última (o app sempre tem uma escala).
+ * @param {object} actor
+ * @param {string} tierId
+ * @returns {Promise<{affectedAchievements: number}>}
+ * Usado por: DELETE /admin/api/v1/achievement-tiers/:id.
+ */
+export async function deleteTier(actor, tierId) {
+  const tier = await AchievementTierModel.findById(tierId);
+  if (!tier) throw notFound("Raridade não encontrada.");
+  if ((await AchievementTierModel.countDocuments()) <= 1) throw badRequest("Deixe pelo menos uma raridade.");
+  const { modifiedCount } = await AchievementModel.updateMany({ "appearance.tier": tier.key }, { $set: { "appearance.tier": "" } });
+  await tier.deleteOne();
+  await publishContentChange();
+  await recordAudit(actor, {
+    action: "delete",
+    entity: "achievement-tier",
+    entityId: tier.key,
+    summary: `Raridade "${tier.label}" (${modifiedCount} conquista(s) ficaram sem raridade)`,
+    before: tier,
+  });
+  return { affectedAchievements: modifiedCount };
 }
 
 /**
@@ -49,6 +156,7 @@ export async function listAchievements() {
  * Usado por: POST /admin/api/v1/achievements.
  */
 export async function createAchievement(actor, data) {
+  await ensureTierExists(data.appearance);
   if (await AchievementModel.exists({ key: data.key })) throw conflict(`Já existe a conquista "${data.key}".`);
   const achievement = await AchievementModel.create(data);
   await publishContentChange();
@@ -67,6 +175,7 @@ export async function createAchievement(actor, data) {
 export async function updateAchievement(actor, achievementId, changes) {
   const achievement = await AchievementModel.findById(achievementId);
   if (!achievement) throw notFound("Conquista não encontrada.");
+  if (changes.appearance !== undefined) await ensureTierExists(changes.appearance);
   const before = achievement.toObject();
   for (const field of ["title", "description", "metric", "goal", "icon", "order", "active", "secret", "appearance"]) {
     if (changes[field] !== undefined) achievement[field] = changes[field];

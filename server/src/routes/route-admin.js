@@ -58,6 +58,10 @@ adminRouter.get("/achievements", read, asyncHandler(GamificationController.listA
 adminRouter.post("/achievements", content, asyncHandler(GamificationController.createAchievement));
 adminRouter.patch("/achievements/:id", content, asyncHandler(GamificationController.updateAchievement));
 adminRouter.delete("/achievements/:id", manage, asyncHandler(GamificationController.deleteAchievement));
+adminRouter.post("/achievement-tiers", content, asyncHandler(GamificationController.createTier));
+adminRouter.put("/achievement-tiers/order", content, asyncHandler(GamificationController.reorderTiers));
+adminRouter.patch("/achievement-tiers/:id", content, asyncHandler(GamificationController.updateTier));
+adminRouter.delete("/achievement-tiers/:id", manage, asyncHandler(GamificationController.deleteTier));
 
 adminRouter.get("/events", read, asyncHandler(GamificationController.listEvents));
 adminRouter.post("/events", manage, asyncHandler(GamificationController.createEvent));

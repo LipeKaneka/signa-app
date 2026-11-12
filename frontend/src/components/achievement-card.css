@@ -151,10 +151,6 @@
   text-transform: uppercase;
 }
 
-.achievement-tier--common { background: #e6e4ee; color: #4e4b5c; }
-.achievement-tier--rare { background: #dbeafe; color: #1d4ed8; }
-.achievement-tier--epic { background: #ede4ff; color: #6b2fd6; }
-.achievement-tier--legendary { background: linear-gradient(90deg, #ffe08a, #f5b82e); color: #6b4300; }
 
 .achievement-card--locked .achievement-tier {
   filter: grayscale(1);

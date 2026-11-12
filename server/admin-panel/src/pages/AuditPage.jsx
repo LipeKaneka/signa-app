@@ -3,7 +3,7 @@ import { api } from "../api.js";
 import { LoadState, Pagination, formatDateTime, useLoad } from "../components/ui.jsx";
 
 const ENTITIES = {
-  module: "Módulo", activity: "Atividade", sign: "Verbete", achievement: "Conquista", event: "Evento",
+  module: "Módulo", activity: "Atividade", sign: "Verbete", achievement: "Conquista", "achievement-tier": "Raridade", event: "Evento",
   level: "Níveis", setting: "Configuração", user: "Usuário", admin: "Painel", database: "Banco",
 };
 

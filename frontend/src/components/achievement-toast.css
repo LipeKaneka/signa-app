@@ -82,8 +82,6 @@
 
 .achievement-toast__tier {
   font-weight: 800;
+  color: #ffd25a;
 }
 
-.achievement-toast--tier-legendary .achievement-toast__tier { color: #ffd25a; }
-.achievement-toast--tier-epic .achievement-toast__tier { color: #d8c4ff; }
-.achievement-toast--tier-rare .achievement-toast__tier { color: #a9cbff; }

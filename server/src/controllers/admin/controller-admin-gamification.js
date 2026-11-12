@@ -6,7 +6,7 @@ import { readActor } from "../../middlewares/admin-auth-middleware.js";
 import { readRequiredString, readOptionalString, readBoolean, readInteger, readDate } from "../../utils/util-validators.js";
 import { badRequest } from "../../utils/util-http-error.js";
 import { readEventAppearance } from "../../config/event-appearance.js";
-import { readAchievementAppearance } from "../../config/achievement-appearance.js";
+import { readAchievementAppearance, readTierFields } from "../../config/achievement-appearance.js";
 import { readEventSchedule } from "../../config/event-schedule.js";
 
 /**
@@ -64,6 +64,35 @@ export async function updateAchievement(req, res) {
 export async function deleteAchievement(req, res) {
   await GamificationAdmin.deleteAchievement(readActor(req), req.params.id);
   res.json({ ok: true });
+}
+
+/** Lê os campos de raridade (erro de validação → 400). */
+function readTier(body, creating) {
+  try {
+    return readTierFields(body, creating);
+  } catch (error) {
+    throw badRequest(error.message);
+  }
+}
+
+/** POST /admin/api/v1/achievement-tiers → 201 {tier} (entra como a mais rara). */
+export async function createTier(req, res) {
+  res.status(201).json({ tier: await GamificationAdmin.createTier(readActor(req), readTier(req.body, true)) });
+}
+
+/** PATCH /admin/api/v1/achievement-tiers/:id → {tier}. */
+export async function updateTier(req, res) {
+  res.json({ tier: await GamificationAdmin.updateTier(readActor(req), req.params.id, readTier(req.body, false)) });
+}
+
+/** PUT /admin/api/v1/achievement-tiers/order — corpo {ids: [...]} da mais comum para a mais rara → {tiers}. */
+export async function reorderTiers(req, res) {
+  res.json({ tiers: await GamificationAdmin.reorderTiers(readActor(req), req.body?.ids) });
+}
+
+/** DELETE /admin/api/v1/achievement-tiers/:id → {affectedAchievements}. */
+export async function deleteTier(req, res) {
+  res.json(await GamificationAdmin.deleteTier(readActor(req), req.params.id));
 }
 
 /**

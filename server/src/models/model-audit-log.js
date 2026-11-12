@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 /**
  * Registro de auditoria (coleção "auditLogs"): quem mudou o quê, quando e de onde.
  * - action: "create" | "update" | "activate" | "deactivate" | "delete" | "login" | "logout" | ... (texto livre curto).
- * - entity: tipo do que mudou ("module", "activity", "sign", "achievement", "event", "level", "setting", "user",
+ * - entity: tipo do que mudou ("module", "activity", "sign", "achievement", "achievement-tier", "event", "level", "setting", "user",
  *   "admin", "database"). entityId: id ou chave do item.
  * - before/after: cópia do item antes e depois (sem senhas). adminEmail fica gravado para o histórico
  *   continuar legível mesmo se a conta do admin mudar.

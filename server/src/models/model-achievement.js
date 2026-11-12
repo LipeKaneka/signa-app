@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { ACHIEVEMENT_METRICS } from "../config/achievement-metrics.js";
-import { ACHIEVEMENT_EFFECTS, ACHIEVEMENT_TIERS } from "../config/achievement-appearance.js";
+import { ACHIEVEMENT_EFFECTS } from "../config/achievement-appearance.js";
 
 /**
  * Conquista do catálogo (coleção "achievements"), editável pelo painel.
@@ -26,7 +26,7 @@ const achievementSchema = new mongoose.Schema(
     appearance: {
       type: {
         _id: false,
-        tier: { type: String, enum: ACHIEVEMENT_TIERS, default: "" },
+        tier: { type: String, maxlength: 40, default: "" }, // chave de AchievementTierModel ("" = sem raridade)
         colorFrom: String,
         colorTo: String,
         accentColor: String,

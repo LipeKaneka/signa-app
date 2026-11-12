@@ -15,18 +15,7 @@ export const DEFAULT_ACHIEVEMENT_APPEARANCE = Object.freeze({
   effect: "none",
 });
 
-export const TIER_LABELS = { common: "Comum", rare: "Rara", epic: "Épica", legendary: "Lendária" };
-
-/** Raridade = atalho: escolher preenche cores e efeito (dá para mudar depois). */
-const TIER_PRESETS = {
-  "": { colorFrom: "#4f31bb", colorTo: "#4f31bb", accentColor: "#4f31bb", effect: "none" },
-  common: { colorFrom: "#8a8798", colorTo: "#6b6880", accentColor: "#8a8798", effect: "none" },
-  rare: { colorFrom: "#3b82f6", colorTo: "#1d4ed8", accentColor: "#3b82f6", effect: "shine" },
-  epic: { colorFrom: "#8b5cf6", colorTo: "#6b2fd6", accentColor: "#a66cff", effect: "glow" },
-  legendary: { colorFrom: "#f5b82e", colorTo: "#e07b00", accentColor: "#f5b82e", effect: "sparkles" },
-};
-
-const EFFECTS = [
+export const EFFECTS = [
   ["none", "Nenhum"],
   ["shine", "Reflexo de luz"],
   ["glow", "Brilho pulsando"],
@@ -100,8 +89,16 @@ export function AchievementBadge({ appearance, size = 52, hidden = false }) {
   );
 }
 
-/** Cartão como no app (desbloqueado: com efeito; bloqueado: apagado). */
-export function AchievementPreviewCard({ title, description, appearance, unlocked = true, hidden = false, compact = false }) {
+/** Selo de raridade com as cores da raridade (rarity = {label, background, text} ou a raridade do painel). */
+export function RarityTag({ rarity }) {
+  if (!rarity) return null;
+  const background = rarity.background ?? rarity.tagBackground;
+  const color = rarity.text ?? rarity.tagText;
+  return <span className="ach-tier" style={{ background, color }}>{rarity.label}</span>;
+}
+
+/** Cartão como no app (desbloqueado: com efeito; bloqueado: apagado). rarity = selo (null = sem raridade). */
+export function AchievementPreviewCard({ title, description, appearance, rarity = null, unlocked = true, hidden = false, compact = false }) {
   const look = { ...DEFAULT_ACHIEVEMENT_APPEARANCE, ...(appearance ?? {}) };
   const effect = unlocked && !hidden && look.effect !== "none" ? look.effect : null;
   const classes = [
@@ -114,7 +111,7 @@ export function AchievementPreviewCard({ title, description, appearance, unlocke
     <div className={classes} style={hidden ? undefined : lookStyle(look)}>
       <AchievementBadge appearance={look} hidden={hidden} size={compact ? 40 : 52} />
       <div className="ach-card__body">
-        {!hidden && look.tier && <span className={`ach-tier ach-tier--${look.tier}`}>{TIER_LABELS[look.tier]}</span>}
+        {!hidden && <RarityTag rarity={rarity} />}
         <strong>{title || "Título da conquista"}</strong>
         <span>{description || "Descrição da conquista"}</span>
       </div>
@@ -124,12 +121,18 @@ export function AchievementPreviewCard({ title, description, appearance, unlocke
 
 /**
  * Editor da aparência com prévia (desbloqueada e bloqueada).
- * @param {{value: object, onChange: (changes: object) => void, title: string, description: string}} props
+ * @param {{value: object, onChange: (changes: object) => void, title: string, description: string, tiers: object[]}} props
+ * tiers = raridades do banco (da mais comum para a mais rara); escolher uma aplica a aparência padrão dela.
  */
-export function AchievementAppearanceEditor({ value, onChange, title, description }) {
+export function AchievementAppearanceEditor({ value, onChange, title, description, tiers = [] }) {
   const fileInput = useRef(null);
   const [imageError, setImageError] = useState("");
   const look = { ...DEFAULT_ACHIEVEMENT_APPEARANCE, ...value };
+  const rarity = tiers.find((tier) => tier.key === look.tier) ?? null;
+  const chooseTier = (key) => {
+    const tier = tiers.find((item) => item.key === key);
+    onChange({ tier: key, ...(tier?.preset ?? {}) });
+  };
 
   const chooseImage = async (event) => {
     const file = event.target.files?.[0];
@@ -147,18 +150,19 @@ export function AchievementAppearanceEditor({ value, onChange, title, descriptio
     <fieldset className="appearance-editor">
       <legend>Aparência no app</legend>
       <div className="ach-preview">
-        <AchievementPreviewCard title={title} description={description} appearance={look} />
-        <AchievementPreviewCard title={title} description={description} appearance={look} unlocked={false} />
+        <AchievementPreviewCard title={title} description={description} appearance={look} rarity={rarity} />
+        <AchievementPreviewCard title={title} description={description} appearance={look} rarity={rarity} unlocked={false} />
         <p className="field__hint">Em cima: desbloqueada (com efeito). Embaixo: bloqueada.</p>
       </div>
       <div className="form__row">
         <label className="field">
           <span className="field__label">Raridade</span>
-          <select value={look.tier} onChange={(e) => onChange({ tier: e.target.value, ...TIER_PRESETS[e.target.value] })}>
+          <select value={look.tier} onChange={(e) => chooseTier(e.target.value)}>
             <option value="">Sem selo</option>
-            {Object.entries(TIER_LABELS).map(([tier, label]) => <option key={tier} value={tier}>{label}</option>)}
+            {tiers.map((tier) => <option key={tier.key} value={tier.key}>{tier.label}</option>)}
+            {look.tier && !rarity && <option value={look.tier}>{look.tier} (apagada)</option>}
           </select>
-          <span className="field__hint">Preenche cores e efeito; dá para ajustar depois.</span>
+          <span className="field__hint">Preenche cores e efeito com o padrão da raridade; dá para ajustar depois.</span>
         </label>
         <label className="field">
           <span className="field__label">Efeito (desbloqueada)</span>

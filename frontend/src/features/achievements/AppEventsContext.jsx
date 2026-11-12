@@ -52,6 +52,7 @@ export function AppEventsProvider({ children }) {
           kind: "achievement",
           title: achievement.title,
           appearance: achievement.appearance,
+          rarity: achievement.rarity,
         }))]);
       })
       .catch(() => {});

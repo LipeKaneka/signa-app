@@ -32,6 +32,7 @@ function AchievementItem({ achievement, showDate }) {
         title={achievement.title}
         description={achievement.description}
         appearance={achievement.appearance}
+        rarity={achievement.rarity}
         unlocked={achievement.unlocked}
         hidden={achievement.hiddenSecret}
         compact

@@ -1,8 +1,14 @@
 import { AchievementMedal } from "./illustrations.jsx";
 import "./achievement-card.css";
 
-/** Raridade (appearance.tier) → texto do selo. */
-export const TIER_LABELS = { common: "Comum", rare: "Rara", epic: "Épica", legendary: "Lendária" };
+/**
+ * Selo de raridade com as cores escolhidas no painel. rarity = {label, background, text, rank, total} (do servidor).
+ * Usado por: AchievementCard e AchievementToast.
+ */
+export function RarityTag({ rarity, className = "achievement-tier" }) {
+  if (!rarity) return null;
+  return <span className={className} style={{ background: rarity.background, color: rarity.text }}>{rarity.label}</span>;
+}
 
 /** "Obtida em 11/09/2026 às 22:00". */
 function formatUnlockDate(isoDate) {
@@ -57,21 +63,20 @@ export function AchievementCard({ achievement, showDate = false }) {
   const hiddenSecret = achievement.secret && !unlocked;
   const appearance = hiddenSecret ? null : achievement.appearance;
   const effect = unlocked && appearance?.effect && appearance.effect !== "none" ? appearance.effect : null;
-  const tier = appearance?.tier ? TIER_LABELS[appearance.tier] : null;
+  const rarity = hiddenSecret ? null : achievement.rarity;
   const classes = [
     "achievement-card",
     unlocked ? "" : "achievement-card--locked",
     hiddenSecret ? "achievement-card--secret" : "",
     appearance ? "achievement-card--custom" : "",
     effect ? `achievement-card--fx-${effect}` : "",
-    appearance?.tier ? `achievement-card--tier-${appearance.tier}` : "",
   ].filter(Boolean).join(" ");
   return (
     <li className="achievement-item">
       <div className={classes} style={achievementStyle(appearance)}>
         <span className="achievement-card__medal"><AchievementBadge appearance={appearance} hidden={hiddenSecret} /></span>
         <div className="achievement-card__body">
-          {tier && <span className={`achievement-tier achievement-tier--${appearance.tier}`}>{tier}</span>}
+          <RarityTag rarity={rarity} />
           <h3 className="achievement-card__title">{achievement.title}</h3>
           <p className="achievement-card__description">{achievement.description}</p>
           <span className="visually-hidden">

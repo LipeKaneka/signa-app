@@ -582,3 +582,50 @@ test("conquista: aparência (raridade, cores, imagem/emoji, efeito) é validada 
   const list = await editor.get("/admin/api/v1/achievements").set(PANEL);
   assert.ok(list.body.achievements.every((achievement) => achievement.appearance && achievement.appearance.effect));
 });
+
+test("raridades: padrão criadas sozinhas, criar, reordenar, validar e apagar (o app recebe nome, cores e posição)", async () => {
+  const editor = await signIn("editor");
+  const owner = await signIn("owner");
+  let list = (await editor.get("/admin/api/v1/achievements").set(PANEL)).body;
+  assert.deepEqual(list.tiers.map((tier) => tier.key), ["common", "rare", "epic", "legendary"]);
+
+  assert.equal((await editor.post("/admin/api/v1/achievement-tiers").set(PANEL).send({ key: "Mítica", label: "Mítica" })).status, 400);
+  assert.equal((await editor.post("/admin/api/v1/achievement-tiers").set(PANEL).send({ key: "mitica", label: "" })).status, 400);
+  assert.equal((await editor.post("/admin/api/v1/achievement-tiers").set(PANEL).send({ key: "mitica", label: "Mítica", tagText: "azul" })).status, 400);
+  const created = await editor.post("/admin/api/v1/achievement-tiers").set(PANEL)
+    .send({ key: "mitica", label: "Mítica", tagBackground: "#111111", tagText: "#FFFFFF", preset: { colorFrom: "#000000", effect: "rainbow" } });
+  assert.equal(created.status, 201, created.body.error);
+  assert.equal(created.body.tier.tagText, "#ffffff");
+  assert.equal((await editor.post("/admin/api/v1/achievement-tiers").set(PANEL).send({ key: "mitica", label: "Outra" })).status, 409);
+
+  list = (await editor.get("/admin/api/v1/achievements").set(PANEL)).body;
+  assert.equal(list.tiers.at(-1).key, "mitica"); // nova entra como a mais rara
+
+  // Mítica passa a ser a 2ª mais comum.
+  const ids = list.tiers.map((tier) => tier.id);
+  const reordered = [ids[0], ids[4], ids[1], ids[2], ids[3]];
+  assert.equal((await editor.put("/admin/api/v1/achievement-tiers/order").set(PANEL).send({ ids: reordered.slice(1) })).status, 400);
+  const order = await editor.put("/admin/api/v1/achievement-tiers/order").set(PANEL).send({ ids: reordered });
+  assert.equal(order.status, 200, order.body.error);
+  assert.deepEqual(order.body.tiers.map((tier) => tier.key), ["common", "mitica", "rare", "epic", "legendary"]);
+
+  // Conquista com a raridade: o app recebe nome, cores e a posição na escala.
+  assert.equal((await editor.post("/admin/api/v1/achievements").set(PANEL)
+    .send({ key: "rara_inexistente", title: "X", description: "X", metric: "xp", goal: 1, appearance: { tier: "nao_existe" } })).status, 400);
+  const achievement = await editor.post("/admin/api/v1/achievements").set(PANEL)
+    .send({ key: `mitica_${randomBytes(3).toString("hex")}`, title: "Mítica", description: "Teste.", metric: "xp", goal: 1, order: 950, appearance: { tier: "mitica" } });
+  assert.equal(achievement.status, 201, achievement.body.error);
+  const account = await request(app).post("/internal/v1/auth/register").set(withKey())
+    .send({ nickname: "Rara", email: `rara_${randomBytes(3).toString("hex")}@exemplo.test`, password: `${randomBytes(6).toString("hex")}A1`, acceptedTerms: true });
+  let profile = await request(app).get(`/internal/v1/users/${account.body.id}/profile`).set(withKey());
+  const inApp = profile.body.achievements.find((item) => item.id === achievement.body.achievement.key);
+  assert.deepEqual(inApp.rarity, { key: "mitica", label: "Mítica", background: "#111111", text: "#ffffff", rank: 2, total: 5 });
+
+  // Apagar a raridade deixa a conquista sem raridade.
+  const removed = await owner.delete(`/admin/api/v1/achievement-tiers/${created.body.tier.id}`).set(PANEL);
+  assert.equal(removed.status, 200, removed.body.error);
+  assert.equal(removed.body.affectedAchievements, 1);
+  profile = await request(app).get(`/internal/v1/users/${account.body.id}/profile`).set(withKey());
+  assert.equal(profile.body.achievements.find((item) => item.id === achievement.body.achievement.key).rarity, null);
+  assert.equal((await editor.delete(`/admin/api/v1/achievement-tiers/${ids[0]}`).set(PANEL)).status, 403); // apagar exige papel admin
+});
