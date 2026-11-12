@@ -17,5 +17,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
     "vite": "^5.4.11"
-  }
+  },
+  "license": "UNLICENSED",
+  "author": "Equipe Signa Ludus"
 }

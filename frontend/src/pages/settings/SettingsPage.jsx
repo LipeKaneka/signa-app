@@ -101,6 +101,7 @@ export function SettingsPage() {
     <ScreenWithNav title="Configurações" backTo={-1} contentClassName="settings-content">
       <div className="settings-icon"><AppIcon size={100} /></div>
       {version && <p className="settings-version">Versão {version.name} ({version.code})</p>}
+      <p className="settings-version">© 2026 Equipe Signa Ludus. Todos os direitos reservados.</p>
 
       <ul className="settings-list">
         {SETTING_ROWS.map((row) => (

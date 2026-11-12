@@ -17,3 +17,11 @@ banco, servidor e painel (127.0.0.1:8090 e /admin), backend (8080) e frontend (5
 Para o front em outro domínio, coloque a origem dele em `FRONTEND_URL` no backend (CORS).
 
 Documentação técnica (arquitetura, referência de módulos e conquistas): [`docs/`](docs/README.md).
+
+## Direitos autorais
+
+Copyright (c) 2026 Equipe Signa Ludus. Todos os direitos reservados.
+
+O código, o conteúdo didático, o nome "Signa" / "Signa Ludus" e o logotipo são da Equipe Signa Ludus. Este
+repositório é público só para consulta: copiar, modificar, redistribuir ou usar comercialmente exige
+autorização por escrito. Detalhes em [`LICENSE`](LICENSE). Componentes de terceiros seguem as próprias licenças.

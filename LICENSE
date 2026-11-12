@@ -1,0 +1,34 @@
+Copyright (c) 2026 Equipe Signa Ludus. Todos os direitos reservados.
+
+Signa Ludus / Signa — aplicativo para aprender Libras (código-fonte, painel administrativo, servidor,
+conteúdo didático, textos, ilustrações, logotipo e marca).
+
+AVISO DE DIREITOS AUTORAIS
+
+Este repositório é público apenas para consulta. O código-fonte, a documentação, o conteúdo didático
+(trilhas, atividades, explicações), as ilustrações, o nome "Signa" / "Signa Ludus" e o logotipo são
+propriedade da Equipe Signa Ludus e são protegidos pela Lei de Direitos Autorais (Lei nº 9.610/1998)
+e pela Lei de Software (Lei nº 9.609/1998).
+
+Sem autorização prévia e por escrito da Equipe Signa Ludus, NÃO é permitido:
+  - copiar, reproduzir ou redistribuir, no todo ou em parte, o código ou o conteúdo;
+  - modificar, adaptar ou criar obras derivadas;
+  - publicar, vender, sublicenciar ou usar comercialmente o aplicativo ou partes dele;
+  - usar o nome "Signa" / "Signa Ludus", o logotipo ou a identidade visual.
+
+É permitido apenas ler o código neste repositório e baixar o aplicativo pelos canais oficiais da
+equipe, para uso pessoal.
+
+Componentes de terceiros usados pelo projeto (bibliotecas, a fonte Inter, o MediaPipe, o VLibras e
+outros) continuam sob as suas próprias licenças, que não são alteradas por este aviso.
+
+Para pedidos de autorização, entre em contato com a Equipe Signa Ludus pelo repositório oficial.
+
+O SOFTWARE É FORNECIDO "NO ESTADO EM QUE SE ENCONTRA", SEM GARANTIAS DE QUALQUER TIPO.
+
+---
+
+English summary: Copyright (c) 2026 Equipe Signa Ludus. All rights reserved. This repository is
+public for viewing only. No permission is granted to copy, modify, distribute, sublicense or use
+this code, its content, name or logo, in whole or in part, without prior written permission.
+Third-party components remain under their own licenses.

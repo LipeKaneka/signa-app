@@ -26,6 +26,6 @@
     "mongodb-memory-server": "^11.0.0",
     "supertest": "^7.1.0"
   },
-  "author": "Signa Authors",
-  "license": "ISC"
+  "author": "Equipe Signa Ludus",
+  "license": "UNLICENSED"
 }
