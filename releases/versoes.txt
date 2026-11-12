@@ -18,3 +18,4 @@
 1.1.0|c40dac9|11/11/2026|Aviso de APK novo: tela de atualização configurada pelo painel (versão 1.1)
 1.2.0|1d1a159|11/11/2026|Tema escolhido aparece marcado nas configurações
 1.3.0|80d08fb|11/11/2026|Trilha decorada; aviso de atualização a cada abertura; link do Google Drive baixa direto
+1.4.0|020886e|11/11/2026|Login com Google; conquistas por toques, dicionário e uso do app; release pelo GitHub
