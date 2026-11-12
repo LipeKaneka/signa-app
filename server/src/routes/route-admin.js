@@ -71,6 +71,7 @@ adminRouter.put("/levels", manage, asyncHandler(GamificationController.replaceLe
 adminRouter.get("/settings", read, asyncHandler(GamificationController.listSettings));
 adminRouter.put("/settings/:key", manage, asyncHandler(GamificationController.updateSetting));
 adminRouter.delete("/settings/:key", manage, asyncHandler(GamificationController.resetSetting));
+adminRouter.get("/app-update/github", manage, asyncHandler(GamificationController.readGithubRelease));
 
 adminRouter.get("/users", read, asyncHandler(UsersController.list));
 adminRouter.get("/users/:id", read, asyncHandler(UsersController.detail));
@@ -78,6 +79,7 @@ adminRouter.patch("/users/:id/status", manage, asyncHandler(UsersController.setS
 adminRouter.post("/users/:id/xp", manage, asyncHandler(UsersController.adjustXp));
 adminRouter.patch("/users/:id/profile", manage, asyncHandler(UsersController.updateProfile));
 adminRouter.patch("/users/:id/stats", manage, asyncHandler(UsersController.updateStats));
+adminRouter.patch("/users/:id/counters", manage, asyncHandler(UsersController.updateCounters));
 adminRouter.put("/users/:id/activities/:activityId", manage, asyncHandler(UsersController.setActivity));
 adminRouter.put("/users/:id/achievements/:key", manage, asyncHandler(UsersController.setAchievement));
 adminRouter.post("/users/:id/reset-progress", manage, asyncHandler(UsersController.resetProgress));

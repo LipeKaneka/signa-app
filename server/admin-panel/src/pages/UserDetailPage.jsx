@@ -144,6 +144,62 @@ function StatsCard({ user, draft, onChange, delta, onDelta, editable }) {
   );
 }
 
+/** Contadores editáveis de ações no app (tipo → texto do campo). */
+const countersOf = (user) =>
+  Object.fromEntries(user.achievementMetrics.metrics.filter((metric) => metric.edit === "action").map((metric) => [metric.actionType, String(metric.value)]));
+
+const DICTIONARY_DRAFT_LABEL = { all: "marcar todos os sinais como vistos", none: "zerar os sinais vistos" };
+
+/**
+ * Todos os marcadores que as conquistas podem medir (os mesmos de "O que mede" em Conquistas), com o valor do
+ * usuário. Ações no app (toques, perguntas, aberturas) se editam aqui; XP, ofensiva e acertos no card Progresso;
+ * módulos e atividades pela lista de atividades; o dicionário pode ser zerado ou completado.
+ */
+function MetricsCard({ user, draft, onChange, dictionary, onDictionary, editable }) {
+  const { metrics, totalSigns } = user.achievementMetrics;
+  const groups = [...new Set(metrics.map((metric) => metric.group))];
+  return (
+    <div className="card">
+      <h2 className="card__title">Marcadores das conquistas</h2>
+      <p className="muted">Tudo o que uma conquista pode medir, com o valor deste usuário. Mudar um valor libera (ou não) as conquistas ligadas a ele.</p>
+      {groups.map((group) => (
+        <div key={group}>
+          <h3>{group}</h3>
+          <div className="stat-edit">
+            {metrics.filter((metric) => metric.group === group).map((metric) => {
+              if (metric.edit === "action") {
+                return (
+                  <Field key={metric.id} label={metric.label}>
+                    <input inputMode="numeric" value={draft[metric.actionType] ?? ""} disabled={!editable}
+                      onChange={(e) => onChange({ ...draft, [metric.actionType]: e.target.value })} />
+                  </Field>
+                );
+              }
+              const where = metric.edit === "stats" ? "Edite no card Progresso." : metric.edit === "dictionary" ? `${totalSigns} sinais no dicionário.` : "Vem das atividades concluídas.";
+              const suffix = metric.id === "dictionaryPercent" ? "%" : "";
+              return (
+                <Field key={metric.id} label={metric.label} hint={where}>
+                  <input value={`${formatNumber(metric.value)}${suffix}`} disabled readOnly />
+                </Field>
+              );
+            })}
+          </div>
+          {group === "Dicionário" && editable && (
+            <div className="setting__actions">
+              <button type="button" className={`button${dictionary === "all" ? "" : " button--ghost"}`} onClick={() => onDictionary(dictionary === "all" ? null : "all")}>
+                Marcar todos como vistos
+              </button>
+              <button type="button" className={`button${dictionary === "none" ? "" : " button--ghost"}`} onClick={() => onDictionary(dictionary === "none" ? null : "none")}>
+                Zerar sinais vistos
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Atividades da trilha, por módulo: concluir (com nota) ou desmarcar (só no rascunho; salva no fim). */
 function ActivitiesCard({ user, draft, onChange, editable }) {
   return (
@@ -285,6 +341,8 @@ export function UserDetailPage() {
   const [delta, setDelta] = useState("");
   const [activities, setActivities] = useState({});
   const [achievements, setAchievements] = useState({});
+  const [counters, setCounters] = useState(null);
+  const [dictionary, setDictionary] = useState(null);
 
   const resetDrafts = () => {
     if (!user) return;
@@ -293,12 +351,14 @@ export function UserDetailPage() {
     setDelta("");
     setActivities({});
     setAchievements({});
+    setCounters(countersOf(user));
+    setDictionary(null);
   };
   useEffect(resetDrafts, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /** O que mudou em relação ao que está salvo: lista para o resumo e as chamadas à API. */
   const pending = useMemo(() => {
-    if (!user || !profile || !stats) return { lines: [], steps: [], invalid: false };
+    if (!user || !profile || !stats || !counters) return { lines: [], steps: [], invalid: false };
     const lines = [];
     const steps = [];
     let invalid = false;
@@ -347,8 +407,25 @@ export function UserDetailPage() {
       lines.push(`Conquista "${achievementTitles.get(key)}": ${ACHIEVEMENT_MODE_LABEL[mode]}`);
       steps.push((reason) => api(`/users/${id}/achievements/${key}`, { method: "PUT", body: { mode, reason } }));
     }
+    const savedCounters = countersOf(user);
+    const metricLabels = new Map(user.achievementMetrics.metrics.map((metric) => [metric.actionType, metric.label]));
+    const counterChanges = {};
+    for (const [type, text] of Object.entries(counters)) {
+      const value = readWhole(text);
+      if (value === null || value < 0) invalid = true;
+      else if (value !== Number(savedCounters[type])) counterChanges[type] = value;
+    }
+    const counterLines = Object.entries(counterChanges).map(([type, value]) => `${metricLabels.get(type)}: ${formatNumber(Number(savedCounters[type]))} → ${formatNumber(value)}`);
+    if (dictionary) counterLines.push(`Dicionário: ${DICTIONARY_DRAFT_LABEL[dictionary]}`);
+    if (counterLines.length) {
+      lines.push(counterLines.join(" · "));
+      steps.push((reason) => api(`/users/${id}/counters`, {
+        method: "PATCH",
+        body: { ...(Object.keys(counterChanges).length ? { actions: counterChanges } : {}), ...(dictionary ? { dictionary } : {}), reason },
+      }));
+    }
     return { lines, steps, invalid };
-  }, [user, profile, stats, delta, activities, achievements, id]);
+  }, [user, profile, stats, delta, activities, achievements, counters, dictionary, id]);
 
   const dirty = pending.lines.length > 0;
 
@@ -375,7 +452,7 @@ export function UserDetailPage() {
     <section className={dirty ? "has-savebar" : undefined}>
       <p><Link to="/usuarios">← Usuários</Link></p>
       <LoadState loading={loading && !data} error={error} onRetry={reload} />
-      {user && profile && stats && (
+      {user && profile && stats && counters && (
         <>
           <div className="toolbar">
             <h1>{user.nickname} {user.status === "blocked" && <Badge tone="danger">Banido</Badge>}</h1>
@@ -419,6 +496,7 @@ export function UserDetailPage() {
           </div>
           <ActivitiesCard user={user} draft={activities} onChange={setActivities} editable={editable} />
           <AchievementsCard user={user} draft={achievements} onChange={setAchievements} editable={editable} />
+          <MetricsCard user={user} draft={counters} onChange={setCounters} dictionary={dictionary} onDictionary={setDictionary} editable={editable} />
 
           <div className="card">
             <h2 className="card__title">Últimas tentativas</h2>

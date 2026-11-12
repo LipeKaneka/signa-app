@@ -77,6 +77,12 @@ Confira o app e depois registre a versão:
   git commit -m "Versão ${rawVersion}"
   git tag -a v${label} -m "Signa ${label}: ${summary}"
 
-Para avisar os usuários: publique o APK num link (ex.: GitHub Releases) e, no painel, em
-Configurações → Atualização do app, coloque o link, o número ${versionCode} e o nome ${rawVersion}.
+Para avisar os usuários (GitHub Releases):
+  1. git push origin v${label}
+  2. No GitHub: Releases → Draft a new release → tag v${label} → anexe releases/Signa-${label}.apk
+     Descrição (copie):
+       ${summary}
+
+       versionCode: ${versionCode}
+  3. No painel: Configurações → Atualização do app → "Buscar no GitHub" → "Aplicar estes dados".
 `);

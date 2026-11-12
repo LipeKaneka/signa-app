@@ -1,3 +1,4 @@
+import { getEnvironment } from "../config/env.js";
 import { findActiveEvents } from "../services/service-event.js";
 import { getPublicSettings } from "../services/service-settings.js";
 import { listLevels } from "../services/service-level.js";
@@ -20,5 +21,8 @@ export async function getAppConfig(_req, res) {
     listLevels(),
     getContentVersion(),
   ]);
-  res.json({ settings, levels, contentVersion });
+  // ID público do login com Google (o "Web client ID" de GOOGLE_CLIENT_IDS, no Render): o app lê daqui, então o
+  // APK não precisa ser gerado de novo quando o ID muda. Não é segredo (vai dentro de qualquer app que usa Google).
+  const googleWebClientId = getEnvironment().googleClientIds[0] ?? "";
+  res.json({ settings: { ...settings, "auth.googleWebClientId": googleWebClientId }, levels, contentVersion });
 }

@@ -4,6 +4,7 @@ import { Icon } from "../../components/Icon.jsx";
 import { GoogleLogo, SignaLudusLogo } from "../../components/illustrations.jsx";
 import { BanDialog } from "../../components/BanDialog.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useAppConfig } from "../../context/AppConfigContext.jsx";
 import { ACCOUNT_BANNED, ApiError } from "../../api/http-client.js";
 
 /** Campo com ícone à esquerda (padrão das telas de entrada do protótipo). */
@@ -66,16 +67,22 @@ export function AuthBrand({ backTo, backLabel = "Voltar" }) {
   );
 }
 
-/** "Web client ID" do Google Cloud (o mesmo de GOOGLE_CLIENT_IDS no servidor). Vazio = botão só avisa. */
-const GOOGLE_WEB_CLIENT_ID = (import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID ?? "").trim();
+/**
+ * "Web client ID" do Google Cloud. Vem do servidor (GOOGLE_CLIENT_IDS no Render, via /app-config); o
+ * VITE_GOOGLE_WEB_CLIENT_ID do build, se existir, tem prioridade. Vazio = o botão só avisa.
+ */
+const BUILD_GOOGLE_WEB_CLIENT_ID = (import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID ?? "").trim();
 
 let googleReady = null;
+let googleReadyFor = "";
 
-/** Carrega o plugin de login social (só quando a pessoa toca no botão) e o inicializa uma vez. */
-function loadGoogleSignIn() {
+/** Carrega o plugin do Google só quando o botão é tocado (e de novo se o ID mudar). */
+function loadGoogleSignIn(webClientId) {
+  if (googleReadyFor !== webClientId) googleReady = null;
+  googleReadyFor = webClientId;
   googleReady ??= import("@capgo/capacitor-social-login")
     .then(async ({ SocialLogin }) => {
-      await SocialLogin.initialize({ google: { webClientId: GOOGLE_WEB_CLIENT_ID, mode: "online" } });
+      await SocialLogin.initialize({ google: { webClientId, mode: "online" } });
       return SocialLogin;
     })
     .catch((error) => {
@@ -98,18 +105,20 @@ function wasCancelled(error) {
  */
 export function GoogleButton({ onUnavailable }) {
   const { signInWithGoogle } = useAuth();
+  const { text } = useAppConfig();
   const [busy, setBusy] = useState(false);
   const [ban, setBan] = useState(null);
+  const webClientId = BUILD_GOOGLE_WEB_CLIENT_ID || text("auth.googleWebClientId").trim();
 
   async function handleClick() {
-    if (!GOOGLE_WEB_CLIENT_ID) {
+    if (!webClientId) {
       onUnavailable("Entrar com o Google ainda não está disponível. Use e-mail e senha.");
       return;
     }
     setBusy(true);
     onUnavailable("");
     try {
-      const SocialLogin = await loadGoogleSignIn();
+      const SocialLogin = await loadGoogleSignIn(webClientId);
       const response = await SocialLogin.login({ provider: "google", options: { scopes: ["email", "profile"] } });
       const idToken = response?.result?.idToken;
       if (!idToken) throw new Error("Sem token do Google.");
@@ -135,7 +144,7 @@ export function GoogleButton({ onUnavailable }) {
       >
         <GoogleLogo size={26} />
       </button>
-      {GOOGLE_WEB_CLIENT_ID && (
+      {webClientId && (
         <p className="auth-google__terms">
           Ao entrar com o Google, você aceita o <Link to="/termos">Termo de Uso</Link>.
         </p>

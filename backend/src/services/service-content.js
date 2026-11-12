@@ -22,8 +22,12 @@ export async function listActiveEvents() {
 /**
  * Configuração pública do app: textos editáveis, regras públicas, tabela de níveis e versão do conteúdo.
  * @returns {Promise<{settings: Record<string, unknown>, levels: object[], contentVersion: number}>}
+ * Inclui o ID do login com Google, que vem de variável de ambiente do servidor (não muda a versão do conteúdo):
+ * por isso também vence em 1 minuto, para uma troca no Render chegar ao app sem reiniciar o backend.
  * Usado por: GET /app-config.
  */
+const APP_CONFIG_MAX_AGE_MS = 60 * 1000;
+
 export function getAppConfig() {
-  return cachedContent("app-config", () => callServer("/app-config"));
+  return cachedContent("app-config", () => callServer("/app-config"), { maxAgeMs: APP_CONFIG_MAX_AGE_MS });
 }

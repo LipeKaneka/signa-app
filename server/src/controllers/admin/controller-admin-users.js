@@ -1,4 +1,5 @@
 import * as UsersAdmin from "../../services/service-admin-users.js";
+import { APP_EVENT_METRICS } from "../../config/achievement-metrics.js";
 import { readActor } from "../../middlewares/admin-auth-middleware.js";
 import { badRequest } from "../../utils/util-http-error.js";
 import { readRequiredString, readOptionalString, readPositiveInteger, readInteger, readEmail, readBoolean } from "../../utils/util-validators.js";
@@ -78,6 +79,24 @@ export async function updateStats(req, res) {
     totalCorrectAnswers: readCounter(body.totalCorrectAnswers, "Acertos"),
   };
   res.json({ user: await UsersAdmin.updateUserStats(readActor(req), req.params.id, values, readReason(body)) });
+}
+
+/**
+ * PATCH /admin/api/v1/users/:id/counters — {actions?: {tap_xp: 10, ...}, dictionary?: "all"|"none", reason} → {user}.
+ * Contadores das conquistas por ações no app (valores exatos, sem limite).
+ */
+export async function updateCounters(req, res) {
+  const body = req.body ?? {};
+  const actions = {};
+  if (body.actions !== undefined) {
+    if (!body.actions || typeof body.actions !== "object" || Array.isArray(body.actions)) throw badRequest("actions deve ser um objeto.");
+    for (const [type, value] of Object.entries(body.actions)) {
+      if (!APP_EVENT_METRICS[type]) throw badRequest(`Contador desconhecido: ${type}.`);
+      actions[type] = readInteger(value, type, { min: 0, max: UsersAdmin.MAX_COUNTER });
+    }
+  }
+  if (body.dictionary !== undefined && !["all", "none"].includes(body.dictionary)) throw badRequest('dictionary deve ser "all" ou "none".');
+  res.json({ user: await UsersAdmin.updateUserCounters(readActor(req), req.params.id, { actions, dictionary: body.dictionary }, readReason(body)) });
 }
 
 /** PUT /admin/api/v1/users/:id/activities/:activityId — {completed, bestScore?, reason} → {user}. */

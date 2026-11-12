@@ -1,4 +1,6 @@
 import * as GamificationAdmin from "../../services/service-admin-gamification.js";
+import { readLatestRelease } from "../../services/service-github-release.js";
+import { getSetting } from "../../services/service-settings.js";
 import { listLevels as readLevels } from "../../services/service-level.js";
 import { readActor } from "../../middlewares/admin-auth-middleware.js";
 import { readRequiredString, readOptionalString, readBoolean, readInteger, readDate } from "../../utils/util-validators.js";
@@ -147,6 +149,16 @@ export async function replaceLevels(req, res) {
 /** GET /admin/api/v1/settings — {settings} com definição e valor atual. */
 export async function listSettings(_req, res) {
   res.json({ settings: await GamificationAdmin.listSettings() });
+}
+
+/**
+ * GET /admin/api/v1/app-update/github?repo=dono/nome — lê a release mais recente do GitHub e devolve os campos de
+ * "Atualização do app" já preenchidos (não salva: o painel mostra e o administrador aplica).
+ * Sem ?repo, usa a configuração app.update.githubRepo.
+ */
+export async function readGithubRelease(req, res) {
+  const repo = typeof req.query.repo === "string" && req.query.repo.trim() ? req.query.repo : await getSetting("app.update.githubRepo");
+  res.json(await readLatestRelease(repo));
 }
 
 /** PUT /admin/api/v1/settings/:key — {value} → {key, value}. */

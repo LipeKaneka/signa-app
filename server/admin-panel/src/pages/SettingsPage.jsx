@@ -64,6 +64,72 @@ function SettingRow({ setting, editable, onSaved }) {
   );
 }
 
+/** Campos de "Atualização do app" que a busca no GitHub preenche (chave da configuração → campo da resposta). */
+const GITHUB_FIELDS = [
+  ["app.update.versionName", "versionName", "Nome da versão"],
+  ["app.update.latestVersionCode", "latestVersionCode", "Número (versionCode)"],
+  ["app.update.downloadUrl", "downloadUrl", "Link do APK"],
+  ["app.update.notes", "notes", "Novidades"],
+];
+
+/**
+ * "Buscar no GitHub": lê a release mais recente do repositório (app.update.githubRepo) e mostra os dados que vão
+ * para a tela de atualização do app; "Aplicar" salva os campos encontrados (os vazios ficam como estão).
+ */
+function GithubReleaseImporter({ onApplied }) {
+  const [release, setRelease] = useState(null);
+  const search = useAction();
+  const apply = useAction();
+
+  const fetchRelease = () =>
+    search.run(async () => {
+      setRelease(null);
+      setRelease(await api("/app-update/github"));
+    });
+
+  const found = release ? GITHUB_FIELDS.filter(([, field]) => release.fields[field] !== null && release.fields[field] !== "") : [];
+  const applyRelease = () =>
+    apply.run(async () => {
+      for (const [key, field] of found) {
+        await api(`/settings/${encodeURIComponent(key)}`, { method: "PUT", body: { value: release.fields[field] } });
+      }
+      onApplied();
+    }, "Dados da release aplicados: quem tiver uma versão menor já vê a tela de atualização.");
+
+  return (
+    <div className="github-import">
+      <div className="setting__actions">
+        <button className="button" disabled={search.busy} onClick={fetchRelease}>
+          {search.busy ? "Buscando…" : "Buscar no GitHub"}
+        </button>
+      </div>
+      <Notice message={search.message} />
+      {release && (
+        <div className="github-import__result">
+          <p>
+            <strong>{release.name}</strong> ({release.tag}) · {formatDateTime(release.publishedAt)} ·{" "}
+            <a href={release.htmlUrl} target="_blank" rel="noreferrer">abrir no GitHub</a>
+          </p>
+          <dl>
+            {GITHUB_FIELDS.map(([key, field, label]) => (
+              <div key={key}>
+                <dt>{label}</dt>
+                <dd style={{ whiteSpace: "pre-line" }}>{release.fields[field] === null || release.fields[field] === "" ? "—" : String(release.fields[field])}</dd>
+              </div>
+            ))}
+          </dl>
+          {release.warnings.map((warning) => <Notice key={warning} message={{ type: "error", text: warning }} />)}
+          <div className="setting__actions">
+            <button className="button" disabled={apply.busy || found.length === 0} onClick={applyRelease}>Aplicar estes dados</button>
+            <button className="button button--ghost" disabled={apply.busy} onClick={() => setRelease(null)}>Cancelar</button>
+          </div>
+          <Notice message={apply.message} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Configurações: regras de pontuação e textos do app (valor ausente = padrão do código). */
 export function SettingsPage() {
   const { can } = useAuth();
@@ -75,9 +141,10 @@ export function SettingsPage() {
       title: "Atualização do app (APK)",
       prefix: "app.update.",
       intro:
-        "Para avisar uma versão nova: coloque o APK num link público (ex.: GitHub Releases ou Google Drive), preencha o link e "
-        + "o número da versão nova (versionCode do APK). Quem tiver uma versão menor vê a tela de atualização. Com o número mínimo, "
-        + "versões abaixo dele ficam bloqueadas até atualizar.",
+        "Para avisar uma versão nova: publique uma release no GitHub (tag v1.4.0, com o APK anexado e \"versionCode: N\" na "
+        + "descrição) e use \"Buscar no GitHub\", ou preencha à mão o link público do APK e o número da versão nova. Quem tiver "
+        + "uma versão menor vê a tela de atualização. Com o número mínimo, versões abaixo dele ficam bloqueadas até atualizar.",
+      importer: true,
     },
   ];
   return (
@@ -89,6 +156,7 @@ export function SettingsPage() {
           <div className="card" key={group.prefix}>
             <h2>{group.title}</h2>
             {group.intro && <p className="muted">{group.intro}</p>}
+            {group.importer && can("manage") && <GithubReleaseImporter onApplied={reload} />}
             {data.settings.filter((setting) => setting.key.startsWith(group.prefix)).map((setting) => (
               <SettingRow key={setting.key} setting={setting} editable={can("manage")} onSaved={reload} />
             ))}

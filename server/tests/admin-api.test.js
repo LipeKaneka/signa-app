@@ -457,9 +457,25 @@ test("usuários: editar perfil, números sem limite, atividades e conquistas (tu
   assert.equal(detail.achievements.find((a) => a.id === target.id).manual, null);
   assert.equal((await admin.put(`${base}/achievements/nao_existe`).set(PANEL).send({ mode: "granted", reason: "x" })).status, 404);
 
+  // Marcadores das conquistas: todos aparecem no detalhe; contadores de ações e dicionário se editam.
+  const metricIds = detail.achievementMetrics.metrics.map((metric) => metric.id);
+  assert.ok(["tapXp", "tapFlame", "tapLogo", "dictionaryPercent", "streak", "perfectActivities"].every((id) => metricIds.includes(id)));
+  const counters = await admin.patch(`${base}/counters`).set(PANEL).send({ actions: { tap_xp: 12, tap_logo: 3 }, dictionary: "all", reason: "teste" });
+  assert.equal(counters.status, 200, counters.body.error);
+  const metricsAfter = (await admin.get(base).set(PANEL)).body.user.achievementMetrics.metrics;
+  const valueOf = (id) => metricsAfter.find((metric) => metric.id === id).value;
+  assert.equal(valueOf("tapXp"), 12);
+  assert.equal(valueOf("tapLogo"), 3);
+  assert.equal(valueOf("dictionaryPercent"), 100);
+  assert.equal((await admin.patch(`${base}/counters`).set(PANEL).send({ dictionary: "none", reason: "teste" })).status, 200);
+  assert.equal((await admin.patch(`${base}/counters`).set(PANEL).send({ actions: { nao_existe: 1 }, reason: "x" })).status, 400);
+  assert.equal((await admin.patch(`${base}/counters`).set(PANEL).send({ actions: { tap_xp: -1 }, reason: "x" })).status, 400);
+  assert.equal((await admin.patch(`${base}/counters`).set(PANEL).send({ actions: { tap_xp: 12 }, reason: "x" })).status, 400); // nada mudou
+
   // Visualizador não edita.
   const viewer = await signIn("viewer");
   assert.equal((await viewer.patch(`${base}/stats`).set(PANEL).send({ xp: 1, reason: "x" })).status, 403);
+  assert.equal((await viewer.patch(`${base}/counters`).set(PANEL).send({ actions: { tap_xp: 1 }, reason: "x" })).status, 403);
 
   const audit = await admin.get("/admin/api/v1/audit-log?limit=50").set(PANEL);
   assert.ok(audit.body.logs.some((log) => log.summary.includes("deu a conquista")));

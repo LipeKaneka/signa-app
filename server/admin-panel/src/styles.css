@@ -183,6 +183,17 @@ input:disabled, select:disabled { background: var(--off-bg); }
 .setting .notice { grid-column: 1 / -1; margin: 0; }
 .setting__actions { display: flex; gap: 6px; }
 
+/* "Buscar no GitHub" (Configurações → Atualização do app): botão e prévia da release antes de aplicar. */
+.github-import { display: grid; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.github-import__result { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); min-width: 0; overflow-wrap: anywhere; }
+.github-import__result p { margin: 0; }
+.github-import__result dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0; }
+.github-import__result dl > div { display: contents; }
+.github-import__result dt { color: var(--muted); }
+.github-import__result dd { margin: 0; max-height: 9.5em; overflow: auto; }
+.github-import .notice { margin: 0; }
+@media (max-width: 560px) { .github-import__result dl { grid-template-columns: 1fr; } }
+
 .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
 .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; display: grid; gap: 2px; box-shadow: var(--shadow); }
 .stat__value { font-size: 1.7rem; font-weight: 700; color: var(--text); }

@@ -112,6 +112,15 @@ export const SETTING_DEFINITIONS = Object.freeze([
     public: true,
   },
   {
+    key: "app.update.githubRepo",
+    label: "Repositório do GitHub com as releases (dono/nome; usado pelo botão \"Buscar no GitHub\")",
+    type: "string",
+    maxLength: 100,
+    allowEmpty: true,
+    default: "LipeKaneka/signa-app",
+    public: false,
+  },
+  {
     key: "app.update.notes",
     label: "Novidades da versão (aparecem na tela de atualização)",
     type: "text",

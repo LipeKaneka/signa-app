@@ -6,7 +6,9 @@ import { badRequest, conflict, notFound } from "../utils/util-http-error.js";
 import { recordAudit } from "./service-audit.js";
 import { toPublicProfile, getProfileWithAchievements, readActiveBan } from "./service-user.js";
 import { buildTrail } from "./service-trail.js";
-import { listActiveAchievements } from "./service-achievement.js";
+import { listActiveAchievements, readUserAchievementMetrics, countActiveSigns } from "./service-achievement.js";
+import { ACHIEVEMENT_METRICS, APP_EVENT_METRICS } from "../config/achievement-metrics.js";
+import { SignModel } from "../models/model-sign.js";
 import { toDayKey } from "./service-streak.js";
 
 /** Maior número aceito em XP, ofensiva e acertos (sem teto prático; é o maior inteiro exato do JavaScript). */
@@ -74,6 +76,26 @@ export async function listUsers({ search, status, page, limit }) {
  * @throws {HttpError} 404.
  * Usado por: GET /admin/api/v1/users/:id.
  */
+/** Métrica → como o painel edita: "stats" (formulário de XP/ofensiva/acertos), "action" (contador de ação do app),
+ *  "dictionary" (zerar / marcar todos) ou null (vem das atividades concluídas: edite pela lista de atividades). */
+const STAT_METRICS = new Set(["xp", "streak", "totalCorrectAnswers"]);
+const ACTION_BY_METRIC = new Map(Object.entries(APP_EVENT_METRICS).map(([type, metric]) => [metric, type]));
+
+/**
+ * Todos os "marcadores" que uma conquista pode medir, com o valor atual do usuário e como editar.
+ * @param {object} user
+ * @returns {Promise<{metrics: {id, label, group, value, edit, actionType?}[], totalSigns: number}>}
+ */
+async function describeAchievementMetrics(user) {
+  const [values, totalSigns] = await Promise.all([readUserAchievementMetrics(user), countActiveSigns()]);
+  const metrics = ACHIEVEMENT_METRICS.map((metric) => {
+    const actionType = ACTION_BY_METRIC.get(metric.id);
+    const edit = STAT_METRICS.has(metric.id) ? "stats" : actionType ? "action" : metric.group === "Dicionário" ? "dictionary" : null;
+    return { id: metric.id, label: metric.label, group: metric.group, value: values[metric.id] ?? 0, edit, ...(actionType ? { actionType } : {}) };
+  });
+  return { metrics, totalSigns };
+}
+
 export async function getUserDetail(userId) {
   const user = await UserModel.findById(userId);
   if (!user) throw notFound("Usuário não encontrado.");
@@ -93,6 +115,7 @@ export async function getUserDetail(userId) {
     lastActivityDay: user.lastActivityDay,
     storedStreak: user.streak,
     achievements,
+    achievementMetrics: await describeAchievementMetrics(user),
     modules: trail.map((module) => ({
       id: module.id,
       title: module.title,
@@ -138,6 +161,8 @@ function snapshotProgress(user) {
     maxStreak: user.maxStreak,
     totalCorrectAnswers: user.totalCorrectAnswers,
     completedActivitiesCount: user.completedActivitiesCount,
+    actionCounts: Object.fromEntries(user.actionCounts ?? []),
+    viewedSigns: user.viewedSigns?.length ?? 0,
   };
 }
 
@@ -312,6 +337,39 @@ export async function updateUserStats(actor, userId, values, reason) {
     .join(", ");
   if (!described) throw badRequest("Nada mudou.");
   return saveWithAudit(actor, user, before, "update", `${user.nickname}: ${described} (${reason})`);
+}
+
+/**
+ * Define os contadores de ações do app (toques na logo, no fogo, no XP, perguntas ao assistente...) com o valor
+ * exato e/ou zera ou completa os sinais vistos no dicionário. Conquistas ligadas a eles passam a valer na hora.
+ * @param {object} actor
+ * @param {string} userId
+ * @param {{actions?: Record<string, number>, dictionary?: "all"|"none"}} changes - já validados (tipos de APP_EVENT_METRICS).
+ * @param {string} reason
+ * @returns {Promise<object>}
+ * Usado por: PATCH /admin/api/v1/users/:id/counters.
+ */
+export async function updateUserCounters(actor, userId, { actions = {}, dictionary }, reason) {
+  const user = await findUser(userId);
+  const before = snapshotProgress(user);
+  const described = [];
+  for (const [type, value] of Object.entries(actions)) {
+    const previous = user.actionCounts?.get(type) ?? 0;
+    if (previous === value) continue;
+    user.actionCounts.set(type, value);
+    const label = ACHIEVEMENT_METRICS.find((metric) => metric.id === APP_EVENT_METRICS[type])?.label ?? type;
+    described.push(`${label} ${previous} → ${value}`);
+  }
+  if (dictionary === "none" && user.viewedSigns.length > 0) {
+    described.push(`dicionário ${user.viewedSigns.length} → 0 sinais vistos`);
+    user.viewedSigns = [];
+  } else if (dictionary === "all") {
+    const slugs = await SignModel.distinct("slug", { active: { $ne: false } });
+    described.push(`dicionário ${user.viewedSigns.length} → ${slugs.length} sinais vistos (todos)`);
+    user.viewedSigns = slugs;
+  }
+  if (described.length === 0) throw badRequest("Nada mudou.");
+  return saveWithAudit(actor, user, before, "update", `${user.nickname}: ${described.join(", ")} (${reason})`);
 }
 
 /**
