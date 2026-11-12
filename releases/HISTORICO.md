@@ -8,6 +8,7 @@ recriar qualquer um, faça checkout da tag e gere o APK, ou rode `npm run releas
 
 | Versão | Data | versionCode | Tag | O que mudou |
 |---|---|---|---|---|
+| **1.5.0** | 12/11/2026 | 7 | `v1.5.0` | Conquistas personalizáveis: imagens, emojis, cores, efeitos e raridades criadas no painel |
 | **1.4.0** | 11/11/2026 | 5 | `v1.4.0` | Login com Google; conquistas por toques, dicionário e uso do app; release pelo GitHub |
 | **1.3.0** | 11/11/2026 | 4 | `v1.3.0` | Trilha decorada; aviso de atualização a cada abertura; link do Google Drive baixa direto |
 | **1.2.0** | 11/11/2026 | 3 | `v1.2.0` | Tema escolhido aparece marcado nas configurações |
