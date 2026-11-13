@@ -6,3 +6,4 @@ dist/
 .env.android
 android/app/build/
 android/.gradle/
+android/app/google-services.json

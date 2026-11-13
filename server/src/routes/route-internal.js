@@ -3,6 +3,7 @@ import * as UserController from "../controllers/controller-internal-user.js";
 import * as ProgressController from "../controllers/controller-internal-progress.js";
 import * as DictionaryController from "../controllers/controller-internal-dictionary.js";
 import * as ContentController from "../controllers/controller-internal-content.js";
+import * as NotificationController from "../controllers/controller-internal-notification.js";
 import { requireServiceKey } from "../middlewares/service-auth-middleware.js";
 import { loadUser } from "../middlewares/load-user-middleware.js";
 import { asyncHandler } from "../utils/util-async-handler.js";
@@ -16,6 +17,7 @@ export const internalRouter = Router();
 
 internalRouter.use(requireServiceKey);
 internalRouter.get("/health", (_req, res) => res.json({ status: "ok" }));
+internalRouter.get("/notifications/stream", NotificationController.streamNotifications);
 
 internalRouter.post("/auth/register", asyncHandler(UserController.register));
 internalRouter.post("/auth/verify-credentials", asyncHandler(UserController.verifyCredentials));
@@ -31,6 +33,9 @@ userRoutes.get("/profile", asyncHandler(UserController.getProfile));
 userRoutes.post("/events", asyncHandler(UserController.recordEvents));
 userRoutes.patch("/", asyncHandler(UserController.updateProfile));
 userRoutes.delete("/", asyncHandler(UserController.deleteUser));
+userRoutes.get("/notifications", asyncHandler(NotificationController.list));
+userRoutes.post("/notifications/read", asyncHandler(NotificationController.markRead));
+userRoutes.put("/push-token", asyncHandler(NotificationController.savePushToken));
 userRoutes.get("/trail", asyncHandler(ProgressController.getTrail));
 userRoutes.post("/attempts", asyncHandler(ProgressController.startAttempt));
 userRoutes.post("/attempts/:attemptId/answers", asyncHandler(ProgressController.answerQuestion));

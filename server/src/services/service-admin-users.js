@@ -4,6 +4,8 @@ import { ActivityModel } from "../models/model-activity.js";
 import { escapeRegExp } from "../utils/util-text.js";
 import { badRequest, conflict, notFound } from "../utils/util-http-error.js";
 import { recordAudit } from "./service-audit.js";
+import { notifyUser, notifyAchievements, notifyLevelUp } from "./service-notification.js";
+import { describeLevel } from "./service-level.js";
 import { toPublicProfile, getProfileWithAchievements, readActiveBan } from "./service-user.js";
 import { buildTrail } from "./service-trail.js";
 import { listActiveAchievements, readUserAchievementMetrics, countActiveSigns } from "./service-achievement.js";
@@ -181,6 +183,7 @@ export async function setUserStatus(actor, userId, status, reason, durationDays 
   if (!["active", "blocked"].includes(status)) throw badRequest("Status inválido.");
   const user = await findUser(userId);
   const before = snapshotProgress(user);
+  const wasBlocked = user.status === "blocked";
   user.status = status;
   const now = Date.now();
   user.ban = status === "blocked"
@@ -196,6 +199,7 @@ export async function setUserStatus(actor, userId, status, reason, durationDays 
     before,
     after: snapshotProgress(user),
   });
+  if (wasBlocked && status === "active") await notifyUser(user._id, "account_restored");
   return toAdminUserRow(user);
 }
 
@@ -211,8 +215,13 @@ export async function setUserStatus(actor, userId, status, reason, durationDays 
 export async function adjustUserXp(actor, userId, delta, reason) {
   const user = await findUser(userId);
   const before = snapshotProgress(user);
+  const levelBefore = await describeLevel(user.xp);
   user.xp = Math.min(Math.max(0, user.xp + delta), MAX_COUNTER);
   await user.save();
+  if (delta > 0) {
+    await notifyUser(user._id, "xp_bonus", { xp: delta.toLocaleString("pt-BR") });
+    await notifyLevelUp(user._id, levelBefore, await describeLevel(user.xp));
+  }
   await recordAudit(actor, {
     action: "adjust_xp",
     entity: "user",
@@ -422,10 +431,11 @@ export async function setUserAchievement(actor, userId, key, mode, reason) {
   const before = snapshotProgress(user);
   user.achievementOverrides = user.achievementOverrides.filter((entry) => entry.key !== key);
   if (mode !== "auto") user.achievementOverrides.push({ key, unlocked: mode === "granted" });
-  if (mode === "granted" && !user.achievementUnlocks.some((entry) => entry.key === key)) {
-    user.achievementUnlocks.push({ key, unlockedAt: new Date() });
-  }
+  const newlyGranted = mode === "granted" && !user.achievementUnlocks.some((entry) => entry.key === key);
+  if (newlyGranted) user.achievementUnlocks.push({ key, unlockedAt: new Date() });
   if (mode === "revoked") user.achievementUnlocks = user.achievementUnlocks.filter((entry) => entry.key !== key);
   const what = { granted: "deu", revoked: "tirou", auto: "voltou ao automático" }[mode];
-  return saveWithAudit(actor, user, before, "update", `${user.nickname}: ${what} a conquista "${achievement.title}" (${reason})`);
+  const row = await saveWithAudit(actor, user, before, "update", `${user.nickname}: ${what} a conquista "${achievement.title}" (${reason})`);
+  if (newlyGranted) await notifyAchievements(user._id, [achievement]);
+  return row;
 }

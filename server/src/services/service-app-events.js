@@ -1,4 +1,5 @@
 import { UserModel } from "../models/model-user.js";
+import { notifyAchievements } from "./service-notification.js";
 import { SignModel } from "../models/model-sign.js";
 import { APP_EVENT_METRICS, SIGN_VIEW_EVENT } from "../config/achievement-metrics.js";
 import { badRequest } from "../utils/util-http-error.js";
@@ -74,5 +75,6 @@ export async function recordAppEvents(user, events) {
   if (newAchievements.length > 0 && recordUnlockDates(user, await listAchievementsWithProgress(metricsAfter, overrides))) {
     await UserModel.updateOne({ _id: user._id }, { $set: { achievementUnlocks: user.achievementUnlocks } });
   }
+  notifyAchievements(user._id, newAchievements).catch(() => {});
   return { newAchievements };
 }

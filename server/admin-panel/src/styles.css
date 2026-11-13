@@ -557,3 +557,11 @@ input:disabled, select:disabled { background: var(--off-bg); }
 .tier-list__rank { width: 22px; text-align: center; font-weight: 800; color: var(--muted); }
 .tier-list__actions { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
 .tier-form__preview { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: var(--radius); background: #f3f0ff; }
+
+/* Notificações (tipos, envio e histórico) */
+.notification-type { margin-bottom: 12px; }
+.notification-type h3 { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.notification-type__fields { display: grid; gap: 10px; margin: 10px 0; }
+.notification-send__results { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
+.notification-send__results .button { width: 100%; justify-content: flex-start; text-align: left; }
+.notification-type .checkbox { display: inline-flex; cursor: pointer; }

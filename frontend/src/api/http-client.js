@@ -61,6 +61,54 @@ function buildHeaders(hasBody) {
 }
 
 /**
+ * Abre um fluxo de Server-Sent Events da API com o token (o EventSource do navegador não manda cabeçalho).
+ * @param {string} path - ex.: "/notifications/stream".
+ * @param {(event: string, data: unknown) => void} onEvent - cada mensagem recebida.
+ * @param {AbortSignal} signal - abortar fecha o fluxo.
+ * @returns {Promise<void>} termina quando o fluxo fecha.
+ * @throws {ApiError} conexão recusada (401 sai da conta, como nas outras chamadas).
+ * Usado por: NotificationsProvider.
+ */
+export async function openApiStream(path, onEvent, signal) {
+  let response;
+  try {
+    response = await fetch(`${API_URL}${path}`, { headers: { ...buildHeaders(false), Accept: "text/event-stream" }, cache: "no-store", signal });
+  } catch (error) {
+    if (signal.aborted) return;
+    throw new ApiError(0, error.message);
+  }
+  if (!response.ok || !response.body) {
+    if (response.status === 401) unauthorizedListeners.forEach((listener) => listener());
+    throw new ApiError(response.status, "Fluxo indisponível.");
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) return;
+    buffer += decoder.decode(value, { stream: true });
+    let end;
+    while ((end = buffer.indexOf("\n\n")) !== -1) {
+      const block = buffer.slice(0, end);
+      buffer = buffer.slice(end + 2);
+      let event = "message";
+      const data = [];
+      for (const line of block.split("\n")) {
+        if (line.startsWith("event:")) event = line.slice(6).trim();
+        else if (line.startsWith("data:")) data.push(line.slice(5).trim());
+      }
+      if (data.length === 0) continue;
+      try {
+        onEvent(event, JSON.parse(data.join("\n")));
+      } catch {
+        // mensagem inválida: ignora
+      }
+    }
+  }
+}
+
+/**
  * Lê o JSON da resposta; devolve {} se o corpo vier vazio ou inválido.
  * @returns {Promise<object>}
  */

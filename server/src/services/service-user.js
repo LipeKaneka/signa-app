@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { NotificationModel } from "../models/model-notification.js";
 import { randomBytes } from "node:crypto";
 import { UserModel } from "../models/model-user.js";
 import { AttemptModel } from "../models/model-attempt.js";
@@ -232,5 +233,6 @@ export async function updateProfile(user, changes, currentPassword) {
 export async function deleteAccount(user, currentPassword) {
   await verifyCurrentPassword(user._id, currentPassword);
   await AttemptModel.deleteMany({ user: user._id });
+  await NotificationModel.deleteMany({ user: user._id });
   await UserModel.deleteOne({ _id: user._id });
 }

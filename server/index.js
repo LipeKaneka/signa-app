@@ -2,6 +2,7 @@ import "dotenv/config";
 import { getEnvironment } from "./src/config/env.js";
 import { connectDatabase, disconnectDatabase } from "./src/database/database.js";
 import { createApp } from "./src/app.js";
+import { startNotificationScheduler, stopNotificationScheduler } from "./src/services/service-notification-scheduler.js";
 
 /**
  * Ponto de entrada do servidor de gerenciamento: valida o ambiente, conecta ao MongoDB e escuta em HOST:PORT
@@ -16,8 +17,10 @@ async function startServer() {
   const server = createApp().listen(environment.port, environment.host, () => {
     console.log(`Servidor de gerenciamento em http://${environment.host}:${environment.port}/internal/v1`);
   });
+  startNotificationScheduler();
 
   async function shutDown() {
+    stopNotificationScheduler();
     server.close();
     await disconnectDatabase();
     process.exit(0);

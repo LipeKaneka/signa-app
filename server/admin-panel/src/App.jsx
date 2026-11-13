@@ -11,6 +11,7 @@ import { AchievementsPage } from "./pages/AchievementsPage.jsx";
 import { EventsPage } from "./pages/EventsPage.jsx";
 import { LevelsPage } from "./pages/LevelsPage.jsx";
 import { SettingsPage } from "./pages/SettingsPage.jsx";
+import { NotificationsPage } from "./pages/NotificationsPage.jsx";
 import { UsersPage } from "./pages/UsersPage.jsx";
 import { UserDetailPage } from "./pages/UserDetailPage.jsx";
 import { AuditPage } from "./pages/AuditPage.jsx";
@@ -41,6 +42,7 @@ function Routing() {
         <Route path="eventos" element={<EventsPage />} />
         <Route path="niveis" element={<LevelsPage />} />
         <Route path="configuracoes" element={<SettingsPage />} />
+        <Route path="notificacoes" element={<NotificationsPage />} />
         <Route path="usuarios" element={<UsersPage />} />
         <Route path="usuarios/:id" element={<UserDetailPage />} />
         <Route path="auditoria" element={<Allowed permission="manage"><AuditPage /></Allowed>} />

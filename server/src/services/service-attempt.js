@@ -9,6 +9,7 @@ import { findUnlockedActivity } from "./service-trail.js";
 import { registerActivityDay } from "./service-streak.js";
 import { readUserAchievementMetrics, readAchievementOverrides, findNewlyUnlocked, listAchievementsWithProgress, recordUnlockDates } from "./service-achievement.js";
 import { toPublicProfile } from "./service-user.js";
+import { notifyAchievements, notifyLevelUp } from "./service-notification.js";
 import { CAMERA_UNAVAILABLE_OPTION, findCameraTarget } from "../config/camera-targets.js";
 
 /**
@@ -181,6 +182,7 @@ async function countCorrectAnswerNow(user) {
   if (unlocked.length > 0 && recordUnlockDates(user, await listAchievementsWithProgress(metricsAfter, overrides))) {
     await UserModel.updateOne({ _id: user._id }, { $set: { achievementUnlocks: user.achievementUnlocks } });
   }
+  notifyAchievements(user._id, unlocked).catch(() => {});
   return unlocked;
 }
 
@@ -250,6 +252,7 @@ export async function finishAttempt(user, attemptId) {
   const alreadyCompleted = user.completedActivities.some((item) => String(item.activity) === String(closed.activity));
 
   const metricsBefore = await readUserAchievementMetrics(user);
+  const levelBefore = await describeLevel(user.xp);
   const xpEarned = passed ? computeXp(correctAnswers, totalQuestions, alreadyCompleted, rules, multiplier) : 0;
 
   user.xp += xpEarned;
@@ -268,5 +271,8 @@ export async function finishAttempt(user, attemptId) {
   closed.result = result;
   await closed.save();
 
-  return { result, user: { ...toPublicProfile(user), level: await describeLevel(user.xp) } };
+  const levelAfter = await describeLevel(user.xp);
+  // Notificações (sino e celular): não esperam, para não atrasar a tela de resultado.
+  notifyAchievements(user._id, newAchievements).then(() => notifyLevelUp(user._id, levelBefore, levelAfter)).catch(() => {});
+  return { result, user: { ...toPublicProfile(user), level: levelAfter } };
 }

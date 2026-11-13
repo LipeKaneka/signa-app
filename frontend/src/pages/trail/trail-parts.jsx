@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { NotificationBell } from "../../features/notifications/NotificationBell.jsx";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "../../components/Icon.jsx";
 import { Flame, LogoHand, XpBarVertical } from "../../components/illustrations.jsx";
@@ -119,6 +120,7 @@ export function TrailHeader({ user, title, percent, progressLabel, onBack }) {
             <span className="trail-header__icon"><XpBarVertical size={40} /></span>
             {formatCompact(user.xp)}<small>P</small>
           </TapTarget>
+          <NotificationBell />
         </span>
       </div>
       <h1 className="trail-header__title">{title}</h1>

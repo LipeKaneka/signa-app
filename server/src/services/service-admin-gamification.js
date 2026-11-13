@@ -1,4 +1,5 @@
 import { AchievementModel } from "../models/model-achievement.js";
+import { notifyAll } from "./service-notification.js";
 import { EventModel } from "../models/model-event.js";
 import { LevelModel } from "../models/model-level.js";
 import { SettingModel } from "../models/model-setting.js";
@@ -9,7 +10,7 @@ import { recordAudit } from "./service-audit.js";
 import { publishContentChange } from "./service-admin-publish.js";
 import { describeActiveChange } from "./service-admin-trail.js";
 import { listLevels } from "./service-level.js";
-import { setSetting } from "./service-settings.js";
+import { getSetting, setSetting } from "./service-settings.js";
 import { readEventAppearance, toPublicAppearance } from "../config/event-appearance.js";
 import { toPublicAchievementAppearance } from "../config/achievement-appearance.js";
 import { AchievementTierModel } from "../models/model-achievement-tier.js";
@@ -400,6 +401,11 @@ export async function updateSetting(actor, key, value) {
   const saved = await setSetting(key, value, actor.admin.email);
   await publishContentChange();
   await recordAudit(actor, { action: "update", entity: "setting", entityId: key, summary: `Configuração ${key}`, before: before?.value ?? null, after: saved });
+  // Versão nova do APK avisada: notificação "Nova versão" para todos (uma vez por número).
+  if (key === "app.update.latestVersionCode" && Number(saved) > Number(before?.value ?? 0)) {
+    const version = (await getSetting("app.update.versionName")) || String(saved);
+    await notifyAll("app_update", { version }, `app_update:${saved}`);
+  }
   return saved;
 }
 

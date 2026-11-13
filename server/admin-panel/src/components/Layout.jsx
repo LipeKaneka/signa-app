@@ -26,7 +26,13 @@ const MENU_GROUPS = [
       { to: "/niveis", label: "Níveis", icon: "levels", permission: "read" },
     ],
   },
-  { title: "Pessoas", items: [{ to: "/usuarios", label: "Usuários", icon: "users", permission: "read" }] },
+  {
+    title: "Pessoas",
+    items: [
+      { to: "/usuarios", label: "Usuários", icon: "users", permission: "read" },
+      { to: "/notificacoes", label: "Notificações", icon: "bell", permission: "read" },
+    ],
+  },
   {
     title: "Sistema",
     items: [

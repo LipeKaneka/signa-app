@@ -1,0 +1,121 @@
+/* Aviso de notificação no topo (base em achievement-toast.css) */
+.notification-toast {
+  animation-duration: 4500ms;
+}
+
+.notification-toast__icon {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+.notification-toast__body {
+  font-size: 0.875rem;
+  opacity: 0.9;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Sino no cabeçalho da trilha */
+.notification-bell {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+.notification-bell__badge {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: #ff5a5f;
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* Tela Notificações */
+.notifications-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notification-item {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
+  border-radius: 16px;
+  background: var(--color-card);
+  color: var(--color-card-text);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notification-item--unread {
+  border-color: var(--color-primary, #6c4ee3);
+  box-shadow: inset 4px 0 0 var(--color-primary, #6c4ee3);
+}
+
+.notification-item__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-primary-soft, #ece8ff);
+  font-size: 1.25rem;
+}
+
+.notification-item__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.notification-item__text strong {
+  font-size: 1rem;
+}
+
+.notification-item__text span {
+  font-size: 0.9rem;
+  opacity: 0.85;
+  overflow-wrap: anywhere;
+}
+
+.notification-item__text time {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+.notifications-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.notifications-empty {
+  padding: 40px 16px;
+  text-align: center;
+  opacity: 0.7;
+}

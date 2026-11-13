@@ -6,6 +6,7 @@ import { useAppConfig } from "./context/AppConfigContext.jsx";
 import { SplashScreen } from "./components/SplashScreen.jsx";
 import { UpdateGate } from "./features/app-update/UpdateGate.jsx";
 import { AppEventsProvider } from "./features/achievements/AppEventsContext.jsx";
+import { NotificationsProvider } from "./features/notifications/NotificationsContext.jsx";
 import { LoginPage } from "./pages/auth/LoginPage.jsx";
 import { OnboardingPage, wasOnboardingSeen } from "./pages/auth/OnboardingPage.jsx";
 import { TrailPage } from "./pages/trail/TrailPage.jsx";
@@ -23,6 +24,7 @@ const RankingPage = lazyPage(() => import("./pages/ranking/RankingPage.jsx"), "R
 const AssistantPage = lazyPage(() => import("./pages/assistant/AssistantPage.jsx"), "AssistantPage");
 const ProfilePage = lazyPage(() => import("./pages/profile/ProfilePage.jsx"), "ProfilePage");
 const AchievementsPage = lazyPage(() => import("./pages/achievements/AchievementsPage.jsx"), "AchievementsPage");
+const NotificationsPage = lazyPage(() => import("./pages/notifications/NotificationsPage.jsx"), "NotificationsPage");
 const DictionaryPage = lazyPage(() => import("./pages/dictionary/DictionaryPage.jsx"), "DictionaryPage");
 const SettingsPage = lazyPage(() => import("./pages/settings/SettingsPage.jsx"), "SettingsPage");
 
@@ -134,6 +136,7 @@ function PrivateRoutes() {
         <Route path="/assistente" element={<AssistantPage />} />
         <Route path="/perfil" element={<ProfilePage />} />
         <Route path="/conquistas" element={<AchievementsPage />} />
+        <Route path="/notificacoes" element={<NotificationsPage />} />
         <Route path="/dicionario" element={<DictionaryPage />} />
         <Route path="/configuracoes" element={<SettingsPage />} />
         <Route path="/termos" element={<TermsPage />} />
@@ -171,7 +174,9 @@ function AppScreens() {
       <RefreshConfigOnNavigate />
       {status === "signedIn" ? (
         <AppEventsProvider>
-          <PrivateRoutes />
+          <NotificationsProvider>
+            <PrivateRoutes />
+          </NotificationsProvider>
         </AppEventsProvider>
       ) : <PublicRoutes />}
     </HashRouter>

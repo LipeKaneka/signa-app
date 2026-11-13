@@ -7,6 +7,7 @@ import * as GamificationController from "../controllers/admin/controller-admin-g
 import * as UsersController from "../controllers/admin/controller-admin-users.js";
 import * as OverviewController from "../controllers/admin/controller-admin-overview.js";
 import * as DatabaseController from "../controllers/admin/controller-admin-database.js";
+import * as NotificationsController from "../controllers/admin/controller-admin-notifications.js";
 import { requireAdminRequest, requireAdmin, requireRole } from "../middlewares/admin-auth-middleware.js";
 import { PERMISSIONS } from "../config/admin-permissions.js";
 import { asyncHandler } from "../utils/util-async-handler.js";
@@ -76,6 +77,12 @@ adminRouter.get("/settings", read, asyncHandler(GamificationController.listSetti
 adminRouter.put("/settings/:key", manage, asyncHandler(GamificationController.updateSetting));
 adminRouter.delete("/settings/:key", manage, asyncHandler(GamificationController.resetSetting));
 adminRouter.get("/app-update/github", manage, asyncHandler(GamificationController.readGithubRelease));
+
+adminRouter.get("/notifications/types", read, asyncHandler(NotificationsController.listTypes));
+adminRouter.put("/notifications/types/:type", manage, asyncHandler(NotificationsController.updateType));
+adminRouter.delete("/notifications/types/:type", manage, asyncHandler(NotificationsController.resetType));
+adminRouter.post("/notifications/send", manage, asyncHandler(NotificationsController.send));
+adminRouter.get("/notifications/history", read, asyncHandler(NotificationsController.history));
 
 adminRouter.get("/users", read, asyncHandler(UsersController.list));
 adminRouter.get("/users/:id", read, asyncHandler(UsersController.detail));
