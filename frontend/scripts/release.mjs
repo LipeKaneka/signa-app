@@ -67,9 +67,11 @@ const commit = execSync("git rev-parse --short HEAD", { cwd: frontend }).toStrin
 appendFileSync(listFile, `${label}|${commit}|${date}|${summary}\n`);
 if (existsSync(historyFile)) {
   const history = readFileSync(historyFile, "utf8");
-  const header = "|---|---|---|---|---|\n";
+  // Aceita \n e \r\n (no Windows o git pode trazer o arquivo com \r\n).
+  const header = /\|---\|---\|---\|---\|---\|\r?\n/;
   const row = `| **${label}** | ${date} | ${versionCode} | \`v${label}\` | ${summary.replace(/\|/g, "/")} |\n`;
-  writeFileSync(historyFile, history.replace(header, header + row));
+  if (!header.test(history)) console.warn("Aviso: tabela de releases/HISTORICO.md não encontrada; acrescente a linha à mão.");
+  writeFileSync(historyFile, history.replace(header, (match) => match + row));
 }
 
 // 4) Próximos passos (ou publicação automática).

@@ -23,3 +23,4 @@
 1.6.0|a78e975|14/11/2026|Notificações: sino, tela Notificações, aviso em tempo real e notificação no celular
 1.6.1|a728778|14/11/2026|Corrige o login com o Google no celular
 1.6.2|ad59626|14/11/2026|Notificações legíveis e aviso no celular também com o app aberto
+1.6.3|1c452c9|14/11/2026|Notificações sem o ícone redondo com emoji
