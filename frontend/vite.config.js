@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import basicSsl from "@vitejs/plugin-basic-ssl";
+import { existsSync } from "node:fs";
 
 /**
  * Em produção o front chama a API direto (VITE_API_URL = endereço do outro servidor).
@@ -25,5 +26,8 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), ...(mode === "https" ? [basicSsl()] : [])],
     base: "./",
     server: { proxy: buildDevProxy(env) },
+    // Notificação no celular só liga no APK gerado com o android/app/google-services.json do Firebase
+    // (sem ele, pedir o token derruba o app).
+    define: { __PUSH_ENABLED__: JSON.stringify(existsSync("android/app/google-services.json")) },
   };
 });

@@ -10,6 +10,11 @@ export function markNotificationsRead(ids) {
   return requestApi("/notifications/read", { method: "POST", body: ids === "all" ? { all: true } : { ids } });
 }
 
+/** Registra (ou tira, com token vazio) o celular que recebe notificação com o app fechado. */
+export function savePushToken(token, previous = "") {
+  return requestApi("/notifications/push-token", { method: "PUT", body: { token, previous } });
+}
+
 /**
  * Notificações novas, na hora. Termina quando o fluxo fecha (quem chama reconecta).
  * @param {(notification: object) => void} onNotification

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import * as NotificationsApi from "../../api/api-notifications.js";
 import { useSettings } from "../../context/SettingsContext.jsx";
 import { NotificationToast } from "./NotificationToast.jsx";
+import { enablePush, forgetPushToken, PUSH_AVAILABLE } from "./push.js";
 
 /** Espera para reconectar o tempo real (dobra a cada queda, até 1 min). */
 const RECONNECT_MIN_MS = 2 * 1000;
@@ -89,6 +90,25 @@ export function NotificationsProvider({ children }) {
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [receive, reload]);
+
+  // Celular: liga com "Notificações" ativado; desligar tira o aparelho do servidor.
+  useEffect(() => {
+    if (!PUSH_AVAILABLE) return undefined;
+    if (!settings.notifications) {
+      forgetPushToken();
+      return undefined;
+    }
+    let cleanup = () => {};
+    let cancelled = false;
+    enablePush((link) => navigate(link)).then((stop) => {
+      if (cancelled) stop();
+      else cleanup = stop;
+    });
+    return () => {
+      cancelled = true;
+      cleanup();
+    };
+  }, [settings.notifications, navigate]);
 
   const markRead = useCallback((ids) => {
     if (!ids.length) return;

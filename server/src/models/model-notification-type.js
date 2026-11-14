@@ -10,6 +10,7 @@ const notificationTypeSchema = new mongoose.Schema(
   {
     type: { type: String, enum: NOTIFICATION_TYPE_KEYS, required: true, unique: true },
     enabled: { type: Boolean, default: true },
+    push: { type: Boolean, default: true },
     title: { type: String, default: "", maxlength: 80 },
     body: { type: String, default: "", maxlength: 240 },
     updatedBy: { type: String, default: null },

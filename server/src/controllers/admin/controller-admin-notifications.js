@@ -18,16 +18,17 @@ function readFlag(value, label) {
   return value;
 }
 
-/** GET /admin/api/v1/notifications/types — {types}. */
+/** GET /admin/api/v1/notifications/types — {types, pushConfigured}. */
 export async function listTypes(_req, res) {
   res.json(await NotificationService.listNotificationTypes());
 }
 
-/** PUT /admin/api/v1/notifications/types/:type — {enabled?, title?, body?} → {type}. */
+/** PUT /admin/api/v1/notifications/types/:type — {enabled?, push?, title?, body?} → {type}. */
 export async function updateType(req, res) {
   const body = req.body ?? {};
   const changes = Object.fromEntries(Object.entries({
     enabled: readFlag(body.enabled, "Ligado"),
+    push: readFlag(body.push, "Celular"),
     title: readText(body.title, "Título", NOTIFICATION_LIMITS.title),
     body: readText(body.body, "Texto", NOTIFICATION_LIMITS.body),
   }).filter(([, value]) => value !== undefined));

@@ -35,6 +35,7 @@ userRoutes.patch("/", asyncHandler(UserController.updateProfile));
 userRoutes.delete("/", asyncHandler(UserController.deleteUser));
 userRoutes.get("/notifications", asyncHandler(NotificationController.list));
 userRoutes.post("/notifications/read", asyncHandler(NotificationController.markRead));
+userRoutes.put("/push-token", asyncHandler(NotificationController.savePushToken));
 userRoutes.get("/trail", asyncHandler(ProgressController.getTrail));
 userRoutes.post("/attempts", asyncHandler(ProgressController.startAttempt));
 userRoutes.post("/attempts/:attemptId/answers", asyncHandler(ProgressController.answerQuestion));
