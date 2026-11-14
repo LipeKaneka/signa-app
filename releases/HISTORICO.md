@@ -8,6 +8,7 @@ recriar qualquer um, faça checkout da tag e gere o APK, ou rode `npm run releas
 
 | Versão | Data | versionCode | Tag | O que mudou |
 |---|---|---|---|---|
+| **1.6.4** | 14/11/2026 | 12 | `v1.6.4` | Tradutor reconhece 150 palavras novas do Dicionário do INES (experimentais), 170 no total |
 | **1.6.3** | 14/11/2026 | 11 | `v1.6.3` | Notificações sem o ícone redondo com emoji |
 | **1.6.2** | 14/11/2026 | 10 | `v1.6.2` | Notificações legíveis e aviso no celular também com o app aberto |
 | **1.6.1** | 14/11/2026 | 9 | `v1.6.1` | Corrige o login com o Google no celular |
