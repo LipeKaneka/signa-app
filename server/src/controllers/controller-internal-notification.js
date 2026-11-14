@@ -38,17 +38,3 @@ export async function markRead(req, res) {
   }
   res.json(await NotificationService.markNotificationsRead(req.user, body.ids));
 }
-
-/** Token do Firebase: texto curto sem espaços. */
-function readToken(value, label) {
-  if (value === undefined || value === null || value === "") return "";
-  if (typeof value !== "string" || value.length > 4096 || /\s/.test(value)) throw badRequest(`${label} inválido.`);
-  return value;
-}
-
-/** PUT /internal/v1/users/:userId/push-token — {token, previous?} → {push}. Token vazio tira o aparelho. */
-export async function savePushToken(req, res) {
-  const token = readToken(req.body?.token, "Token");
-  const previous = readToken(req.body?.previous, "Token anterior");
-  res.json(await NotificationService.savePushToken(req.user, token, previous));
-}

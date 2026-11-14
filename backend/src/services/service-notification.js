@@ -25,11 +25,6 @@ export function markNotificationsRead(userId, body) {
   return callServer(userPath(userId, "/notifications/read"), { method: "POST", body });
 }
 
-/** @returns {Promise<{push: boolean}>} Usado por: PUT /notifications/push-token. */
-export function savePushToken(userId, token, previous) {
-  return callServer(userPath(userId, "/push-token"), { method: "PUT", body: { token, previous } });
-}
-
 /** Lê o fluxo SSE do servidor e entrega cada notificação a quem está conectado. */
 async function readUpstream(response, signal) {
   const reader = response.body.getReader();

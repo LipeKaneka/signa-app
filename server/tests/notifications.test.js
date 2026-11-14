@@ -1,10 +1,10 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { randomBytes, generateKeyPairSync } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import request from "supertest";
 
-// Notificações: tipos do painel, envio manual, histórico, tempo real (SSE), celular (Firebase simulado),
+// Notificações: tipos do painel, envio manual, histórico, tempo real (SSE),
 // eventos que começam e lembrete de ofensiva.
 let app;
 let memoryServer;
@@ -15,14 +15,11 @@ let Scheduler;
 let EventModel;
 let UserModel;
 const PANEL = { "X-Signa-Admin": "1" };
-const realFetch = globalThis.fetch;
-const pushCalls = [];
 let ownerPassword;
 
 before(async () => {
   memoryServer = await MongoMemoryServer.create();
   serviceKey = randomBytes(48).toString("hex");
-  const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
   Object.assign(process.env, {
     NODE_ENV: "test",
     DATABASE_URL: memoryServer.getUri(),
@@ -30,26 +27,7 @@ before(async () => {
     BREVO_API_KEY: "",
     MAILTRAP_API_TOKEN: "",
     GOOGLE_CLIENT_IDS: "",
-    FIREBASE_SERVICE_ACCOUNT: JSON.stringify({
-      project_id: "signa-teste",
-      client_email: "push@signa-teste.iam.gserviceaccount.com",
-      private_key: privateKey.export({ type: "pkcs8", format: "pem" }),
-    }),
   });
-  // Google/Firebase simulados: nada sai de verdade.
-  globalThis.fetch = async (url, options) => {
-    const target = String(url);
-    if (target.startsWith("https://oauth2.googleapis.com/token")) {
-      return new Response(JSON.stringify({ access_token: "token-teste", expires_in: 3600 }), { status: 200 });
-    }
-    if (target.startsWith("https://fcm.googleapis.com/")) {
-      const body = JSON.parse(options.body);
-      pushCalls.push(body.message);
-      if (body.message.token === "token-velho") return new Response(JSON.stringify({ error: { status: "NOT_FOUND", details: [{ errorCode: "UNREGISTERED" }] } }), { status: 404 });
-      return new Response(JSON.stringify({ name: "ok" }), { status: 200 });
-    }
-    return realFetch(url, options);
-  };
   const database = await import("../src/database/database.js");
   const { seedContent } = await import("../src/seeds/seed-content.js");
   const { createApp } = await import("../src/app.js");
@@ -67,7 +45,6 @@ before(async () => {
 });
 
 after(async () => {
-  globalThis.fetch = realFetch;
   await disconnectDatabase();
   await memoryServer.stop();
 });
@@ -123,7 +100,6 @@ test("painel: desligar um tipo para de criar; texto personalizado com variáveis
   const userId = await registerUser("Bia");
   const admin = await panel();
   const types = (await admin.get("/admin/api/v1/notifications/types").set(PANEL)).body;
-  assert.equal(types.pushConfigured, true);
   assert.ok(types.types.length >= 8);
 
   assert.equal((await admin.put("/admin/api/v1/notifications/types/xp_bonus").set(PANEL).send({ enabled: false })).status, 200);
@@ -143,14 +119,10 @@ test("painel: desligar um tipo para de criar; texto personalizado com variáveis
   assert.equal((await admin.put("/admin/api/v1/notifications/types/manual").set(PANEL).send({ title: "x" })).status, 400);
 });
 
-test("aviso manual para todos e para uma pessoa, com celular e histórico de lidas", async () => {
+test("aviso manual para todos e para uma pessoa, com histórico de lidas", async () => {
   const ana = await registerUser("Caio");
   const bruno = await registerUser("Duda");
   const admin = await panel();
-  // Ana tem um celular bom e um token velho (app desinstalado).
-  assert.equal((await request(app).put(`/internal/v1/users/${ana}/push-token`).set(withKey()).send({ token: "token-velho" })).body.push, true);
-  await request(app).put(`/internal/v1/users/${ana}/push-token`).set(withKey()).send({ token: "token-bom" });
-  pushCalls.length = 0;
 
   const toAll = await admin.post("/admin/api/v1/notifications/send").set(PANEL).send({ title: "Manutenção hoje", body: "O app pode ficar fora às 22h." });
   assert.equal(toAll.status, 201, toAll.body.error);
@@ -159,11 +131,6 @@ test("aviso manual para todos e para uma pessoa, com celular e histórico de lid
   assert.equal(toOne.body.recipients, 1);
   assert.equal((await admin.post("/admin/api/v1/notifications/send").set(PANEL).send({ title: "" })).status, 400);
 
-  // Celular: chamou o Firebase para os dois tokens; o velho foi apagado.
-  await new Promise((resolve) => setTimeout(resolve, 200));
-  assert.ok(pushCalls.some((message) => message.token === "token-bom" && message.notification.title === "Manutenção hoje"));
-  const stored = await UserModel.findById(ana).select("+pushTokens").lean();
-  assert.deepEqual(stored.pushTokens.map((item) => item.token), ["token-bom"]);
 
   await request(app).post(`/internal/v1/users/${ana}/notifications/read`).set(withKey()).send({ all: true });
   const history = (await admin.get("/admin/api/v1/notifications/history?type=manual").set(PANEL)).body;
@@ -172,10 +139,7 @@ test("aviso manual para todos e para uma pessoa, com celular e histórico de lid
   assert.ok(broadcast.read >= 1);
   assert.equal(broadcast.sentBy, "owner@notif.test");
   assert.equal(history.items.find((item) => item.title === "Olá Duda").to.nickname, "Duda");
-
-  // Token do mesmo aparelho em outra conta sai da primeira.
-  await request(app).put(`/internal/v1/users/${bruno}/push-token`).set(withKey()).send({ token: "token-bom" });
-  assert.equal((await UserModel.findById(ana).select("+pushTokens").lean()).pushTokens.length, 0);
+  assert.equal((await request(app).put(`/internal/v1/users/${ana}/push-token`).set(withKey()).send({ token: "x" })).status, 404);
 });
 
 test("versão nova do app avisa todos uma vez por número", async () => {
@@ -219,7 +183,7 @@ test("fluxo em tempo real (SSE) entrega a notificação ao backend na hora", asy
   const { port } = server.address();
   const controller = new AbortController();
   try {
-    const response = await realFetch(`http://127.0.0.1:${port}/internal/v1/notifications/stream`, { headers: withKey(), signal: controller.signal });
+    const response = await fetch(`http://127.0.0.1:${port}/internal/v1/notifications/stream`, { headers: withKey(), signal: controller.signal });
     assert.equal(response.headers.get("content-type").split(";")[0], "text/event-stream");
     const reader = response.body.getReader();
     await reader.read(); // ": conectado"

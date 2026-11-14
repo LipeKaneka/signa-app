@@ -6,8 +6,8 @@ import { Badge, Field, LoadState, Notice, Pagination, confirmAction, formatDateT
 
 const LIMITS = { title: 80, body: 240 };
 
-/** Um tipo de notificação automática: ligar/desligar, celular, título e texto (com as variáveis aceitas). */
-function TypeRow({ item, editable, pushConfigured, onSaved }) {
+/** Um tipo de notificação automática: ligar/desligar, título e texto (com as variáveis aceitas). */
+function TypeRow({ item, editable, onSaved }) {
   const [draft, setDraft] = useState({ title: item.title, body: item.body });
   const { run, busy, message } = useAction();
   useEffect(() => setDraft({ title: item.title, body: item.body }), [item]);
@@ -33,16 +33,10 @@ function TypeRow({ item, editable, pushConfigured, onSaved }) {
           {!item.enabled && <Badge tone="danger">desligada</Badge>}
         </h3>
         {editable && (
-          <span className="table__actions">
-            <label className="checkbox">
-              <input type="checkbox" checked={item.enabled} disabled={busy} onChange={(e) => save({ enabled: e.target.checked }, e.target.checked ? "Ligada." : "Desligada.")} />
-              Ligada
-            </label>
-            <label className="checkbox" title={pushConfigured ? "" : "Configure o Firebase no servidor para mandar ao celular."}>
-              <input type="checkbox" checked={item.push} disabled={busy} onChange={(e) => save({ push: e.target.checked })} />
-              Celular
-            </label>
-          </span>
+          <label className="checkbox">
+            <input type="checkbox" checked={item.enabled} disabled={busy} onChange={(e) => save({ enabled: e.target.checked }, e.target.checked ? "Ligada." : "Desligada.")} />
+            Ligada
+          </label>
         )}
       </div>
       <p className="muted">{item.when}</p>
@@ -106,7 +100,7 @@ function SendForm({ onSent, manualEnabled }) {
       setForm({ title: "", body: "", audience: form.audience });
       onSent();
       return result;
-    }, "Aviso enviado. Quem está com o app aberto recebe na hora; os outros, no celular ou ao abrir o app.");
+    }, "Aviso enviado. Quem está com o app aberto recebe na hora; os outros veem no sino ao abrir o app.");
   };
 
   return (
@@ -202,7 +196,7 @@ function HistoryCard({ types, refreshKey }) {
 }
 
 /**
- * Notificações: todos os tipos que o app pode receber (ligar/desligar, celular, textos), enviar um aviso agora e o
+ * Notificações: todos os tipos que o app pode receber (ligar/desligar, textos), enviar um aviso agora e o
  * histórico de envios com quantas pessoas leram.
  */
 export function NotificationsPage() {
@@ -216,19 +210,16 @@ export function NotificationsPage() {
     <section>
       <h1>Notificações</h1>
       <p className="muted">
-        Tudo o que pode aparecer no sino do app. Chegam na hora para quem está com o app aberto (aviso no topo) e, com
-        "Celular" marcado, também como notificação do celular com o app fechado.
+        Tudo o que pode aparecer no sino do app. Chegam na hora para quem está com o app aberto (aviso no topo); quem
+        estiver com o app fechado vê no sino quando abrir.
       </p>
       <LoadState loading={loading && !data} error={error} onRetry={reload} />
-      {data && !data.pushConfigured && (
-        <Notice message={{ type: "error", text: "Notificação no celular desligada: falta FIREBASE_SERVICE_ACCOUNT no servidor (Render). Dentro do app, tudo funciona." }} />
-      )}
       {data && editable && <SendForm manualEnabled={manual?.enabled} onSent={() => setRefreshKey((key) => key + 1)} />}
       {data && (
         <>
           <h2>Tipos de notificação</h2>
           {data.types.map((item) => (
-            <TypeRow key={item.type} item={item} editable={editable} pushConfigured={data.pushConfigured} onSaved={reload} />
+            <TypeRow key={item.type} item={item} editable={editable} onSaved={reload} />
           ))}
           <HistoryCard types={data.types} refreshKey={refreshKey} />
         </>

@@ -1,5 +1,4 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { forgetPushToken } from "../features/notifications/push.js";
 import * as UserApi from "../api/api-user.js";
 import { ACCOUNT_BANNED, onAccountBanned, onUnauthorized } from "../api/http-client.js";
 import { readStoredToken, storeToken, clearStoredToken } from "../utils/session-storage.js";
@@ -29,7 +28,6 @@ export function AuthProvider({ children }) {
   const [status, setStatus] = useState(() => (cachedUser() ? "signedIn" : readStoredToken() ? "loading" : "signedOut"));
 
   const signOut = useCallback(() => {
-    forgetPushToken(); // antes de apagar a sessão: este celular para de receber as notificações da conta
     clearStoredToken();
     clearCache();
     setUser(null);

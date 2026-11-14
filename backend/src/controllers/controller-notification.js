@@ -22,13 +22,6 @@ export async function markRead(req, res) {
   res.json(await NotificationService.markNotificationsRead(req.userId, { ids: body.ids.map(String) }));
 }
 
-/** PUT /notifications/push-token — {token, previous?} → {push}. Token vazio tira o aparelho. */
-export async function savePushToken(req, res) {
-  const token = typeof req.body?.token === "string" ? req.body.token : "";
-  const previous = typeof req.body?.previous === "string" ? req.body.previous : "";
-  res.json(await NotificationService.savePushToken(req.userId, token, previous));
-}
-
 /**
  * GET /notifications/stream — Server-Sent Events: "notification" com cada notificação nova da pessoa, na hora.
  * O app reconecta sozinho se cair.

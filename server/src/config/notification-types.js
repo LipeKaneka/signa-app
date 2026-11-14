@@ -1,7 +1,6 @@
 /**
  * Todas as notificações que o app pode receber. O painel (aba Notificações) liga/desliga cada tipo, troca o título
- * e o texto e escolhe se também vai para o celular (push). Valores do painel ficam em NotificationTypeModel; o que
- * estiver aqui é o padrão.
+ * e o texto. Valores do painel ficam em NotificationTypeModel; o que estiver aqui é o padrão.
  * - variables: o que pode ir entre chaves no título/texto (ex.: "{achievement}"); o servidor troca pelo valor.
  * - audience: "user" (uma pessoa) ou "all" (todo mundo de uma vez).
  * - when: quando dispara (texto mostrado no painel).

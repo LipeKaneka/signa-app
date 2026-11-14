@@ -94,12 +94,6 @@ const userSchema = new mongoose.Schema(
     actionCounts: { type: Map, of: Number, default: () => new Map() },
     // Sinais (slug) já abertos no dicionário, cada um uma vez: conquistas "ver X sinais" / "ver o dicionário todo".
     viewedSigns: { type: [String], default: [] },
-    // Aparelhos que recebem notificação no celular (token do Firebase registrado pelo app). Até 5 por pessoa.
-    pushTokens: {
-      type: [{ _id: false, token: { type: String, required: true }, updatedAt: { type: Date, default: Date.now } }],
-      default: [],
-      select: false,
-    },
     rankingPositions: {
       activities: { type: rankingPositionSchema, default: () => ({}) },
       xp: { type: rankingPositionSchema, default: () => ({}) },

@@ -7,11 +7,9 @@ import { UserModel } from "../models/model-user.js";
 import { NOTIFICATION_TYPES, NOTIFICATION_LIMITS, findNotificationType, fillTemplate } from "../config/notification-types.js";
 import { badRequest, notFound } from "../utils/util-http-error.js";
 import { recordAudit } from "./service-audit.js";
-import { sendPush, isPushConfigured } from "./service-push.js";
 
-/** Quantas notificações o app recebe por página e quantos aparelhos cada pessoa registra. */
+/** Quantas notificações o app recebe por página. */
 const LIST_LIMIT = 50;
-const MAX_PUSH_TOKENS = 5;
 /** Aviso para todos: grava em blocos para não pesar no banco. */
 const INSERT_CHUNK = 500;
 
@@ -43,7 +41,6 @@ async function readTypeConfigs() {
     return [item.type, {
       ...item,
       enabled: custom?.enabled ?? true,
-      push: custom?.push ?? true,
       title: custom?.title || item.title,
       body: custom?.body || item.body,
       customized: Boolean(custom),
@@ -53,24 +50,13 @@ async function readTypeConfigs() {
   }));
 }
 
-/** Manda para o celular de cada pessoa (se o tipo permitir) e apaga tokens que não valem mais. */
-async function pushToUsers(userIds, message) {
-  if (!isPushConfigured() || userIds.length === 0) return;
-  const users = await UserModel.find({ _id: { $in: userIds }, "pushTokens.0": { $exists: true } }).select("+pushTokens").lean();
-  await Promise.all(users.map(async (user) => {
-    const invalid = await sendPush(user.pushTokens.map((item) => item.token), message);
-    if (invalid.length) await UserModel.updateOne({ _id: user._id }, { $pull: { pushTokens: { token: { $in: invalid } } } });
-  }));
-}
-
 /**
- * Grava, avisa em tempo real e manda para o celular.
+ * Grava no Mongo e avisa em tempo real quem está com o app aberto.
  * @param {string[]|mongoose.Types.ObjectId[]} userIds
  * @param {{type: string, title: string, body: string, link: string, batch?: string|null, sentBy?: string|null}} content
- * @param {{push: boolean}} options
  * @returns {Promise<number>} quantas foram criadas.
  */
-async function deliver(userIds, content, { push }) {
+async function deliver(userIds, content) {
   if (userIds.length === 0 || !content.title) return 0;
   const now = new Date();
   const docs = userIds.map((user) => ({ _id: new mongoose.Types.ObjectId(), user, ...content, readAt: null, createdAt: now }));
@@ -78,10 +64,6 @@ async function deliver(userIds, content, { push }) {
     await NotificationModel.insertMany(docs.slice(start, start + INSERT_CHUNK), { ordered: false });
   }
   for (const doc of docs) notificationHub.emit("notification", { userId: String(doc.user), notification: toPublicNotification(doc) });
-  if (push) {
-    const id = docs.length === 1 ? String(docs[0]._id) : "";
-    pushToUsers(userIds, { title: content.title, body: content.body, link: content.link, id }).catch(() => {});
-  }
   return docs.length;
 }
 
@@ -104,7 +86,7 @@ export async function notifyUser(userId, type, values = {}) {
       body: fillTemplate(config.body, values).slice(0, 400),
       link: config.link,
       batch: null,
-    }, { push: config.push });
+    });
   } catch (error) {
     console.error(`Notificação "${type}" não foi criada:`, error.message);
   }
@@ -153,7 +135,7 @@ export async function notifyAll(type, values, batch) {
       body: fillTemplate(config.body, values).slice(0, 400),
       link: config.link,
       batch,
-    }, { push: config.push });
+    });
   } catch (error) {
     console.error(`Aviso para todos "${type}" não foi criado:`, error.message);
     return 0;
@@ -190,45 +172,23 @@ export async function markNotificationsRead(user, ids) {
   return { unread: await NotificationModel.countDocuments({ user: user._id, readAt: null }) };
 }
 
-/**
- * Registra (ou tira) o aparelho que recebe notificação no celular.
- * @param {object} user
- * @param {string} token - token do Firebase; vazio tira.
- * @param {string} [previous] - token antigo do aparelho, para tirar junto.
- * @returns {Promise<{push: boolean}>} push = servidor configurado para mandar ao celular.
- * Usado por: PUT/DELETE /internal/v1/users/:userId/push-token.
- */
-export async function savePushToken(user, token, previous = "") {
-  const remove = [token, previous].filter(Boolean);
-  if (remove.length) await UserModel.updateOne({ _id: user._id }, { $pull: { pushTokens: { token: { $in: remove } } } });
-  if (token) {
-    // Um aparelho é de uma pessoa só: quem entrar em outra conta no mesmo celular leva o token junto.
-    await UserModel.updateMany({ _id: { $ne: user._id } }, { $pull: { pushTokens: { token } } });
-    await UserModel.updateOne(
-      { _id: user._id },
-      { $push: { pushTokens: { $each: [{ token, updatedAt: new Date() }], $slice: -MAX_PUSH_TOKENS } } },
-    );
-  }
-  return { push: isPushConfigured() };
-}
-
 /* ----------------------------------------------------------------------------------------- painel */
 
 /**
  * Todos os tipos com a configuração valendo.
- * @returns {Promise<{types: object[], pushConfigured: boolean}>}
+ * @returns {Promise<{types: object[]}>}
  * Usado por: GET /admin/api/v1/notifications/types.
  */
 export async function listNotificationTypes() {
   const configs = await readTypeConfigs();
-  return { types: [...configs.values()], pushConfigured: isPushConfigured() };
+  return { types: [...configs.values()] };
 }
 
 /**
- * Muda um tipo (ligar/desligar, push, título, texto). Título/texto vazio = volta ao padrão.
+ * Muda um tipo (ligar/desligar, título, texto). Título/texto vazio = volta ao padrão.
  * @param {object} actor
  * @param {string} type
- * @param {{enabled?: boolean, push?: boolean, title?: string, body?: string}} changes - já validados.
+ * @param {{enabled?: boolean, title?: string, body?: string}} changes - já validados.
  * @returns {Promise<object>} o tipo atualizado.
  * Usado por: PUT /admin/api/v1/notifications/types/:type.
  */
@@ -250,8 +210,8 @@ export async function updateNotificationType(actor, type, changes) {
     entity: "notification-type",
     entityId: type,
     summary: `notificação "${definition.label}" alterada`,
-    before: { enabled: before.enabled, push: before.push, title: before.title, body: before.body },
-    after: { enabled: after.enabled, push: after.push, title: after.title, body: after.body },
+    before: { enabled: before.enabled, title: before.title, body: before.body },
+    after: { enabled: after.enabled, title: after.title, body: after.body },
   });
   return after;
 }
@@ -290,7 +250,7 @@ export async function sendManualNotification(actor, { title, body, userId = null
     recipients = await listActiveUserIds();
   }
   const batch = `manual:${randomUUID()}`;
-  const count = await deliver(recipients, { type: "manual", title, body, link: config.link, batch, sentBy: actor.admin.email }, { push: config.push });
+  const count = await deliver(recipients, { type: "manual", title, body, link: config.link, batch, sentBy: actor.admin.email });
   await recordAudit(actor, { action: "create", entity: "notification", entityId: batch, summary: `aviso "${title}" enviado para ${target} (${count})` });
   return { batch, recipients: count };
 }
