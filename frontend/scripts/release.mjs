@@ -26,6 +26,12 @@ const gradleFile = join(frontend, "android", "app", "build.gradle");
 const historyFile = join(releases, "HISTORICO.md");
 const listFile = join(releases, "versoes.txt");
 
+// Sem o google-services.json (fica fora do git), o APK sai sem notificação no celular. Melhor parar aqui.
+if (!existsSync(join(frontend, "android", "app", "google-services.json"))) {
+  console.error("Falta frontend/android/app/google-services.json (Firebase): o APK sairia sem notificação no celular.");
+  process.exit(1);
+}
+
 if (readFileSync(listFile, "utf8").split("\n").some((line) => line.startsWith(`${label}|`))) {
   console.error(`A versão ${label} já existe em releases/versoes.txt.`);
   process.exit(1);

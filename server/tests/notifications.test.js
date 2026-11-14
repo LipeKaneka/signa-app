@@ -45,6 +45,10 @@ before(async () => {
     if (target.startsWith("https://fcm.googleapis.com/")) {
       const body = JSON.parse(options.body);
       pushCalls.push(body.message);
+      // Como o FCM de verdade: "data" só aceita texto.
+      if (Object.values(body.message.data ?? {}).some((value) => typeof value !== "string")) {
+        return new Response(JSON.stringify({ error: { status: "INVALID_ARGUMENT", message: "Invalid value at 'message.data'" } }), { status: 400 });
+      }
       if (body.message.token === "token-velho") return new Response(JSON.stringify({ error: { status: "NOT_FOUND", details: [{ errorCode: "UNREGISTERED" }] } }), { status: 404 });
       return new Response(JSON.stringify({ name: "ok" }), { status: 200 });
     }
@@ -176,6 +180,25 @@ test("aviso manual para todos e para uma pessoa, com celular e histórico de lid
   // Token do mesmo aparelho em outra conta sai da primeira.
   await request(app).put(`/internal/v1/users/${bruno}/push-token`).set(withKey()).send({ token: "token-bom" });
   assert.equal((await UserModel.findById(ana).select("+pushTokens").lean()).pushTokens.length, 0);
+});
+
+test("notificação sem link (XP de presente) chega ao celular e não apaga o aparelho", async () => {
+  const userId = await registerUser("Gil");
+  const admin = await panel();
+  await request(app).put(`/internal/v1/users/${userId}/push-token`).set(withKey()).send({ token: "token-gil" });
+  pushCalls.length = 0;
+  assert.equal((await admin.post(`/admin/api/v1/users/${userId}/xp`).set(PANEL).send({ delta: 3, reason: "teste" })).status, 200);
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  const sent = pushCalls.find((message) => message.token === "token-gil");
+  assert.ok(sent, "foi para o Firebase");
+  assert.equal(typeof sent.data.link, "string");
+  assert.equal(typeof sent.data.id, "string");
+  const stored = await UserModel.findById(userId).select("+pushTokens").lean();
+  assert.deepEqual(stored.pushTokens.map((item) => item.token), ["token-gil"], "o aparelho continua registrado");
+
+  // Registrar de novo o mesmo token (o app manda sempre que abre) não duplica.
+  await request(app).put(`/internal/v1/users/${userId}/push-token`).set(withKey()).send({ token: "token-gil" });
+  assert.equal((await UserModel.findById(userId).select("+pushTokens").lean()).pushTokens.length, 1);
 });
 
 test("versão nova do app avisa todos uma vez por número", async () => {

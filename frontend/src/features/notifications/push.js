@@ -38,10 +38,11 @@ export async function enablePush(onOpen) {
   if (!PUSH_AVAILABLE) return () => {};
   const { PushNotifications } = await import("@capacitor/push-notifications");
   const handles = await Promise.all([
+    // Manda sempre (mesmo token igual ao salvo): o servidor pode ter perdido o registro, e assim ele volta
+    // toda vez que o app abre.
     PushNotifications.addListener("registration", ({ value }) => {
       const previous = readSavedToken();
-      if (value === previous) return;
-      NotificationsApi.savePushToken(value, previous).then(() => writeSavedToken(value)).catch(() => {});
+      NotificationsApi.savePushToken(value, previous === value ? "" : previous).then(() => writeSavedToken(value)).catch(() => {});
     }),
     PushNotifications.addListener("registrationError", (error) => console.warn("Push: registro falhou", error)),
     PushNotifications.addListener("pushNotificationActionPerformed", ({ notification }) => {

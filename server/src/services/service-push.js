@@ -64,7 +64,7 @@ async function getAccessToken() {
  * @returns {Promise<string[]>} tokens que não valem mais (app desinstalado): quem chama deve apagá-los.
  * Nunca lança: falha de push só vai para o log.
  */
-export async function sendPush(tokens, { title, body, link = "/notificacoes", id = "" }) {
+export async function sendPush(tokens, { title, body, link, id }) {
   if (!tokens.length || !isPushConfigured()) return [];
   const invalid = [];
   try {
@@ -77,8 +77,9 @@ export async function sendPush(tokens, { title, body, link = "/notificacoes", id
         body: JSON.stringify({
           message: {
             token,
-            notification: { title, body },
-            data: { link, id },
+            notification: { title: String(title ?? ""), body: String(body ?? "") },
+            // O FCM só aceita texto em "data": null/undefined dão INVALID_ARGUMENT e a notificação não sai.
+            data: { link: String(link || "/notificacoes"), id: String(id ?? "") },
             android: { priority: "high", notification: { channel_id: "avisos" } },
           },
         }),
@@ -86,8 +87,10 @@ export async function sendPush(tokens, { title, body, link = "/notificacoes", id
       });
       if (response.ok) return;
       const detail = await response.text().catch(() => "");
-      if (response.status === 404 || /UNREGISTERED|INVALID_ARGUMENT/.test(detail)) invalid.push(token);
-      else console.error(`Push recusado (${response.status}):`, detail.slice(0, 200));
+      // Só "aparelho não existe mais" apaga o token; outro erro (mensagem inválida, projeto errado, cota) vai para
+      // o log e o aparelho continua registrado.
+      if (response.status === 404 || /UNREGISTERED/.test(detail)) invalid.push(token);
+      else console.error(`Push recusado (${response.status}):`, detail.slice(0, 300));
     }));
   } catch (error) {
     console.error("Push para o celular falhou:", error.message);
