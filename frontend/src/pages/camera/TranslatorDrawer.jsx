@@ -29,9 +29,11 @@ function SegmentedControl({ label, options, value, onChange }) {
 
 /** Gaveta lateral da câmera: modo, texto traduzido, sensibilidade e o que é reconhecido. */
 export function TranslatorDrawer({ mode, onModeChange, sensitivity, onSensitivityChange, translator, samples, profile, onClose }) {
-  const staticLetters = [...new Set(samples.map((sample) => sample.rotulo))].sort().join(" ");
-  const movementLetters = [...translator.builtInGestureLetters, ...translator.taughtGestureLetters].sort();
-  const lettersToTeach = MOVEMENT_LETTERS.filter((letter) => !movementLetters.includes(letter));
+  const staticLetterList = [...new Set(samples.map((sample) => sample.rotulo))].sort();
+  const staticLetters = staticLetterList.join(" ");
+  const movementLetters = [...new Set([...translator.builtInGestureLetters, ...translator.taughtGestureLetters])].sort();
+  // H e X já vêm pela forma da mão (letras paradas): só sobra ensinar o que nenhum dos dois reconhece.
+  const lettersToTeach = MOVEMENT_LETTERS.filter((letter) => !movementLetters.includes(letter) && !staticLetterList.includes(letter));
   const sensitivityOptions = Object.entries(SENSITIVITIES).map(([id, item]) => ({ id, label: item.label }));
   // Fecha deslizando: o fundo esmaece e a gaveta sai; só desmonta quando o esmaecer termina.
   const { leaving, startLeaving: startClosing, handleAnimationEnd } = useExitAnimation(onClose);

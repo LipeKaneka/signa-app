@@ -1,6 +1,6 @@
 // Letras (ou sinais curtos) COM MOVIMENTO feitos sem tirar a mão da imagem — H, J, K, X, Z, Ç.
-// K e Z já vêm com o app (gestos-base.json, do Dicionário da Libras do INES); as outras não aparecem
-// direito nos vídeos do INES e são aprendidas com gravações reais da própria pessoa (aba Ensinar).
+// J, K e Z já vêm com o app (gestos-base.json, do Dicionário da Libras do INES). H e X são reconhecidas pela
+// forma da mão (amostras-base.json); Ç tem a forma do C e só é reconhecida se a pessoa ensinar (aba Ensinar).
 // Uma letra ensinada no aparelho passa a valer no lugar da que veio com o app. A comparação usa DTW (alinhamento temporal dinâmico) sobre a
 // trajetória da ponta do indicador e o formato da mão, com vizinho mais próximo.
 

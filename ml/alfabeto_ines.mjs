@@ -141,14 +141,28 @@ function reamostrar(qs, n = PASSOS) {
 }
 
 /**
- * Onde está o movimento da letra em cada vídeo (visto na linha do tempo, --linha, e no traçado da ponta do dedo):
- * - K: a mão sobe, para na configuração e então faz o movimento (0,4 s, 3 palmas);
- * - Z: a mão já aparece desenhando o Z (→, diagonal ↙, →; 0,7 s, 8 palmas), antes da primeira parada.
- * Ficam de fora (só "ensinar no aparelho"): H e J (movimento de 0,2 s e menos de 1 palma, abaixo do mínimo que o
- * app usa para perceber um gesto, então copiar o vídeo não reconheceria ninguém), X e Ç (o movimento não aparece
- * no vídeo de 240×176 a 12 quadros/s).
+ * Letras de TRAJETÓRIA (J, K, Z): no INES a mão sobe e já emenda o movimento da letra, sem parar antes. O gesto é
+ * o trecho em movimento que termina na primeira parada firme (3 quadros), sem o começo da subida: ficam de fora os
+ * quadros com o punho mais de 1 palma abaixo de onde a mão para (o app pede "comece com a mão na configuração").
+ * H, X e Ç não são trajetória (rotação do punho, dedo que oscila, tremor da mão em C): o DetectorGesto do app mede
+ * deslocamento da ponta do dedo e não as percebe — ver letras de FORMA, mais abaixo.
  */
-const SEGMENTOS = {K: 'depoisDaParada', Z: 'primeiroMovimento'}
+const TRAJETORIA = ['J', 'K', 'Z']
+
+/** Traçado resumido da ponta do indicador (como o app vê: x espelhado para a mão esquerda), para conferir a letra. */
+function tracado(qs) {
+  const p = qs.map(q => [q.punho[0] + q.pontos[8][0], q.punho[1] + q.pontos[8][1]])
+  const palma = Math.hypot(qs[0].pontos[9][0], qs[0].pontos[9][1])
+  const setas = []
+  for (let i = 2; i < p.length; i += 2) {
+    const dx = p[i][0] - p[i - 2][0], dy = p[i][1] - p[i - 2][1]
+    if (Math.hypot(dx, dy) < 0.15 * palma) continue
+    const s = Math.abs(dx) > 2 * Math.abs(dy) ? (dx > 0 ? '→' : '←') : Math.abs(dy) > 2 * Math.abs(dx) ? (dy > 0 ? '↓' : '↑')
+      : dx > 0 ? (dy > 0 ? '↘' : '↗') : (dy > 0 ? '↙' : '↖')
+    if (setas.at(-1) !== s) setas.push(s)
+  }
+  return setas.join('')
+}
 
 /** Trechos seguidos de "mão mexendo", com início e fim (índices dos quadros). */
 function trechosMexendo(quadros) {
@@ -163,13 +177,17 @@ function trechosMexendo(quadros) {
 }
 
 function segmentoDaLetra(letra, quadros) {
-  const trechos = trechosMexendo(quadros)
-  const primeiraParada = quadros.findIndex(q => q.still)
-  const trecho = SEGMENTOS[letra] === 'depoisDaParada' ? trechos.find(t => t.ini > primeiraParada)
-    : SEGMENTOS[letra] === 'primeiroMovimento' ? trechos.find(t => t.fim > t.ini) : null
+  if (!TRAJETORIA.includes(letra)) return null
+  const parada = quadros.findIndex((q, i) => q.still && quadros[i + 1]?.still && quadros[i + 2]?.still)
+  if (parada < 0) return null
+  const trecho = trechosMexendo(quadros).filter(t => t.fim < parada).at(-1)
   if (!trecho) return null
-  // um quadro antes e um depois: a configuração parada de onde o movimento sai e onde chega
-  const qs = quadros.slice(Math.max(0, trecho.ini - 1), trecho.fim + 2).map(quadroGesto).filter(Boolean)
+  const fim = quadros[parada]
+  const palma = Math.hypot(fim.pontos[9][0], fim.pontos[9][1])
+  let ini = trecho.ini
+  while (ini < parada && quadros[ini].mao && quadros[ini].mao.pontos[0].y > fim.mao.pontos[0].y + palma) ini++
+  // até a parada (inclusive): o movimento chega na configuração parada
+  const qs = quadros.slice(ini, parada + 1).map(quadroGesto).filter(Boolean)
   if (qs.length < 4 || caminho(qs) < 1.2) return null // 1,2 palmas: o mínimo do DetectorGesto do app
   return reamostrar(qs)
 }
@@ -222,17 +240,22 @@ for (const letra of LETRAS_MOVIMENTO) {
   const longeDemais = vars.filter(v => dtw(caracteristicasGesto(v), f) > limiar).length
   console.log(`  ${letra}: caminho ${caminho(q).toFixed(1)} palmas · não-letra mais parecida ${negMin.toFixed(2)} · outra letra ${outraMin.toFixed(2)} → limiar ${limiar}`
     + (longeDemais ? ` (${longeDemais}/${vars.length} variações ficariam de fora)` : ''))
+  console.log(`     traçado da ponta do indicador: ${tracado(q)} (${q.at(-1).t.toFixed(2)} s)`)
   limiares[letra] = limiar
   for (const v of [q, ...vars]) gestosBase.push({r: letra, quadros: v})
 }
 
 // ---------- Letras paradas: efeito de juntar o INES, medido em dados independentes ----------
 
-const amostrasInes = letras.filter(l => !LETRAS_MOVIMENTO.includes(l.letra))
+// Letras de FORMA: H e X têm movimento pequeno (rotação do punho, dedo que oscila) que o app não mede, mas a
+// forma da mão parada já as separa das outras (testado: X fica além do limite de "desconhecido" de todas as
+// letras; nenhum quadro de outra letra vira H ou X). Ç tem a mesma forma do C e o INES não mostra o movimento.
+const FORMA = ['H', 'X']
+const amostrasInes = letras.filter(l => !LETRAS_MOVIMENTO.includes(l.letra) || FORMA.includes(l.letra))
   .flatMap(l => amostrasParadas(simular(l, inverter)).map(p => ({rotulo: l.letra, p, f: 'ines'})))
 /** Acerto nas fotos de celular da base "bench" (outra pessoa), classificadas pelas demais fontes. */
 function acertoBench(comInes) {
-  const treino = [...base.filter(a => a.f !== 'bench'), ...(comInes ? amostrasInes.map(a => ({...a, origem: 'base', v: caracteristicas(a.p)})) : [])]
+  const treino = [...base.filter(a => a.f !== 'bench' && a.f !== 'ines'), ...(comInes ? amostrasInes.map(a => ({...a, origem: 'base', v: caracteristicas(a.p)})) : [])]
   const teste = base.filter(a => a.f === 'bench')
   const porLetra = {}
   let ok = 0
