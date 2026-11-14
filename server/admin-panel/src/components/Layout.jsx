@@ -7,20 +7,26 @@ import tipografiaBranca from "../assets/brand/tipografia-branca.svg";
 
 const ROLE_LABELS = { owner: "Dono", admin: "Administrador", editor: "Editor", viewer: "Leitura" };
 
-/** Menu em grupos; cada item mostra só para quem tem a permissão. */
-const MENU_GROUPS = [
-  { title: "Visão geral", items: [{ to: "/", label: "Dashboard", icon: "home", permission: "read", end: true }] },
+/**
+ * Menu: cada seção é um item só no menu lateral; dentro dela, as páginas viram abas no topo do conteúdo
+ * (ex.: Pessoas → Usuários | Notificações). Cada aba aparece só para quem tem a permissão.
+ * - also: outras rotas que pertencem à seção (ex.: o editor de atividade fica em Conteúdo → Exercícios).
+ */
+const SECTIONS = [
+  { title: "Dashboard", icon: "home", tabs: [{ to: "/", label: "Dashboard", permission: "read", end: true }] },
   {
     title: "Conteúdo",
-    items: [
+    icon: "trail",
+    tabs: [
       { to: "/trilha", label: "Trilha", icon: "trail", permission: "read" },
-      { to: "/exercicios", label: "Exercícios", icon: "exercises", permission: "read" },
+      { to: "/exercicios", label: "Exercícios", icon: "exercises", permission: "read", also: ["/atividades"] },
       { to: "/dicionario", label: "Dicionário", icon: "dictionary", permission: "read" },
     ],
   },
   {
     title: "Gamificação",
-    items: [
+    icon: "achievements",
+    tabs: [
       { to: "/conquistas", label: "Conquistas", icon: "achievements", permission: "read" },
       { to: "/eventos", label: "Eventos de XP", icon: "events", permission: "read" },
       { to: "/niveis", label: "Níveis", icon: "levels", permission: "read" },
@@ -28,14 +34,16 @@ const MENU_GROUPS = [
   },
   {
     title: "Pessoas",
-    items: [
+    icon: "users",
+    tabs: [
       { to: "/usuarios", label: "Usuários", icon: "users", permission: "read" },
       { to: "/notificacoes", label: "Notificações", icon: "bell", permission: "read" },
     ],
   },
   {
     title: "Sistema",
-    items: [
+    icon: "settings",
+    tabs: [
       { to: "/configuracoes", label: "Configurações", icon: "settings", permission: "read" },
       { to: "/auditoria", label: "Auditoria", icon: "audit", permission: "manage" },
       { to: "/banco", label: "Banco de dados", icon: "database", permission: "manage" },
@@ -43,16 +51,38 @@ const MENU_GROUPS = [
     ],
   },
 ];
-const ALL_ITEMS = MENU_GROUPS.flatMap((group) => group.items);
 const COLLAPSED_KEY = "signa-admin:sidebar-collapsed";
 
-/** Título da página atual (barra superior), pelo item de menu que casa com a rota. */
+/** A aba (e sua seção) que casa com a rota atual. */
+function tabMatches(tab, pathname) {
+  if (tab.end) return pathname === tab.to;
+  return [tab.to, ...(tab.also ?? [])].some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}
+
+function findSection(pathname) {
+  return SECTIONS.find((section) => section.tabs.some((tab) => tabMatches(tab, pathname))) ?? null;
+}
+
+/** Título da página atual (barra superior): o nome da seção. */
 function findPageTitle(pathname) {
   if (pathname === "/conta") return "Minha conta";
-  const match = ALL_ITEMS.filter((item) => (item.end ? pathname === item.to : pathname.startsWith(item.to))).sort((a, b) => b.to.length - a.to.length)[0];
-  if (match) return match.label;
-  if (pathname.startsWith("/atividades")) return "Exercícios";
-  return "Painel";
+  return findSection(pathname)?.title ?? "Painel";
+}
+
+/** Abas da seção atual, no topo do conteúdo (só quando a seção tem mais de uma página visível). */
+function SectionTabs({ section, can, pathname }) {
+  const tabs = section?.tabs.filter((tab) => can(tab.permission)) ?? [];
+  if (tabs.length < 2) return null;
+  return (
+    <nav className="section-tabs" aria-label={section.title}>
+      {tabs.map((tab) => (
+        <NavLink key={tab.to} to={tab.to} className={() => `section-tabs__tab${tabMatches(tab, pathname) ? " section-tabs__tab--active" : ""}`}>
+          <PanelIcon name={tab.icon} size={18} />
+          {tab.label}
+        </NavLink>
+      ))}
+    </nav>
+  );
 }
 
 function readCollapsed() {
@@ -106,14 +136,15 @@ function AccountMenu({ admin, logout }) {
 }
 
 /**
- * Estrutura das páginas logadas: menu lateral em grupos (recolhe para só ícones no computador; vira gaveta no
- * celular), barra superior com o título da página e o menu da conta, e o conteúdo.
+ * Estrutura das páginas logadas: menu lateral por seção (recolhe para só ícones no computador; vira gaveta no
+ * celular), barra superior com o título da seção e o menu da conta, as abas da seção e o conteúdo.
  */
 export function Layout() {
   const { admin, can, logout } = useAuth();
   const { pathname } = useLocation();
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const current = findSection(pathname);
 
   // Trocar de página fecha a gaveta do celular.
   useEffect(() => setDrawerOpen(false), [pathname]);
@@ -143,19 +174,15 @@ export function Layout() {
           </button>
         </div>
         <nav className="sidebar__nav">
-          {MENU_GROUPS.map((group) => {
-            const items = group.items.filter((item) => can(item.permission));
-            if (items.length === 0) return null;
+          {SECTIONS.map((section) => {
+            const first = section.tabs.find((tab) => can(tab.permission));
+            if (!first) return null;
+            const active = section === current;
             return (
-              <div className="nav-group" key={group.title}>
-                <p className="nav-group__title">{group.title}</p>
-                {items.map((item) => (
-                  <NavLink key={item.to} to={item.to} end={item.end} title={collapsed ? item.label : undefined} className={({ isActive }) => `nav-link${isActive ? " nav-link--active" : ""}`}>
-                    <PanelIcon name={item.icon} />
-                    <span className="nav-link__label">{item.label}</span>
-                  </NavLink>
-                ))}
-              </div>
+              <NavLink key={section.title} to={first.to} end={first.end} title={collapsed ? section.title : undefined} className={() => `nav-link${active ? " nav-link--active" : ""}`}>
+                <PanelIcon name={section.icon} />
+                <span className="nav-link__label">{section.title}</span>
+              </NavLink>
             );
           })}
         </nav>
@@ -175,6 +202,7 @@ export function Layout() {
           <AccountMenu admin={admin} logout={logout} />
         </header>
         <main className="content">
+          <SectionTabs section={current} can={can} pathname={pathname} />
           <Outlet />
         </main>
       </div>

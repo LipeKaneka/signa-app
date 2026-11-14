@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { Badge, Field, LoadState, Notice, formatDateTime, useAction, useLoad } from "../components/ui.jsx";
@@ -130,38 +131,55 @@ function GithubReleaseImporter({ onApplied }) {
   );
 }
 
-/** Configurações: regras de pontuação e textos do app (valor ausente = padrão do código). */
+/** Temas das configurações, cada um numa aba (a aba fica no endereço: #/configuracoes?aba=atualizacao). */
+const SETTING_TABS = [
+  { id: "pontuacao", title: "Pontuação e regras", prefix: "progress." },
+  { id: "textos", title: "Textos do app", prefix: "app.feedback." },
+  {
+    id: "atualizacao",
+    title: "Atualização do app",
+    prefix: "app.update.",
+    intro:
+      "Para avisar uma versão nova: publique uma release no GitHub (tag v1.4.0, com o APK anexado e \"versionCode: N\" na "
+      + "descrição) e use \"Buscar no GitHub\", ou preencha à mão o link público do APK e o número da versão nova. Quem tiver "
+      + "uma versão menor vê a tela de atualização. Com o número mínimo, versões abaixo dele ficam bloqueadas até atualizar.",
+    importer: true,
+  },
+];
+
+/** Configurações em abas por tema: pontuação e regras, textos do app e atualização do app (valor ausente = padrão do código). */
 export function SettingsPage() {
   const { can } = useAuth();
   const { data, error, loading, reload } = useLoad(() => api("/settings"), []);
-  const groups = [
-    { title: "Pontuação e regras", prefix: "progress." },
-    { title: "Textos do app", prefix: "app.feedback." },
-    {
-      title: "Atualização do app (APK)",
-      prefix: "app.update.",
-      intro:
-        "Para avisar uma versão nova: publique uma release no GitHub (tag v1.4.0, com o APK anexado e \"versionCode: N\" na "
-        + "descrição) e use \"Buscar no GitHub\", ou preencha à mão o link público do APK e o número da versão nova. Quem tiver "
-        + "uma versão menor vê a tela de atualização. Com o número mínimo, versões abaixo dele ficam bloqueadas até atualizar.",
-      importer: true,
-    },
-  ];
+  const [params, setParams] = useSearchParams();
+  const tab = SETTING_TABS.find((item) => item.id === params.get("aba")) ?? SETTING_TABS[0];
   return (
     <section>
       <h1>Configurações</h1>
-      <LoadState loading={loading && !data} error={error} onRetry={reload} />
-      {data &&
-        groups.map((group) => (
-          <div className="card" key={group.prefix}>
-            <h2>{group.title}</h2>
-            {group.intro && <p className="muted">{group.intro}</p>}
-            {group.importer && can("manage") && <GithubReleaseImporter onApplied={reload} />}
-            {data.settings.filter((setting) => setting.key.startsWith(group.prefix)).map((setting) => (
-              <SettingRow key={setting.key} setting={setting} editable={can("manage")} onSaved={reload} />
-            ))}
-          </div>
+      <div className="section-tabs section-tabs--page" role="tablist" aria-label="Temas das configurações">
+        {SETTING_TABS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={item === tab}
+            className={`section-tabs__tab${item === tab ? " section-tabs__tab--active" : ""}`}
+            onClick={() => setParams(item === SETTING_TABS[0] ? {} : { aba: item.id }, { replace: true })}
+          >
+            {item.title}
+          </button>
         ))}
+      </div>
+      <LoadState loading={loading && !data} error={error} onRetry={reload} />
+      {data && (
+        <div className="card" role="tabpanel" aria-label={tab.title}>
+          {tab.intro && <p className="muted">{tab.intro}</p>}
+          {tab.importer && can("manage") && <GithubReleaseImporter onApplied={reload} />}
+          {data.settings.filter((setting) => setting.key.startsWith(tab.prefix)).map((setting) => (
+            <SettingRow key={setting.key} setting={setting} editable={can("manage")} onSaved={reload} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
