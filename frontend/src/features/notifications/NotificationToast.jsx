@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Icon } from "../../components/Icon.jsx";
 import "../../components/achievement-toast.css";
 import "./notifications.css";
 
@@ -35,9 +34,6 @@ export function NotificationToast({ items, onOpen }) {
         }}
         aria-label={`Notificação: ${current.title}. ${current.body ?? ""} Toque para abrir.`}
       >
-        <span className="achievement-toast__medal notification-toast__icon" aria-hidden="true">
-          <Icon name="bell" size={26} strokeWidth={2} />
-        </span>
         <span className="achievement-toast__text">
           <strong>{current.title}</strong>
           {current.body && <span className="notification-toast__body">{current.body}</span>}

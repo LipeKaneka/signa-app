@@ -4,18 +4,6 @@ import { ScreenWithNav, LoadingState } from "../../components/layout.jsx";
 import { useNotifications } from "../../features/notifications/NotificationsContext.jsx";
 import "../../features/notifications/notifications.css";
 
-/** Ícone de cada tipo (config/notification-types.js no servidor). */
-const TYPE_ICONS = {
-  achievement_unlocked: "🏅",
-  level_up: "⬆️",
-  xp_bonus: "✨",
-  streak_reminder: "🔥",
-  event_started: "🎉",
-  app_update: "📲",
-  account_restored: "✅",
-  manual: "📣",
-};
-
 const formatWhen = (date) =>
   new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(date));
 
@@ -58,7 +46,6 @@ export function NotificationsPage() {
                   onClick={() => open(item)}
                   aria-label={`${item.read ? "" : "Não lida. "}${item.title}. ${item.body}`}
                 >
-                  <span className="notification-item__icon" aria-hidden="true">{TYPE_ICONS[item.type] ?? "🔔"}</span>
                   <span className="notification-item__text">
                     <strong>{item.title}</strong>
                     {item.body && <span>{item.body}</span>}

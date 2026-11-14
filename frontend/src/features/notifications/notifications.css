@@ -3,10 +3,6 @@
   animation-duration: 4500ms;
 }
 
-.notification-toast__icon {
-  background: var(--color-primary-soft);
-  color: var(--color-primary-strong);
-}
 
 .notification-toast__body {
   font-size: 0.875rem;
@@ -76,16 +72,6 @@
   box-shadow: inset 4px 0 0 var(--color-primary, #6c4ee3);
 }
 
-.notification-item__icon {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--color-primary-soft, #ece8ff);
-  font-size: 1.25rem;
-}
 
 .notification-item__text {
   display: grid;
