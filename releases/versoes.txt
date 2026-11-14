@@ -21,3 +21,4 @@
 1.4.0|020886e|11/11/2026|Login com Google; conquistas por toques, dicionário e uso do app; release pelo GitHub
 1.5.0|60ba823|12/11/2026|Conquistas personalizáveis: imagens, emojis, cores, efeitos e raridades criadas no painel
 1.6.0|a78e975|14/11/2026|Notificações: sino, tela Notificações, aviso em tempo real e notificação no celular
+1.6.1|a728778|14/11/2026|Corrige o login com o Google no celular
