@@ -44,7 +44,7 @@ export function buildGestureFrame(hand, points, info, aspect, stillThreshold) {
  * @param {{samples: object[], profile: object|null, sensitivity: "strict"|"normal"|"tolerant", onWrite?: (label: string) => void}} options
  *   onWrite é chamado a cada letra/palavra reconhecida.
  * @returns {{handleFrame, text, textActions, currentLetter, handState, isGestureActive, event, wordModel,
- *   wordModelError, taughtGestureLetters, stillThreshold}}
+ *   wordModelError, taughtGestureLetters, builtInGestureLetters, stillThreshold}}
  * Usado por: CameraPage. onWrite é o gancho natural para conquistas do tradutor (ex.: "Soletre 10 letras").
  */
 export function useSignTranslator({ samples, profile, sensitivity, onWrite }) {
@@ -227,7 +227,8 @@ export function useSignTranslator({ samples, profile, sensitivity, onWrite }) {
     event,
     wordModel,
     wordModelError,
-    taughtGestureLetters: refs.current.gestures.map((gesture) => gesture.r),
+    taughtGestureLetters: refs.current.gestures.filter((gesture) => !gesture.base).map((gesture) => gesture.r),
+    builtInGestureLetters: refs.current.gestures.filter((gesture) => gesture.base).map((gesture) => gesture.r),
     stillThreshold: settings.still,
   };
 }

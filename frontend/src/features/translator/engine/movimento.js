@@ -1,8 +1,10 @@
 // Letras (ou sinais curtos) COM MOVIMENTO feitos sem tirar a mão da imagem — H, J, K, X, Z, Ç.
-// Nenhuma base pública usada no projeto tem gravações dessas letras em Libras, então elas
-// são aprendidas com gravações reais da própria pessoa (aba Ensinar), como os sinais
-// estáticos ensinados. A comparação usa DTW (alinhamento temporal dinâmico) sobre a
+// K e Z já vêm com o app (gestos-base.json, do Dicionário da Libras do INES); as outras não aparecem
+// direito nos vídeos do INES e são aprendidas com gravações reais da própria pessoa (aba Ensinar).
+// Uma letra ensinada no aparelho passa a valer no lugar da que veio com o app. A comparação usa DTW (alinhamento temporal dinâmico) sobre a
 // trajetória da ponta do indicador e o formato da mão, com vizinho mais próximo.
+
+import base from './gestos-base.json'
 
 const CHAVE = 'signa:libras-movimentos-v1'
 export const PASSOS = 20
@@ -170,7 +172,7 @@ export function contagemGestos() {
  * um limiar estreito demais, recusando o mesmo gesto feito com pausas ou outro ritmo).
  * Sinais com menos de MIN_AMOSTRAS ficam de fora.
  */
-export function prepararGestos(lista = lerGestos()) {
+export function prepararGestos(lista = lerGestos(), {comBase = true} = {}) {
   const porRotulo = {}
   for (const g of lista) (porRotulo[g.r] ??= []).push(caracteristicasGesto(g.quadros))
   const modelos = []
@@ -178,6 +180,14 @@ export function prepararGestos(lista = lerGestos()) {
     if (fs.length < MIN_AMOSTRAS) continue
     const loo = fs.map((f, i) => Math.min(...fs.filter((_, j) => j !== i).map(g => dtw(f, g))))
     modelos.push({r, fs, limiar: Math.max(LIMIAR_MINIMO, 1.6 * Math.max(...loo))})
+  }
+  if (comBase) {
+    // Letras que vêm com o app, com o limiar calibrado em ml/alfabeto_ines.mjs (abaixo de todos os movimentos
+    // de "não-letra" dos vídeos do INES). Só valem se a pessoa ainda não ensinou a letra.
+    const ensinadas = new Set(modelos.map(m => m.r))
+    const basePorRotulo = {}
+    for (const g of base.gestos) if (!ensinadas.has(g.r)) (basePorRotulo[g.r] ??= []).push(caracteristicasGesto(g.quadros))
+    for (const [r, fs] of Object.entries(basePorRotulo)) modelos.push({r, fs, limiar: base.limiares[r], base: true})
   }
   return modelos
 }

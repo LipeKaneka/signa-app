@@ -30,6 +30,8 @@ function SegmentedControl({ label, options, value, onChange }) {
 /** Gaveta lateral da câmera: modo, texto traduzido, sensibilidade e o que é reconhecido. */
 export function TranslatorDrawer({ mode, onModeChange, sensitivity, onSensitivityChange, translator, samples, profile, onClose }) {
   const staticLetters = [...new Set(samples.map((sample) => sample.rotulo))].sort().join(" ");
+  const movementLetters = [...translator.builtInGestureLetters, ...translator.taughtGestureLetters].sort();
+  const lettersToTeach = MOVEMENT_LETTERS.filter((letter) => !movementLetters.includes(letter));
   const sensitivityOptions = Object.entries(SENSITIVITIES).map(([id, item]) => ({ id, label: item.label }));
   // Fecha deslizando: o fundo esmaece e a gaveta sai; só desmonta quando o esmaecer termina.
   const { leaving, startLeaving: startClosing, handleAnimationEnd } = useExitAnimation(onClose);
@@ -77,9 +79,8 @@ export function TranslatorDrawer({ mode, onModeChange, sensitivity, onSensitivit
         <p className="translator-drawer__info"><b>Letras paradas:</b> {staticLetters}</p>
         <p className="translator-drawer__info">
           <b>Letras com movimento:</b>{" "}
-          {translator.taughtGestureLetters.length
-            ? translator.taughtGestureLetters.join(" ")
-            : `nenhuma ensinada neste aparelho (${MOVEMENT_LETTERS.join(", ")})`}
+          {movementLetters.join(" ") || "nenhuma"}
+          {lettersToTeach.length > 0 && ` (ensine no aparelho: ${lettersToTeach.join(", ")})`}
         </p>
         <p className="translator-drawer__info">
           <b>Palavras:</b>{" "}
@@ -98,7 +99,8 @@ export function TranslatorDrawer({ mode, onModeChange, sensitivity, onSensitivit
 
         <p className="translator-drawer__note">
           🔒 Tudo é processado no seu aparelho; nenhuma imagem é enviada. Letras: “Brazilian Sign Language Alphabet”
-          (UNIVALI, MIT/CC BY 4.0), “benchmarking-libras” (Luca Villela, MIT) e projeto de Maycon Pacheco (MIT).
+          (UNIVALI, MIT/CC BY 4.0), “benchmarking-libras” (Luca Villela, MIT), projeto de Maycon Pacheco (MIT) e
+          Dicionário da Libras do INES (uso educacional).
           Palavras: MINDS-Libras (UFMG, CC BY 4.0) e Dicionário da Libras do INES (uso educacional).
         </p>
       </aside>
