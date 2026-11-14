@@ -27,3 +27,4 @@
 1.6.4|7cad108|14/11/2026|Tradutor reconhece 150 palavras novas do Dicionário do INES (experimentais), 170 no total
 1.6.5|76cbaff|14/11/2026|Notificação no celular volta a funcionar (aparelho registrado sempre que o app abre)
 1.6.6|6b7ffaf|14/11/2026|Alfabeto: K e Z sem precisar ensinar e letras paradas mais precisas (Dicionário do INES)
+1.6.7|4c30fb8|14/11/2026|Alfabeto: 26 de 27 letras sem precisar ensinar (H, J, K, X e Z do Dicionário do INES)
