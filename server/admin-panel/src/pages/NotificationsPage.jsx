@@ -223,6 +223,12 @@ export function NotificationsPage() {
       {data && !data.pushConfigured && (
         <Notice message={{ type: "error", text: "Notificação no celular desligada: falta FIREBASE_SERVICE_ACCOUNT no servidor (Render). Dentro do app, tudo funciona." }} />
       )}
+      {data && data.pushConfigured && (
+        <p className="muted">
+          Celulares registrados para receber com o app fechado: <strong>{(data.pushDevices ?? 0).toLocaleString("pt-BR")}</strong>{" "}
+          {data.pushDevices === 0 && "— abra o app 1.6 ou mais novo e aceite a permissão de notificações."}
+        </p>
+      )}
       {data && editable && <SendForm manualEnabled={manual?.enabled} onSent={() => setRefreshKey((key) => key + 1)} />}
       {data && (
         <>

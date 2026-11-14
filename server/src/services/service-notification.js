@@ -216,12 +216,12 @@ export async function savePushToken(user, token, previous = "") {
 
 /**
  * Todos os tipos com a configuração valendo.
- * @returns {Promise<{types: object[], pushConfigured: boolean}>}
+ * @returns {Promise<{types: object[], pushConfigured: boolean, pushDevices: number}>} pushDevices = pessoas com celular registrado.
  * Usado por: GET /admin/api/v1/notifications/types.
  */
 export async function listNotificationTypes() {
-  const configs = await readTypeConfigs();
-  return { types: [...configs.values()], pushConfigured: isPushConfigured() };
+  const [configs, pushDevices] = await Promise.all([readTypeConfigs(), UserModel.countDocuments({ "pushTokens.0": { $exists: true } })]);
+  return { types: [...configs.values()], pushConfigured: isPushConfigured(), pushDevices };
 }
 
 /**
