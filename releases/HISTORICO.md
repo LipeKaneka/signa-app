@@ -8,6 +8,7 @@ recriar qualquer um, faça checkout da tag e gere o APK, ou rode `npm run releas
 
 | Versão | Data | versionCode | Tag | O que mudou |
 |---|---|---|---|---|
+| **1.6.2** | 14/11/2026 | 10 | `v1.6.2` | Notificações legíveis e aviso no celular também com o app aberto |
 | **1.6.1** | 14/11/2026 | 9 | `v1.6.1` | Corrige o login com o Google no celular |
 | **1.6.0** | 14/11/2026 | 8 | `v1.6.0` | Notificações: sino, tela Notificações, aviso em tempo real e notificação no celular |
 | **1.5.0** | 12/11/2026 | 7 | `v1.5.0` | Conquistas personalizáveis: imagens, emojis, cores, efeitos e raridades criadas no painel |
