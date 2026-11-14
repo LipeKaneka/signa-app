@@ -119,13 +119,15 @@ export function GoogleButton({ onUnavailable }) {
     onUnavailable("");
     try {
       const SocialLogin = await loadGoogleSignIn(webClientId);
-      const response = await SocialLogin.login({ provider: "google", options: { scopes: ["email", "profile"] } });
+      // Sem "scopes": e-mail e perfil já vêm por padrão, e no Android pedir scopes recusa o login (exige mexer na MainActivity).
+      const response = await SocialLogin.login({ provider: "google", options: {} });
       const idToken = response?.result?.idToken;
       if (!idToken) throw new Error("Sem token do Google.");
       await signInWithGoogle(idToken);
     } catch (error) {
       if (error?.code === ACCOUNT_BANNED) setBan(error.ban);
       else if (!wasCancelled(error)) {
+        console.error("Login com o Google falhou:", error);
         onUnavailable(error instanceof ApiError ? error.message : "Não foi possível entrar com o Google. Tente de novo.");
       }
       setBusy(false);
