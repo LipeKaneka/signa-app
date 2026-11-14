@@ -1,5 +1,5 @@
 {
- "data": "2026-11-14 01:21",
+ "data": "2026-11-14 02:17",
  "semente": 42,
  "criterios_aprovacao": {
   "acuracia": 0.8,
@@ -19,22 +19,23 @@
     "minds-10"
    ],
    "amostras": 200,
-   "acuracia": 0.94,
-   "f1_macro": 0.9409092584402181,
-   "acuracia_aceitos": 0.9447236180904522,
-   "cobertura_no_limiar": 0.995
+   "acuracia": 0.87,
+   "f1_macro": 0.8782082016635793,
+   "acuracia_aceitos": 0.8826530612244898,
+   "cobertura_no_limiar": 0.98
   },
   "validacao_cruzada": {
-   "acuracia_media": 0.946908523908524,
-   "acuracia_desvio": 0.03138248480340961,
-   "f1_macro_media": 0.9460801725211269
+   "acuracia_media": 0.9286451836451836,
+   "acuracia_desvio": 0.030773330281989725,
+   "f1_macro_media": 0.9382207955136949
   },
   "limiar": 0.46,
   "aprovado": true,
-  "ines": 7
+  "ines": 204,
+  "experimentais": 150
  },
  "dados": {
-  "gravacoes": 1165,
+  "gravacoes": 1362,
   "descartadas": [],
   "pessoas": {
    "ines": 7,
@@ -73,6 +74,608 @@
    "Vacina",
    "Vontade"
   ],
+  "experimentais": [
+   {
+    "sinal": "Abelha",
+    "videos": 1
+   },
+   {
+    "sinal": "Abrir",
+    "videos": 5
+   },
+   {
+    "sinal": "Água",
+    "videos": 1
+   },
+   {
+    "sinal": "Ajudar",
+    "videos": 2
+   },
+   {
+    "sinal": "Amanhã",
+    "videos": 1
+   },
+   {
+    "sinal": "Amigo",
+    "videos": 1
+   },
+   {
+    "sinal": "Amor",
+    "videos": 1
+   },
+   {
+    "sinal": "Aprender",
+    "videos": 1
+   },
+   {
+    "sinal": "Arroz",
+    "videos": 1
+   },
+   {
+    "sinal": "Azul",
+    "videos": 1
+   },
+   {
+    "sinal": "Banana",
+    "videos": 1
+   },
+   {
+    "sinal": "Bebê",
+    "videos": 1
+   },
+   {
+    "sinal": "Beber",
+    "videos": 5
+   },
+   {
+    "sinal": "Bem-vindo",
+    "videos": 1
+   },
+   {
+    "sinal": "Borboleta",
+    "videos": 1
+   },
+   {
+    "sinal": "Borracha",
+    "videos": 1
+   },
+   {
+    "sinal": "Branco",
+    "videos": 1
+   },
+   {
+    "sinal": "Brigar",
+    "videos": 3
+   },
+   {
+    "sinal": "Brincar",
+    "videos": 1
+   },
+   {
+    "sinal": "Cachorro",
+    "videos": 1
+   },
+   {
+    "sinal": "Caderno",
+    "videos": 1
+   },
+   {
+    "sinal": "Café",
+    "videos": 1
+   },
+   {
+    "sinal": "Calmo",
+    "videos": 2
+   },
+   {
+    "sinal": "Caneta",
+    "videos": 1
+   },
+   {
+    "sinal": "Cansado",
+    "videos": 1
+   },
+   {
+    "sinal": "Carne",
+    "videos": 1
+   },
+   {
+    "sinal": "Carro",
+    "videos": 1
+   },
+   {
+    "sinal": "Casa",
+    "videos": 1
+   },
+   {
+    "sinal": "Cavalo",
+    "videos": 1
+   },
+   {
+    "sinal": "Certo",
+    "videos": 1
+   },
+   {
+    "sinal": "Cinza",
+    "videos": 2
+   },
+   {
+    "sinal": "Cobra",
+    "videos": 1
+   },
+   {
+    "sinal": "Coelho",
+    "videos": 1
+   },
+   {
+    "sinal": "Cola",
+    "videos": 2
+   },
+   {
+    "sinal": "Colega",
+    "videos": 1
+   },
+   {
+    "sinal": "Com licença",
+    "videos": 1
+   },
+   {
+    "sinal": "Comer",
+    "videos": 1
+   },
+   {
+    "sinal": "Como",
+    "videos": 2
+   },
+   {
+    "sinal": "Computador",
+    "videos": 1
+   },
+   {
+    "sinal": "Conversar",
+    "videos": 1
+   },
+   {
+    "sinal": "Desenhar",
+    "videos": 1
+   },
+   {
+    "sinal": "Dez",
+    "videos": 1
+   },
+   {
+    "sinal": "Diretor",
+    "videos": 1
+   },
+   {
+    "sinal": "Dois",
+    "videos": 3
+   },
+   {
+    "sinal": "Domingo",
+    "videos": 1
+   },
+   {
+    "sinal": "Dupla",
+    "videos": 1
+   },
+   {
+    "sinal": "Dúvida",
+    "videos": 1
+   },
+   {
+    "sinal": "Elefante",
+    "videos": 1
+   },
+   {
+    "sinal": "Ensinar",
+    "videos": 1
+   },
+   {
+    "sinal": "Entender",
+    "videos": 1
+   },
+   {
+    "sinal": "Errado",
+    "videos": 1
+   },
+   {
+    "sinal": "Escola",
+    "videos": 1
+   },
+   {
+    "sinal": "Escrever",
+    "videos": 1
+   },
+   {
+    "sinal": "Esperar",
+    "videos": 2
+   },
+   {
+    "sinal": "Estudar",
+    "videos": 1
+   },
+   {
+    "sinal": "Explicar",
+    "videos": 1
+   },
+   {
+    "sinal": "Família",
+    "videos": 1
+   },
+   {
+    "sinal": "Feijão",
+    "videos": 1
+   },
+   {
+    "sinal": "Feliz",
+    "videos": 1
+   },
+   {
+    "sinal": "Galinha",
+    "videos": 1
+   },
+   {
+    "sinal": "Gato",
+    "videos": 1
+   },
+   {
+    "sinal": "Geografia",
+    "videos": 1
+   },
+   {
+    "sinal": "Girafa",
+    "videos": 1
+   },
+   {
+    "sinal": "História",
+    "videos": 1
+   },
+   {
+    "sinal": "Hoje",
+    "videos": 2
+   },
+   {
+    "sinal": "Intérprete",
+    "videos": 1
+   },
+   {
+    "sinal": "Irmão",
+    "videos": 1
+   },
+   {
+    "sinal": "Lápis",
+    "videos": 1
+   },
+   {
+    "sinal": "Laranja",
+    "videos": 1
+   },
+   {
+    "sinal": "Leão",
+    "videos": 1
+   },
+   {
+    "sinal": "Leite",
+    "videos": 1
+   },
+   {
+    "sinal": "Ler",
+    "videos": 2
+   },
+   {
+    "sinal": "Levantar",
+    "videos": 3
+   },
+   {
+    "sinal": "Livro",
+    "videos": 1
+   },
+   {
+    "sinal": "Macaco",
+    "videos": 1
+   },
+   {
+    "sinal": "Marrom",
+    "videos": 1
+   },
+   {
+    "sinal": "Matemática",
+    "videos": 1
+   },
+   {
+    "sinal": "Mês",
+    "videos": 1
+   },
+   {
+    "sinal": "Mochila",
+    "videos": 1
+   },
+   {
+    "sinal": "Nervoso",
+    "videos": 1
+   },
+   {
+    "sinal": "Nome",
+    "videos": 1
+   },
+   {
+    "sinal": "Nove",
+    "videos": 1
+   },
+   {
+    "sinal": "Obrigado",
+    "videos": 2
+   },
+   {
+    "sinal": "Oi",
+    "videos": 1
+   },
+   {
+    "sinal": "Oito",
+    "videos": 1
+   },
+   {
+    "sinal": "Olá",
+    "videos": 1
+   },
+   {
+    "sinal": "Olhar",
+    "videos": 2
+   },
+   {
+    "sinal": "Onde",
+    "videos": 1
+   },
+   {
+    "sinal": "Ônibus",
+    "videos": 2
+   },
+   {
+    "sinal": "Ontem",
+    "videos": 1
+   },
+   {
+    "sinal": "Ouvinte",
+    "videos": 1
+   },
+   {
+    "sinal": "Ovo",
+    "videos": 2
+   },
+   {
+    "sinal": "Página",
+    "videos": 1
+   },
+   {
+    "sinal": "Pai",
+    "videos": 2
+   },
+   {
+    "sinal": "Pão",
+    "videos": 1
+   },
+   {
+    "sinal": "Parabéns",
+    "videos": 1
+   },
+   {
+    "sinal": "Pássaro",
+    "videos": 2
+   },
+   {
+    "sinal": "Pato",
+    "videos": 1
+   },
+   {
+    "sinal": "Peixe",
+    "videos": 2
+   },
+   {
+    "sinal": "Por favor",
+    "videos": 1
+   },
+   {
+    "sinal": "Porco",
+    "videos": 1
+   },
+   {
+    "sinal": "Português",
+    "videos": 1
+   },
+   {
+    "sinal": "Prazer",
+    "videos": 3
+   },
+   {
+    "sinal": "Preto",
+    "videos": 2
+   },
+   {
+    "sinal": "Primeiro",
+    "videos": 2
+   },
+   {
+    "sinal": "Primo",
+    "videos": 1
+   },
+   {
+    "sinal": "Professor",
+    "videos": 1
+   },
+   {
+    "sinal": "Prova",
+    "videos": 1
+   },
+   {
+    "sinal": "Qual",
+    "videos": 3
+   },
+   {
+    "sinal": "Quando",
+    "videos": 2
+   },
+   {
+    "sinal": "Quarta-feira",
+    "videos": 1
+   },
+   {
+    "sinal": "Quarto",
+    "videos": 4
+   },
+   {
+    "sinal": "Quatro",
+    "videos": 1
+   },
+   {
+    "sinal": "Quem",
+    "videos": 3
+   },
+   {
+    "sinal": "Quinta-feira",
+    "videos": 1
+   },
+   {
+    "sinal": "Quinto",
+    "videos": 1
+   },
+   {
+    "sinal": "Raiva",
+    "videos": 1
+   },
+   {
+    "sinal": "Regra",
+    "videos": 1
+   },
+   {
+    "sinal": "Repetir",
+    "videos": 1
+   },
+   {
+    "sinal": "Respeito",
+    "videos": 1
+   },
+   {
+    "sinal": "Responder",
+    "videos": 1
+   },
+   {
+    "sinal": "Rosa",
+    "videos": 1
+   },
+   {
+    "sinal": "Roxo",
+    "videos": 2
+   },
+   {
+    "sinal": "Sábado",
+    "videos": 1
+   },
+   {
+    "sinal": "Sala",
+    "videos": 1
+   },
+   {
+    "sinal": "Segunda-feira",
+    "videos": 1
+   },
+   {
+    "sinal": "Segundo",
+    "videos": 1
+   },
+   {
+    "sinal": "Seis",
+    "videos": 1
+   },
+   {
+    "sinal": "Semana",
+    "videos": 1
+   },
+   {
+    "sinal": "Sentar",
+    "videos": 1
+   },
+   {
+    "sinal": "Sete",
+    "videos": 1
+   },
+   {
+    "sinal": "Sexta-feira",
+    "videos": 1
+   },
+   {
+    "sinal": "Silêncio",
+    "videos": 1
+   },
+   {
+    "sinal": "Surdo",
+    "videos": 2
+   },
+   {
+    "sinal": "Tartaruga",
+    "videos": 1
+   },
+   {
+    "sinal": "Tchau",
+    "videos": 1
+   },
+   {
+    "sinal": "Tentar",
+    "videos": 1
+   },
+   {
+    "sinal": "Terceiro",
+    "videos": 1
+   },
+   {
+    "sinal": "Terminar",
+    "videos": 1
+   },
+   {
+    "sinal": "Tesoura",
+    "videos": 2
+   },
+   {
+    "sinal": "Trabalhar",
+    "videos": 1
+   },
+   {
+    "sinal": "Três",
+    "videos": 2
+   },
+   {
+    "sinal": "Tudo bem",
+    "videos": 1
+   },
+   {
+    "sinal": "Turma",
+    "videos": 1
+   },
+   {
+    "sinal": "Último",
+    "videos": 2
+   },
+   {
+    "sinal": "Um",
+    "videos": 2
+   },
+   {
+    "sinal": "Vaca",
+    "videos": 1
+   },
+   {
+    "sinal": "Verde",
+    "videos": 1
+   },
+   {
+    "sinal": "Vermelho",
+    "videos": 1
+   },
+   {
+    "sinal": "Zero",
+    "videos": 1
+   }
+  ],
   "treino_validacao": [
    "ines",
    "minds-02",
@@ -99,9 +702,9 @@
     "minds-07",
     "minds-09"
    ],
-   "melhor_epoca": 32,
-   "acuracia": 0.9621621621621622,
-   "f1_macro": 0.959484593837535
+   "melhor_epoca": 14,
+   "acuracia": 0.9135135135135135,
+   "f1_macro": 0.9280663475857984
   },
   {
    "dobra": 2,
@@ -109,9 +712,9 @@
     "minds-05",
     "minds-12"
    ],
-   "melhor_epoca": 6,
-   "acuracia": 0.915,
-   "f1_macro": 0.9113913571808308
+   "melhor_epoca": 20,
+   "acuracia": 0.945,
+   "f1_macro": 0.951641604010025
   },
   {
    "dobra": 3,
@@ -119,9 +722,9 @@
     "minds-02",
     "minds-11"
    ],
-   "melhor_epoca": 50,
-   "acuracia": 1.0,
-   "f1_macro": 1.0
+   "melhor_epoca": 31,
+   "acuracia": 0.98,
+   "f1_macro": 0.9823558897243106
   },
   {
    "dobra": 4,
@@ -129,9 +732,9 @@
     "minds-04",
     "minds-08"
    ],
-   "melhor_epoca": 32,
-   "acuracia": 0.9384615384615385,
-   "f1_macro": 0.937865270059206
+   "melhor_epoca": 7,
+   "acuracia": 0.9128205128205128,
+   "f1_macro": 0.9272826574010784
   },
   {
    "dobra": 5,
@@ -139,112 +742,112 @@
     "minds-03",
     "minds-06"
    ],
-   "melhor_epoca": 17,
-   "acuracia": 0.918918918918919,
-   "f1_macro": 0.9216596415280627
+   "melhor_epoca": 14,
+   "acuracia": 0.8918918918918919,
+   "f1_macro": 0.901757478847262
   }
  ],
- "epocas_modelo_final": 32,
+ "epocas_modelo_final": 14,
  "limiares_validacao": [
   {
    "limiar": 0.0,
    "cobertura": 1.0,
-   "acuracia_aceitos": 0.9471502590673575
+   "acuracia_aceitos": 0.9295336787564766
   },
   {
    "limiar": 0.3,
-   "cobertura": 1.0,
-   "acuracia_aceitos": 0.9471502590673575
+   "cobertura": 0.9937823834196892,
+   "acuracia_aceitos": 0.9332638164754953
   },
   {
    "limiar": 0.4,
-   "cobertura": 0.9989637305699481,
-   "acuracia_aceitos": 0.9481327800829875
+   "cobertura": 0.9782383419689119,
+   "acuracia_aceitos": 0.9427966101694916
   },
   {
    "limiar": 0.5,
-   "cobertura": 0.9844559585492227,
-   "acuracia_aceitos": 0.9557894736842105
+   "cobertura": 0.9585492227979274,
+   "acuracia_aceitos": 0.9535135135135135
   },
   {
    "limiar": 0.6,
-   "cobertura": 0.9689119170984456,
-   "acuracia_aceitos": 0.9625668449197861
+   "cobertura": 0.9367875647668393,
+   "acuracia_aceitos": 0.9623893805309734
   },
   {
    "limiar": 0.7,
-   "cobertura": 0.9492227979274611,
-   "acuracia_aceitos": 0.9716157205240175
+   "cobertura": 0.9119170984455959,
+   "acuracia_aceitos": 0.9761363636363637
   },
   {
    "limiar": 0.8,
-   "cobertura": 0.9212435233160622,
-   "acuracia_aceitos": 0.9786276715410573
+   "cobertura": 0.8756476683937824,
+   "acuracia_aceitos": 0.9834319526627219
   },
   {
    "limiar": 0.9,
-   "cobertura": 0.8891191709844559,
-   "acuracia_aceitos": 0.986013986013986
+   "cobertura": 0.8269430051813471,
+   "acuracia_aceitos": 0.9912280701754386
   },
   {
    "limiar": 0.95,
-   "cobertura": 0.8590673575129534,
-   "acuracia_aceitos": 0.9891435464414958
+   "cobertura": 0.7875647668393783,
+   "acuracia_aceitos": 0.993421052631579
   }
  ],
  "limiares_teste": [
   {
    "limiar": 0.0,
    "cobertura": 1.0,
-   "acuracia_aceitos": 0.94
+   "acuracia_aceitos": 0.87
   },
   {
    "limiar": 0.3,
    "cobertura": 1.0,
-   "acuracia_aceitos": 0.94
+   "acuracia_aceitos": 0.87
   },
   {
    "limiar": 0.4,
    "cobertura": 0.995,
-   "acuracia_aceitos": 0.9447236180904522
+   "acuracia_aceitos": 0.8693467336683417
   },
   {
    "limiar": 0.5,
-   "cobertura": 0.995,
-   "acuracia_aceitos": 0.9447236180904522
+   "cobertura": 0.98,
+   "acuracia_aceitos": 0.8826530612244898
   },
   {
    "limiar": 0.6,
-   "cobertura": 0.99,
-   "acuracia_aceitos": 0.9494949494949495
+   "cobertura": 0.965,
+   "acuracia_aceitos": 0.8963730569948186
   },
   {
    "limiar": 0.7,
-   "cobertura": 0.96,
-   "acuracia_aceitos": 0.953125
+   "cobertura": 0.945,
+   "acuracia_aceitos": 0.9047619047619048
   },
   {
    "limiar": 0.8,
-   "cobertura": 0.955,
-   "acuracia_aceitos": 0.9581151832460733
+   "cobertura": 0.925,
+   "acuracia_aceitos": 0.9135135135135135
   },
   {
    "limiar": 0.9,
-   "cobertura": 0.94,
-   "acuracia_aceitos": 0.9680851063829787
+   "cobertura": 0.915,
+   "acuracia_aceitos": 0.9180327868852459
   },
   {
    "limiar": 0.95,
-   "cobertura": 0.93,
-   "acuracia_aceitos": 0.967741935483871
+   "cobertura": 0.84,
+   "acuracia_aceitos": 0.9404761904761905
   }
  ],
  "por_sinal": [
   {
    "sinal": "Acontecer",
    "precisao": 1.0,
-   "recall": 0.9,
-   "f1": 0.9473684210526315,
+   "recall": 1.0,
+   "f1": 1.0,
    "n": 10
   },
   {
@@ -256,9 +859,9 @@
   },
   {
    "sinal": "Amarelo",
-   "precisao": 1.0,
+   "precisao": 0.9090909090909091,
    "recall": 1.0,
-   "f1": 1.0,
+   "f1": 0.9523809523809523,
    "n": 10
   },
   {
@@ -278,15 +881,15 @@
   {
    "sinal": "Bala",
    "precisao": 1.0,
-   "recall": 1.0,
-   "f1": 1.0,
+   "recall": 0.9,
+   "f1": 0.9473684210526315,
    "n": 10
   },
   {
    "sinal": "Banco",
    "precisao": 1.0,
-   "recall": 1.0,
-   "f1": 1.0,
+   "recall": 0.4,
+   "f1": 0.5714285714285714,
    "n": 10
   },
   {
@@ -305,9 +908,9 @@
   },
   {
    "sinal": "Cinco",
-   "precisao": 0.9090909090909091,
-   "recall": 1.0,
-   "f1": 0.9523809523809523,
+   "precisao": 1.0,
+   "recall": 0.6,
+   "f1": 0.75,
    "n": 10
   },
   {
@@ -326,16 +929,16 @@
   },
   {
    "sinal": "Esquina",
-   "precisao": 1.0,
-   "recall": 0.9,
-   "f1": 0.9473684210526315,
+   "precisao": 0.7142857142857143,
+   "recall": 1.0,
+   "f1": 0.8333333333333334,
    "n": 10
   },
   {
    "sinal": "Filho",
-   "precisao": 0.7142857142857143,
+   "precisao": 0.625,
    "recall": 0.5,
-   "f1": 0.5882352941176471,
+   "f1": 0.5555555555555556,
    "n": 10
   },
   {
@@ -347,23 +950,23 @@
   },
   {
    "sinal": "Medo",
-   "precisao": 0.5,
-   "recall": 0.7,
-   "f1": 0.5833333333333334,
+   "precisao": 0.46153846153846156,
+   "recall": 0.6,
+   "f1": 0.5217391304347826,
    "n": 10
   },
   {
    "sinal": "Ruim",
-   "precisao": 1.0,
+   "precisao": 0.6923076923076923,
    "recall": 0.9,
-   "f1": 0.9473684210526315,
+   "f1": 0.782608695652174,
    "n": 10
   },
   {
    "sinal": "Sapo",
-   "precisao": 0.9090909090909091,
-   "recall": 1.0,
-   "f1": 0.9523809523809523,
+   "precisao": 1.0,
+   "recall": 0.6,
+   "f1": 0.75,
    "n": 10
   },
   {
@@ -382,17 +985,128 @@
   }
  ],
  "por_pessoa_teste": {
-  "minds-01": 0.99,
-  "minds-10": 0.89
+  "minds-01": 0.95,
+  "minds-10": 0.79
  },
+ "teste_previsto_como_experimental": 6,
  "confusao": [
   [
+   10,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   0,
+   10,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   0,
+   0,
+   10,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   0,
+   0,
+   0,
+   10,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   0,
+   0,
+   0,
+   0,
+   10,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   0,
+   0,
+   0,
+   0,
+   0,
    9,
-   0,
-   0,
-   0,
-   0,
-   0,
    0,
    0,
    0,
@@ -410,11 +1124,12 @@
   ],
   [
    0,
-   10,
    0,
+   1,
    0,
    0,
    0,
+   4,
    0,
    0,
    0,
@@ -423,119 +1138,8 @@
    0,
    0,
    0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0
-  ],
-  [
-   0,
-   0,
-   10,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0
-  ],
-  [
-   0,
-   0,
-   0,
-   10,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0
-  ],
-  [
-   0,
-   0,
-   0,
-   0,
-   10,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0
-  ],
-  [
-   0,
-   0,
-   0,
-   0,
-   0,
-   10,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0
-  ],
-  [
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   10,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
+   1,
+   4,
    0,
    0,
    0
@@ -550,7 +1154,7 @@
    0,
    9,
    0,
-   1,
+   0,
    0,
    0,
    0,
@@ -594,7 +1198,7 @@
    0,
    0,
    0,
-   10,
+   6,
    0,
    0,
    0,
@@ -663,12 +1267,12 @@
    0,
    0,
    0,
-   9,
+   10,
    0,
    0,
    0,
    0,
-   1,
+   0,
    0,
    0
   ],
@@ -730,9 +1334,9 @@
    0,
    0,
    0,
-   2,
+   3,
    0,
-   7,
+   6,
    0,
    0,
    0,
@@ -754,7 +1358,7 @@
    0,
    0,
    0,
-   1,
+   0,
    9,
    0,
    0,
@@ -773,12 +1377,12 @@
    0,
    0,
    0,
+   4,
    0,
    0,
    0,
    0,
-   0,
-   10,
+   6,
    0,
    0
   ],
@@ -827,5 +1431,5 @@
    10
   ]
  ],
- "duracao_s": 792
+ "duracao_s": 1503
 }

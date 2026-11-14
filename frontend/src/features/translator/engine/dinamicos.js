@@ -197,11 +197,21 @@ export function inferir(m, seq) {
   return ex.map(v => v / soma)
 }
 
-/** Classifica um sinal recortado. Abaixo do limiar calibrado na validação: não reconhecido. */
+/** Limiar de um sinal: o calibrado na validação ou, para os experimentais (só do INES, sem teste), o mais alto. */
+export function limiarDoSinal(m, sinal) {
+  return sinal?.experimental ? Math.max(m.limiar, m.limiar_experimental ?? 0.85) : m.limiar
+}
+
+/** Classifica um sinal recortado. Abaixo do limiar do sinal: não reconhecido. */
 export function classificarSinal(m, {Xs, ts}) {
   const p = inferir(m, reamostrar(Xs, ts, m.passos))
   const ordem = p.map((v, k) => [v, k]).sort((a, b) => b[0] - a[0])
   const [conf, k] = ordem[0]
+  const sinal = m.sinais[k]
+  const limiar = limiarDoSinal(m, sinal)
   const top = ordem.slice(0, 3).map(([v, i]) => ({palavra: m.sinais[i].palavra, p: v}))
-  return {palavra: conf >= m.limiar ? m.sinais[k].palavra : null, confianca: conf, maisParecido: m.sinais[k].palavra, top}
+  return {
+    palavra: conf >= limiar ? sinal.palavra : null, confianca: conf, maisParecido: sinal.palavra, top,
+    limiar, experimental: Boolean(sinal.experimental),
+  }
 }

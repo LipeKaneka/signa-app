@@ -7,11 +7,13 @@ import caracteristicas as C
 import config
 
 
-def carregar_gravacoes(incluir_proprias=True, incluir_ines=True):
+def carregar_gravacoes(incluir_proprias=True, incluir_ines=True, experimentais=False):
     """Lista de dicts: {X, valido, t, sinal, palavra, pessoa, origem, arquivo} (com e sem espelho).
 
-    INES: só entram sinais que o modelo já conhece (das outras fontes), uma variante por sinal — a mais
-    parecida com as gravações das outras pessoas (ver escolher_variantes_ines).
+    INES, sinais que o modelo já conhece (das outras fontes): uma variante por sinal — a mais parecida com
+    as gravações das outras pessoas (ver escolher_variantes_ines).
+    INES, sinais novos (com `experimentais`): as palavras do dicionário do app que só o INES tem. Todas as
+    variantes entram, marcadas com experimental=True: só treino, nunca validação nem teste.
     """
     arquivos = sorted(config.MINDS_PONTOS.glob('S*/*.npz'))
     if incluir_proprias and config.PROPRIOS_PONTOS.exists():
@@ -22,6 +24,14 @@ def carregar_gravacoes(incluir_proprias=True, incluir_ines=True):
         ines = [it for f in sorted(config.INES_PONTOS.glob('*/*.npz')) if f.parent.name in vocabulario
                 and (it := ler_gravacao(f, vocabulario))]
         itens += escolher_variantes_ines(itens, ines)
+        if experimentais:
+            app = config.palavras_app()
+            novos = [it for f in sorted(config.INES_PONTOS.glob('*/*.npz'))
+                     if f.parent.name in app and f.parent.name not in vocabulario
+                     and (it := ler_gravacao(f, app)) and 'descartado' not in it]
+            for it in novos:
+                it['experimental'] = True
+            itens += novos
     return itens
 
 

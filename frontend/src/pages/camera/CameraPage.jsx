@@ -33,7 +33,7 @@ function pickRandomTarget(letters, previous) {
 
 function describeTranslatorStatus(translator) {
   const { event, handState, currentLetter } = translator;
-  if (event?.type === "word" || event?.type === "gesture") return { strong: event.text };
+  if (event?.type === "word" || event?.type === "gesture") return { strong: event.text, experimental: event.experimental };
   if (event) return { text: event.text };
   if (handState === "none") return { text: "Mostre a mão para soletrar ou faça um sinal começando com as mãos abaixadas" };
   if (handState === "moving") return { text: translator.isGestureActive() ? "Termine o gesto e pare a mão" : "Segure a mão parada…" };
@@ -128,6 +128,7 @@ function CameraScreen() {
           <p className="camera-status" role="status" aria-live="polite">
             {status.strong ? <strong>{status.strong}</strong> : status.text}
             {status.confidence ? <small> {Math.round(status.confidence * 100)}%</small> : null}
+            {status.experimental ? <small title="Sinal aprendido só com o Dicionário do INES: pode errar mais."> (experimental)</small> : null}
           </p>
         )}
         <CornerBrackets />

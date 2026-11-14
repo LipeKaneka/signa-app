@@ -11,10 +11,15 @@ O detector de letras continua igual. O modo novo é a aba **Palavras** do Tradut
 
 ## Resultado atual
 
-Treinado em 14/11/2026 com os 20 sinais da MINDS-Libras (1158 gravações de 12 pessoas) mais 7 vídeos do Dicionário do INES (América, Banco, Barulho, Cinco, Esquina, Ruim e Sapo), nenhuma descartada.
-- **Validação cruzada por pessoa:** 94,7% ± 3,1% (antes, só com a MINDS: 94,2% ± 4,4%).
-- **Teste em 2 pessoas nunca vistas:** 94,0% de acerto, F1 macro 0,941 (antes: 93,0% e 0,930; mesmas pessoas de teste).
-- **Sinais mais fracos:** Filho (50% de recall) e Medo (56% de precisão).
+Treinado em 14/11/2026 com `python ml/treinar.py --experimentais`: **170 palavras**.
+
+- **20 avaliadas** (MINDS-Libras, 1158 gravações de 12 pessoas, mais 7 vídeos do INES):
+  - validação cruzada por pessoa: 92,9% em média;
+  - **teste em 2 pessoas nunca vistas: 87,0% de acerto**, F1 macro 0,878. Antes das palavras novas eram 94,0%. Das 200 gravações de teste, só 6 foram confundidas com uma palavra experimental; o resto da queda é o modelo maior (128 unidades) dividindo a atenção;
+  - sinais mais fracos: Banco (40% de recall), Filho (50%), Cinco, Medo e Sapo (60%).
+- **150 experimentais**: palavras do dicionário do app que só o Dicionário do INES tem (197 vídeos, uma pessoa). **Não têm medida de acerto**, porque não há gravações de outras pessoas. No app, só são aceitas com confiança ≥ 0,85 e aparecem como "experimental".
+
+Para tirar o "experimental" de uma palavra: gravar várias pessoas com `gravar.py` e treinar de novo.
 
 O relatório completo está em `relatorios/sinais-dinamicos.md`. Esses números valem para vídeos de estúdio; na câmera do celular, espere menos.
 
@@ -68,8 +73,8 @@ uv pip install --python D:\signa-dados\venv\Scripts\python.exe -r ml/requirement
 python ml/baixar_minds.py
 
 # 3) Treino + relatório (ml/relatorios/sinais-dinamicos.md) + exportação se aprovado
-python ml/baixar_ines.py   # opcional: pontos do Dicionário do INES (entram no treino; --sem-ines tira)
-python ml/treinar.py
+python ml/baixar_ines.py --app   # opcional: pontos do Dicionário do INES para as palavras do app
+python ml/treinar.py --experimentais   # sem a opção: só as 20 palavras avaliadas
 
 # 4) Conferir o app contra o Python
 python ml/testar_paridade.py

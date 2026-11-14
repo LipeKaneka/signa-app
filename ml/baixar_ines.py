@@ -8,6 +8,7 @@ Saída: <SIGNA_DADOS>/ines/pontos/<sinal>/<arquivo>.npz, com os mesmos campos de
 
 Uso:
   python baixar_ines.py                 # só os sinais que o modelo já conhece (padrão)
+  python baixar_ines.py --app           # as palavras do dicionário do app (sem o alfabeto)
   python baixar_ines.py --todos         # o dicionário inteiro (~5.800 vídeos; leva horas)
   python baixar_ines.py --sinais casa obrigado
 """
@@ -16,7 +17,6 @@ import json
 import re
 import tempfile
 import time
-import unicodedata
 import urllib.request
 from pathlib import Path
 
@@ -29,9 +29,7 @@ AGENTE = 'SignaLudus-escola/1.0 (trabalho escolar; uso educacional)'
 PAUSA_S = 1.0
 
 
-def slug(texto):
-    sem_acento = ''.join(c for c in unicodedata.normalize('NFD', texto.lower()) if unicodedata.category(c) != 'Mn')
-    return re.sub(r'[^a-z0-9]+', '-', sem_acento).strip('-')
+slug = config.slug
 
 
 def baixar(url):
@@ -58,12 +56,13 @@ def listar_palavras():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--todos', action='store_true', help='o dicionário inteiro')
+    ap.add_argument('--app', action='store_true', help='as palavras do dicionário do app (sem o alfabeto)')
     ap.add_argument('--sinais', nargs='*', help='só estes sinais (slug, ex.: obrigado)')
     a = ap.parse_args()
 
     itens = listar_palavras()
     if not a.todos:
-        alvo = set(a.sinais or [s for s, _ in config.SINAIS_MINDS])
+        alvo = set(config.palavras_app() if a.app else a.sinais or [s for s, _ in config.SINAIS_MINDS])
         itens = [it for it in itens if it['sinal'] in alvo]
     print(f'{len(itens)} vídeos do INES para processar', flush=True)
 

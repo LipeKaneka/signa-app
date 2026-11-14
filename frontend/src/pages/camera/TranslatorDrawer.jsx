@@ -84,16 +84,22 @@ export function TranslatorDrawer({ mode, onModeChange, sensitivity, onSensitivit
         <p className="translator-drawer__info">
           <b>Palavras:</b>{" "}
           {translator.wordModel
-            ? translator.wordModel.sinais.map((sign) => sign.palavra).join(" · ")
+            ? translator.wordModel.sinais.filter((sign) => !sign.experimental).map((sign) => sign.palavra).join(" · ")
             : translator.wordModelError
               ? "indisponível no momento"
               : "carregando…"}
         </p>
+        {translator.wordModel?.sinais.some((sign) => sign.experimental) && (
+          <p className="translator-drawer__info">
+            <b>Palavras experimentais</b> (aprendidas só com o Dicionário do INES; podem errar mais):{" "}
+            {translator.wordModel.sinais.filter((sign) => sign.experimental).map((sign) => sign.palavra).join(" · ")}
+          </p>
+        )}
 
         <p className="translator-drawer__note">
           🔒 Tudo é processado no seu aparelho; nenhuma imagem é enviada. Letras: “Brazilian Sign Language Alphabet”
           (UNIVALI, MIT/CC BY 4.0), “benchmarking-libras” (Luca Villela, MIT) e projeto de Maycon Pacheco (MIT).
-          Palavras: MINDS-Libras (UFMG, CC BY 4.0).
+          Palavras: MINDS-Libras (UFMG, CC BY 4.0) e Dicionário da Libras do INES (uso educacional).
         </p>
       </aside>
     </div>

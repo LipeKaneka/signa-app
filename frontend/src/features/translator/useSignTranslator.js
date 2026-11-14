@@ -117,11 +117,11 @@ export function useSignTranslator({ samples, profile, sensitivity, onWrite }) {
         const result = classifyWord(wordModel, segment);
         const start = Math.min(state.segmentStart ?? textRef.current.length, textRef.current.length);
         const lettersInSegment = textRef.current.length > start;
-        const required = lettersInSegment ? Math.max(WORD_OVER_LETTERS_CONFIDENCE, wordModel.limiar) : wordModel.limiar;
+        const required = lettersInSegment ? Math.max(WORD_OVER_LETTERS_CONFIDENCE, result.limiar) : result.limiar;
         if (result.confianca >= required) {
           setText((current) => appendLabel(current.slice(0, start), result.palavra));
           onWriteRef.current?.(result.palavra);
-          setEvent({ type: "word", text: result.palavra, confidence: result.confianca });
+          setEvent({ type: "word", text: result.palavra, confidence: result.confianca, experimental: result.experimental });
         } else if (!lettersInSegment) {
           setEvent({ type: "info", text: `Sinal não reconhecido (parece ${result.maisParecido})` });
         }
