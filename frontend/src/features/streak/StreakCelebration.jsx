@@ -12,18 +12,23 @@ import "./streak-celebration.css";
 
 /**
  * Tempos da animação (ms), tirados do projeto do Alight Motion ("Novo projeto 2"):
- * número antigo cai até 690; troca para o novo e treme em 775; "Aumentada" em 783; o fundo some em 2015;
- * a faixa roxa sobe de 1766 a 3366 e revela a trilha.
+ * número antigo cai até 690; troca para o novo e treme em 775; "Aumentada" em 783; a faixa roxa sobe de 1766 a 3366,
+ * cobre a tela inteira (o fundo some por trás dela) e sai por cima revelando a trilha.
  */
 const SWAP_AT = 770;
 const SHAKE_AT = 775;
 const SHAKE_END = 2015;
 const SHAKE_FREQ_END = 1125;
-const BACKDROP_END = 2015;
 const WIPE_AT = 1766;
+/**
+ * A faixa cobre a tela inteira de ~300 a ~700 ms depois de começar: o fundo da animação sai no meio desse intervalo,
+ * escondido atrás dela (medido em telas de 320×568 a 1024×1366).
+ */
+const BACKDROP_END = WIPE_AT + 550;
 const TOTAL = 3366;
-/** Tremor: 175 px no vídeo de 1080 px de largura → proporcional à tela. */
+/** Tremor: 175 px no vídeo de 1080 px de largura → proporcional à tela (limitado em telas largas, como tablet). */
 const SHAKE_MAGNITUDE = 175 / 1080;
+const SHAKE_MAX_WIDTH = 480;
 const SHAKE_FREQUENCY = 16;
 
 /** Curva "ease-out" do Alight (cubicBezier 0 0.34 0.1 1) aproximada: rápida no começo, assenta no fim. */
@@ -38,7 +43,7 @@ const FIRE_FRAME_MS = 70;
  * Fogo animado quadro a quadro. Todos os quadros ficam carregados e empilhados; só o atual aparece (sem piscar).
  * Com "menos movimento", fica parado no primeiro quadro.
  */
-function AnimatedFire({ size, still }) {
+function AnimatedFire({ still }) {
   const [step, setStep] = useState(0);
   useEffect(() => {
     if (still) return undefined;
@@ -47,7 +52,7 @@ function AnimatedFire({ size, still }) {
   }, [still]);
   const current = FIRE_SEQUENCE[step];
   return (
-    <span className="streak-fire" style={{ width: size, height: size }} aria-hidden="true">
+    <span className="streak-fire" aria-hidden="true">
       {FIRE_FRAMES.map((frame, index) => (
         <img key={frame} src={frame} alt="" style={{ opacity: index === current ? 1 : 0 }} />
       ))}
@@ -72,7 +77,7 @@ function useDiagonalShake(ref, enabled) {
       if (!element) return;
       if (elapsed >= SHAKE_AT && elapsed <= SHAKE_END) {
         const progress = (elapsed - SHAKE_AT) / (SHAKE_END - SHAKE_AT);
-        const magnitude = SHAKE_MAGNITUDE * window.innerWidth * (1 - easeOut(progress));
+        const magnitude = SHAKE_MAGNITUDE * Math.min(window.innerWidth, SHAKE_MAX_WIDTH) * (1 - easeOut(progress));
         const frequency = SHAKE_FREQUENCY * Math.max(0, 1 - (elapsed - SHAKE_AT) / (SHAKE_FREQ_END - SHAKE_AT));
         if (last !== null) phase += ((now - last) / 1000) * frequency;
         const offset = magnitude * Math.sin(phase * 2 * Math.PI) * (frequency > 0 ? 1 : 0);
@@ -133,7 +138,7 @@ export function StreakCelebration({ from, to, onDone }) {
       {!backdropGone && (
         <div className="streak-celebration__backdrop">
           <div className="streak-celebration__group" ref={groupRef}>
-            <span className="streak-celebration__fire"><AnimatedFire size={120} still={reduced} /></span>
+            <span className="streak-celebration__fire"><AnimatedFire still={reduced} /></span>
             <span className="streak-celebration__number-slot">
               {swapped
                 ? <strong key="new" className="streak-celebration__number">{to}</strong>
