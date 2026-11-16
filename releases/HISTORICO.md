@@ -8,6 +8,7 @@ recriar qualquer um, faça checkout da tag e gere o APK, ou rode `npm run releas
 
 | Versão | Data | versionCode | Tag | O que mudou |
 |---|---|---|---|---|
+| **1.7.0** | 15/11/2026 | 16 | `v1.7.0` | Animação de ofensiva aumentada ao voltar para a trilha |
 | **1.6.7** | 14/11/2026 | 15 | `v1.6.7` | Alfabeto: 26 de 27 letras sem precisar ensinar (H, J, K, X e Z do Dicionário do INES) |
 | **1.6.6** | 14/11/2026 | 14 | `v1.6.6` | Alfabeto: K e Z sem precisar ensinar e letras paradas mais precisas (Dicionário do INES) |
 | **1.6.5** | 14/11/2026 | 13 | `v1.6.5` | Notificação no celular volta a funcionar (aparelho registrado sempre que o app abre) |
