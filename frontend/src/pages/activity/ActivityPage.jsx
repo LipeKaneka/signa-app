@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useState } from "react";
+import { queueStreakCelebration } from "../../features/streak/StreakCelebrationHost.jsx";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import * as TrailApi from "../../api/api-trail.js";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -127,6 +128,9 @@ export function ActivityPage() {
       const previousLevel = user?.level?.level;
       const newLevel = summary.user.level;
       setLevelUp(previousLevel && newLevel && newLevel.level > previousLevel ? newLevel : null);
+      // Ofensiva aumentou (primeira atividade do dia): animação ao voltar para a trilha.
+      const previousStreak = user?.streak ?? 0;
+      if (summary.user.streak > previousStreak) queueStreakCelebration(previousStreak, summary.user.streak);
       setUser(summary.user);
       setResult(summary.result);
     } catch (finishError) {

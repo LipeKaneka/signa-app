@@ -6,6 +6,7 @@ import { useAppConfig } from "./context/AppConfigContext.jsx";
 import { SplashScreen } from "./components/SplashScreen.jsx";
 import { UpdateGate } from "./features/app-update/UpdateGate.jsx";
 import { AppEventsProvider } from "./features/achievements/AppEventsContext.jsx";
+import { StreakCelebrationHost } from "./features/streak/StreakCelebrationHost.jsx";
 import { NotificationsProvider } from "./features/notifications/NotificationsContext.jsx";
 import { LoginPage } from "./pages/auth/LoginPage.jsx";
 import { OnboardingPage, wasOnboardingSeen } from "./pages/auth/OnboardingPage.jsx";
@@ -176,6 +177,8 @@ function AppScreens() {
         <AppEventsProvider>
           <NotificationsProvider>
             <PrivateRoutes />
+            {/* Ofensiva aumentou na última atividade: animação ao voltar para a trilha. */}
+            <StreakCelebrationHost />
           </NotificationsProvider>
         </AppEventsProvider>
       ) : <PublicRoutes />}

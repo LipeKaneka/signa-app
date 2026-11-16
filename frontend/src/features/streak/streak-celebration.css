@@ -1,0 +1,152 @@
+/* "Ofensiva aumentada" — recriado do projeto do Alight Motion (tempos em StreakCelebration.jsx). */
+.streak-celebration {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  overflow: hidden;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Fundo: branco → lilás (tema claro) ou roxo escuro (tema escuro), como as duas versões do projeto. */
+.streak-celebration__backdrop {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, #ffffff -12%, #c8b7ff 130%);
+}
+
+:root[data-theme="dark"] .streak-celebration__backdrop {
+  background: linear-gradient(180deg, #260d84 -12%, #130837 130%);
+}
+
+.streak-celebration__group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-body);
+  font-weight: 900;
+  line-height: 1;
+  will-change: transform;
+}
+
+/* Fogo: surge do zero, passa um pouco do tamanho e assenta (0 → 1,12 em 260 ms → 1 em 420 ms). */
+.streak-celebration__fire {
+  display: block;
+  margin-bottom: 6px;
+  animation: streak-fire-pop 420ms both;
+}
+
+/* Quadros do fogo empilhados; o atual fica visível. */
+.streak-fire {
+  position: relative;
+  display: block;
+}
+
+.streak-fire img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.streak-celebration__number-slot {
+  display: block;
+  min-height: 4.2rem;
+}
+
+.streak-celebration__number {
+  display: block;
+  font-size: 4rem;
+  font-weight: 900;
+  color: #ff4444;
+}
+
+/* Número antigo: cai de cima aparecendo (690 ms). */
+.streak-celebration__number--drop {
+  animation: streak-number-drop 690ms cubic-bezier(0, 0.7, 0.18, 1) both;
+}
+
+.streak-celebration__label {
+  font-size: 2.6rem;
+  color: #ff4444;
+}
+
+/* "Aumentada" cresce; a cópia por trás cresce mais e vai sumindo (brilho). */
+.streak-celebration__raised {
+  position: relative;
+  display: grid;
+  margin-top: 14px;
+  font-size: 2rem;
+  color: #e0ac54;
+}
+
+.streak-celebration__raised > span {
+  grid-area: 1 / 1;
+  text-align: center;
+}
+
+.streak-celebration__raised-text {
+  animation: streak-raised-grow 490ms cubic-bezier(0, 0.76, 0.15, 1) both;
+}
+
+.streak-celebration__raised-glow {
+  animation: streak-raised-glow 1232ms linear both;
+}
+
+/* Faixa roxa que sobe: nasce embaixo, estica (692 ms) e atravessa a tela até sair por cima (1,6 s no total). */
+.streak-celebration__wipe {
+  position: absolute;
+  left: 50%;
+  top: 108vh;
+  width: 56vw;
+  height: 8.2vh;
+  border-radius: 24px;
+  background: var(--color-primary, #4f31bb);
+  transform: translate(-50%, -50%);
+  animation: streak-wipe 1600ms both;
+}
+
+@keyframes streak-fire-pop {
+  0% { transform: scale(0); animation-timing-function: cubic-bezier(0, 0.75, 0.13, 1); }
+  62% { transform: scale(1.12); animation-timing-function: ease-in-out; }
+  100% { transform: scale(1); }
+}
+
+@keyframes streak-number-drop {
+  from { transform: translateY(-10vh); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes streak-raised-grow {
+  from { transform: scale(1); }
+  to { transform: scale(1.27); }
+}
+
+@keyframes streak-raised-glow {
+  0% { transform: scale(1); opacity: 0.66; animation-timing-function: cubic-bezier(0, 0.76, 0.15, 1); }
+  40% { transform: scale(1.62); opacity: 0.5; }
+  100% { transform: scale(1.81); opacity: 0.3; }
+}
+
+@keyframes streak-wipe {
+  0% { top: 108vh; height: 8.2vh; animation-timing-function: cubic-bezier(0, 0.77, 0.15, 1); }
+  43.25% { top: 108vh; height: 115vh; animation-timing-function: cubic-bezier(0, 0.69, 0.31, 1); }
+  100% { top: -122vh; height: 115vh; }
+}
+
+/* Menos movimento: sem tremor nem faixa; só o número novo, que some suavemente. */
+.streak-celebration--reduced .streak-celebration__backdrop {
+  animation: streak-fade-out 1800ms ease-in both;
+}
+
+.streak-celebration--reduced .streak-celebration__group * {
+  animation-duration: 0s !important;
+}
+
+@keyframes streak-fade-out {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0; }
+}
