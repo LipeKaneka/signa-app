@@ -113,7 +113,10 @@ function gravar(xs) {
   try { localStorage.setItem(CHAVE, JSON.stringify(xs)) } catch {}
 }
 // Amostras do próprio usuário passam pelo mesmo ajuste de proporções que os quadros ao vivo.
-export const amostrasBase = () => base.amostras.map(a => ({...a, origem: 'base', v: caracteristicas(a.p)}))
+// As amostras de referência não mudam: as características são calculadas uma vez só (eram refeitas a cada
+// tela aberta). Quem usa só lê a lista (find, filter, concat), nunca altera.
+let baseCalculada = null
+export const amostrasBase = () => (baseCalculada ??= base.amostras.map(a => ({...a, origem: 'base', v: caracteristicas(a.p)})))
 export const amostrasProprias = (escala = null) => lerProprias().map(a => ({...a, origem: a.cal ? 'calibracao' : 'propria', v: caracteristicas(a.p, escala)}))
 export const todasAmostras = (escala = null) => [...amostrasBase(), ...amostrasProprias(escala)]
 
@@ -163,11 +166,22 @@ export const LIMIAR_DESCONHECIDO = 2.2
 const PESO_PESSOAL = 2
 
 export function classificar(vetor, amostras, k = 5, limiar = LIMIAR_DESCONHECIDO) {
-  if (!amostras.length) return {rotulo: null, confianca: 0, distancia: Infinity, maisParecido: null}
-  const viz = amostras
-    .map(a => ({r: a.rotulo, d: dist(vetor, a.v), w: a.origem === 'base' ? 1 : PESO_PESSOAL}))
-    .sort((a, b) => a.d - b.d)
-    .slice(0, k)
+  const n = amostras.length
+  if (!n) return {rotulo: null, confianca: 0, distancia: Infinity, maisParecido: null}
+  // Roda a cada quadro da câmera: calcula cada distância uma vez só e escolhe os k mais próximos sem ordenar
+  // a lista toda. Resultado igual ao de ordenar por distância (empates ficam na ordem original).
+  const ds = new Float64Array(n)
+  for (let i = 0; i < n; i++) ds[i] = dist(vetor, amostras[i].v)
+  const perto = []
+  for (let i = 0; i < n; i++) {
+    const d = ds[i]
+    if (perto.length >= k && d >= ds[perto[perto.length - 1]]) continue
+    let j = perto.length
+    while (j > 0 && ds[perto[j - 1]] > d) j--
+    perto.splice(j, 0, i)
+    if (perto.length > k) perto.pop()
+  }
+  const viz = perto.map(i => ({r: amostras[i].rotulo, d: ds[i], w: amostras[i].origem === 'base' ? 1 : PESO_PESSOAL}))
   const votos = {}
   for (const n of viz) votos[n.r] = (votos[n.r] || 0) + n.w / (n.d + 1e-3)
   const total = Object.values(votos).reduce((s, x) => s + x, 0)
@@ -175,10 +189,15 @@ export function classificar(vetor, amostras, k = 5, limiar = LIMIAR_DESCONHECIDO
   const distancia = viz.find(n => n.r === rotulo).d
   const conhecido = distancia <= limiar
   // Três candidatos mais próximos (um por letra), para o diagnóstico.
-  const top = []
-  for (const a of amostras.map(a => ({r: a.rotulo, d: dist(vetor, a.v)})).sort((a, b) => a.d - b.d)) {
-    if (!top.some(t => t.r === a.r)) top.push(a)
-    if (top.length === 3) break
+  // Menor distância de cada letra (a primeira, em empate), e as 3 letras mais próximas.
+  const melhorPorLetra = new Map()
+  for (let i = 0; i < n; i++) {
+    const atual = melhorPorLetra.get(amostras[i].rotulo)
+    if (!atual || ds[i] < atual.d) melhorPorLetra.set(amostras[i].rotulo, {d: ds[i], i})
   }
+  const top = [...melhorPorLetra.entries()]
+    .sort((a, b) => a[1].d - b[1].d || a[1].i - b[1].i)
+    .slice(0, 3)
+    .map(([r, {d}]) => ({r, d}))
   return {rotulo: conhecido ? rotulo : null, confianca: conhecido ? peso / total : 0, distancia, maisParecido: rotulo, top}
 }

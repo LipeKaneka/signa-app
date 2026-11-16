@@ -65,6 +65,9 @@ function pickXpEvent(events, now) {
     .reduce((best, event) => (!best || event.multiplier > best.multiplier ? event : best), null);
 }
 
+/** Mantém o valor anterior quando o novo é igual: evita redesenhar as telas a cada consulta sem mudança. */
+const keepIfSame = (next) => (previous) => (JSON.stringify(previous) === JSON.stringify(next) ? previous : next);
+
 /**
  * Configuração dinâmica do app, editada no painel do servidor (chega pelo backend, sem APK novo):
  * textos (GET /app-config), tabela de níveis e eventos de XP ativos (GET /events/active).
@@ -89,10 +92,10 @@ export function AppConfigProvider({ children }) {
     ]);
     if (config.status === "rejected") lastConfigAt.current = 0; // falhou: tenta de novo na próxima
     if (config.status === "fulfilled" && config.value) {
-      setSettings({ ...FALLBACK_SETTINGS, ...config.value.settings });
-      setLevels(config.value.levels ?? []);
+      setSettings(keepIfSame({ ...FALLBACK_SETTINGS, ...config.value.settings }));
+      setLevels(keepIfSame(config.value.levels ?? []));
     }
-    if (active.status === "fulfilled") setEvents(active.value.events ?? []);
+    if (active.status === "fulfilled") setEvents(keepIfSame(active.value.events ?? []));
     setNow(Date.now());
   }, []);
 
@@ -114,6 +117,10 @@ export function AppConfigProvider({ children }) {
     };
   }, [refresh]);
 
+  // O relógio anda a cada 15 s, mas as telas só redesenham quando o evento valendo muda (pickXpEvent devolve o
+  // mesmo objeto da lista enquanto ele continuar valendo).
+  const xpEvent = useMemo(() => pickXpEvent(events, now), [events, now]);
+
   const value = useMemo(
     () => ({
       text: (key) => String(settings[key] ?? FALLBACK_SETTINGS[key] ?? ""),
@@ -124,11 +131,11 @@ export function AppConfigProvider({ children }) {
       },
       minScoreToPass: Number(settings["progress.minScoreToPass"] ?? FALLBACK_SETTINGS["progress.minScoreToPass"]),
       levels,
-      xpEvent: pickXpEvent(events, now),
+      xpEvent,
       refresh,
       refreshIfStale,
     }),
-    [settings, levels, events, now, refresh, refreshIfStale],
+    [settings, levels, xpEvent, refresh, refreshIfStale],
   );
   return <AppConfigContext.Provider value={value}>{children}</AppConfigContext.Provider>;
 }

@@ -1,6 +1,6 @@
 // Detecção (MediaPipe) numa thread separada: a tela e a câmera continuam fluidas no
 // celular enquanto o detector trabalha. Recebe quadros como ImageBitmap e devolve só os
-// pontos. Mesma lógica de engine/maos.js (duas mãos sempre e pose em quadros alternados),
+// pontos. Mesma lógica de engine/maos-local.js (duas mãos sempre e pose em quadros alternados),
 // para o resultado ser o mesmo nas duas formas de rodar.
 import {FilesetResolver, HandLandmarker, PoseLandmarker} from '@mediapipe/tasks-vision'
 

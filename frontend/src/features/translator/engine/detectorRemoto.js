@@ -1,8 +1,8 @@
 // Detector usado pela câmera: roda o MediaPipe num Web Worker (thread separada), para a tela
 // não travar no celular, e escolhe sozinho CPU ou GPU medindo as duas no próprio aparelho
 // na primeira vez (a escolha fica guardada). Se o worker não funcionar no navegador, cai para
-// a detecção na thread principal (src/libras/maos.js), com o mesmo formato de resultado.
-import {MODELO, MODELO_POSE, OPCOES_MAO, WASM, detectarCorpo, detectarQuadro, detector, detectorCorpo} from './maos'
+// a detecção na thread principal (maos-local.js, carregado só nesse caso), com o mesmo formato de resultado.
+import {MODELO, MODELO_POSE, OPCOES_MAO, WASM} from './maos'
 
 const CHAVE = 'signa:delegado-v1'
 const QUADROS_TESTE = 8
@@ -50,11 +50,15 @@ class Remoto {
 /** Fallback na thread principal, com a mesma interface. */
 class Local {
   constructor(corpo) { this.corpo = corpo; this.delegado = 'CPU (sem worker)' }
-  async iniciar() { this.det = this.corpo ? await detectorCorpo() : await detector('VIDEO'); return this }
+  async iniciar() {
+    this.m = await import('./maos-local.js')
+    this.det = this.corpo ? await this.m.detectorCorpo() : await this.m.detector('VIDEO')
+    return this
+  }
   async detectar(fonte) {
     const t0 = performance.now()
-    if (this.corpo) { const r = detectarCorpo(this.det, fonte); return {rm: r.rm, pose: r.pose, ms: performance.now() - t0} }
-    return {rm: detectarQuadro(this.det, fonte), pose: null, ms: performance.now() - t0}
+    if (this.corpo) { const r = this.m.detectarCorpo(this.det, fonte); return {rm: r.rm, pose: r.pose, ms: performance.now() - t0} }
+    return {rm: this.m.detectarQuadro(this.det, fonte), pose: null, ms: performance.now() - t0}
   }
   fechar() {}
 }

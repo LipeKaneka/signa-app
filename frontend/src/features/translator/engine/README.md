@@ -6,7 +6,8 @@ Tudo roda no aparelho; nenhuma imagem é enviada.
 
 | Arquivo | O que faz | Principais funções |
 |---|---|---|
-| `maos.js` | Configura o MediaPipe (mãos e corpo) e escolhe a mão principal | `maoPrincipal`, `detector`, `detectorCorpo`, `CONEXOES` |
+| `maos.js` | Constantes do MediaPipe (modelos, opções) e escolha da mão principal; não carrega a biblioteca | `maoPrincipal`, `CONEXOES`, `OPCOES_MAO` |
+| `maos-local.js` | Detecção na thread principal, só quando não há Web Worker (carregado sob demanda) | `detector`, `detectorCorpo` |
 | `detectorRemoto.js` | Roda o MediaPipe num Web Worker e escolhe CPU ou GPU na primeira vez | `criarDetector` |
 | `visao.worker.js` | O worker em si (recebe quadros, devolve pontos) | — |
 | `classificador.js` | Letras paradas: normaliza os 21 pontos, extrai características e classifica por k-NN; guarda as amostras da pessoa | `pontosNormalizados`, `caracteristicas`, `classificar`, `todasAmostras`, `adicionarAmostras`, `exportarProprias`, `importarProprias` |
