@@ -1,8 +1,11 @@
-# Reinicia os processos de desenvolvimento (servidor de gerenciamento 8090 com o painel em /admin, backend 8080 e frontend 5173)
+﻿# Reinicia os processos de desenvolvimento (servidor de gerenciamento 8090 com o painel em /admin, backend 8080 e frontend 5173)
 # quando algum arquivo do projeto mudou desde o último reinício. Usado pelo hook "Stop" do Claude Code (.claude/settings.json),
 # mas também pode ser rodado à mão:  powershell -ExecutionPolicy Bypass -File scripts/restart-dev.ps1 -Force
 # O banco (porta 27017) não é reiniciado: só é iniciado se não estiver rodando.
-param([switch]$Force)
+# -Stop: para tudo o que este script iniciou (servidor, backend, frontend e o banco local).
+# -Plain: mensagem final em texto (para "Iniciar Signa Ludus.bat"); sem ele, sai em JSON (para o hook).
+# Os atalhos de clique duplo ficam na raiz: "Iniciar Signa Ludus.bat" e "Parar Signa Ludus.bat".
+param([switch]$Force, [switch]$Stop, [switch]$Plain)
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
@@ -24,7 +27,7 @@ function Get-LastChange {
 
 $lastRestart = if (Test-Path $marker) { (Get-Item $marker).LastWriteTimeUtc } else { [datetime]::MinValue }
 $lastChange = Get-LastChange
-if (-not $Force -and $lastChange -le $lastRestart) { exit 0 }
+if (-not $Force -and -not $Stop -and $lastChange -le $lastRestart) { exit 0 }
 
 function Stop-Tree([int]$processId) {
   # Pelo cmd: no PowerShell 5.1 o aviso "processo não encontrado" viraria erro e pararia o script.
@@ -56,6 +59,29 @@ function Test-Port([int]$port) {
   [bool](Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue)
 }
 
+# Mensagem final: texto para quem roda pelo atalho; JSON para o hook do Claude Code.
+function Write-Result([string]$message) {
+  if ($Plain) { Write-Output $message } else { @{ systemMessage = $message } | ConvertTo-Json -Compress }
+}
+
+if ($Stop) {
+  foreach ($name in "server", "backend", "frontend", "database") { Stop-Started $name }
+  # Só as portas do app: o banco é parado só se foi este script que o iniciou (pode ser um MongoDB seu).
+  foreach ($port in 8090, 8080, 5173) { Stop-Port $port }
+  Write-Result "Signa Ludus parado (servidor, backend, frontend e banco local)."
+  exit 0
+}
+
+# Primeira vez numa máquina: instala as dependências que faltarem (pode levar alguns minutos).
+foreach ($project in "server", "backend", "frontend") {
+  $directory = Join-Path $root $project
+  if (-not (Test-Path (Join-Path $directory "node_modules"))) {
+    if ($Plain) { Write-Output "Instalando as dependências de $project (só na primeira vez)..." }
+    $installLog = Join-Path $stateDir "$project-install.log"
+    Start-Process -FilePath "cmd.exe" -ArgumentList "/c npm install --no-audit --no-fund > `"$installLog`" 2>&1" -WorkingDirectory $directory -WindowStyle Hidden -Wait
+  }
+}
+
 function Start-Hidden([string]$name, [string]$directory, [string]$npmArgs) {
   $log = Join-Path $stateDir "$name.log"
   $process = Start-Process -FilePath "cmd.exe" -ArgumentList "/c npm $npmArgs > `"$log`" 2>&1" -WorkingDirectory $directory -WindowStyle Hidden -PassThru
@@ -64,7 +90,8 @@ function Start-Hidden([string]$name, [string]$directory, [string]$npmArgs) {
 
 if (-not (Test-Port 27017)) {
   Start-Hidden "database" (Join-Path $root "server") "run db:local"
-  for ($i = 0; $i -lt 40 -and -not (Test-Port 27017); $i++) { Start-Sleep -Milliseconds 500 }
+  # Até 60 s: o MongoDB local pode demorar na primeira vez. Se passar disso, o servidor fica tentando conectar sozinho.
+  for ($i = 0; $i -lt 120 -and -not (Test-Port 27017); $i++) { Start-Sleep -Milliseconds 500 }
 }
 
 foreach ($name in "server", "backend", "frontend") { Stop-Started $name }
@@ -99,5 +126,5 @@ for ($i = 0; $i -lt 60 -and -not $ready; $i++) {
 
 Set-Content -Path $marker -Value (Get-Date -Format o)
 $message = if ($ready) { "Signa Ludus reiniciado (web 5173, backend 8080, servidor 8090, painel 127.0.0.1:8090/admin)." } else { "Reiniciei os servidores, mas eles ainda não responderam. Veja .claude/dev-servers/*.log" }
-@{ systemMessage = $message } | ConvertTo-Json -Compress
+Write-Result $message
 exit 0

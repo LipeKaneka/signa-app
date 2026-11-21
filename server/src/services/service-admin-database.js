@@ -5,6 +5,7 @@ import { badRequest, conflict, notFound } from "../utils/util-http-error.js";
 import { escapeRegExp } from "../utils/util-text.js";
 import { recordAudit } from "./service-audit.js";
 import { publishContentChange } from "./service-admin-publish.js";
+import { MESSAGES } from "../config/messages.js";
 
 const MAX_PAGE_SIZE = 100;
 const MAX_EXPORT_DOCUMENTS = 5000;
@@ -13,7 +14,7 @@ const LIST_TEXT_LIMIT = 160;
 
 /** Coleção pelo nome da URL. @throws {HttpError} 404. */
 function findCollection(key) {
-  if (!Object.hasOwn(EXPLORER_COLLECTIONS, key)) throw notFound("Coleção não encontrada.");
+  if (!Object.hasOwn(EXPLORER_COLLECTIONS, key)) throw notFound(MESSAGES.admin.collectionNotFound);
   return { key, ...EXPLORER_COLLECTIONS[key] };
 }
 
@@ -55,13 +56,13 @@ const hiddenProjection = (collection) => Object.fromEntries([...hiddenFields(col
  * @throws {HttpError} 400.
  */
 function readChanges(changes, collection) {
-  if (!changes || typeof changes !== "object" || Array.isArray(changes)) throw badRequest("Envie os campos a alterar.");
+  if (!changes || typeof changes !== "object" || Array.isArray(changes)) throw badRequest(MESSAGES.admin.sendFields);
   const allowed = new Set(writableFields(collection));
   const entries = Object.entries(changes);
-  if (entries.length === 0) throw badRequest("Nenhum campo alterado.");
+  if (entries.length === 0) throw badRequest(MESSAGES.admin.noFieldChanged);
   for (const [field] of entries) {
-    if (field.startsWith("$") || field.includes(".")) throw badRequest(`Campo inválido: ${field}.`);
-    if (!allowed.has(field)) throw badRequest(`O campo "${field}" não pode ser alterado aqui.`);
+    if (field.startsWith("$") || field.includes(".")) throw badRequest(MESSAGES.admin.invalidField(field));
+    if (!allowed.has(field)) throw badRequest(MESSAGES.admin.fieldNotEditableHere(field));
   }
   return Object.fromEntries(entries);
 }
@@ -71,8 +72,8 @@ function translateDatabaseError(error) {
   if (error instanceof mongoose.Error.ValidationError) {
     return badRequest(Object.values(error.errors).map((item) => `${item.path}: ${item.kind === "required" ? "obrigatório" : item.message}`).join(" · "));
   }
-  if (error instanceof mongoose.Error.CastError) return badRequest(`Valor inválido em "${error.path}".`);
-  if (error?.code === 11000) return conflict(`Já existe um documento com esse valor (${Object.keys(error.keyValue ?? {}).join(", ") || "campo único"}).`);
+  if (error instanceof mongoose.Error.CastError) return badRequest(MESSAGES.admin.invalidValue(error.path));
+  if (error?.code === 11000) return conflict(MESSAGES.admin.duplicateValue(Object.keys(error.keyValue ?? {}).join(", ")));
   return error;
 }
 
@@ -139,9 +140,9 @@ export async function listDocuments(key, { search = "", page = 1, limit = 25 }) 
  */
 export async function getDocument(key, id) {
   const collection = findCollection(key);
-  if (!mongoose.isValidObjectId(id)) throw notFound("Documento não encontrado.");
+  if (!mongoose.isValidObjectId(id)) throw notFound(MESSAGES.admin.documentNotFound);
   const document = await collection.model.findById(id, hiddenProjection(collection)).lean();
-  if (!document) throw notFound("Documento não encontrado.");
+  if (!document) throw notFound(MESSAGES.admin.documentNotFound);
   return toPlain(document, collection);
 }
 
@@ -159,9 +160,9 @@ export async function updateDocument(actor, key, id, changes) {
   const collection = findCollection(key);
   if (!collection.editable) throw badRequest(collection.note ?? "Esta coleção é só leitura.");
   const fields = readChanges(changes, collection);
-  if (!mongoose.isValidObjectId(id)) throw notFound("Documento não encontrado.");
+  if (!mongoose.isValidObjectId(id)) throw notFound(MESSAGES.admin.documentNotFound);
   const document = await collection.model.findById(id);
-  if (!document) throw notFound("Documento não encontrado.");
+  if (!document) throw notFound(MESSAGES.admin.documentNotFound);
 
   const before = Object.fromEntries(Object.keys(fields).map((field) => [field, JSON.parse(JSON.stringify(document.get(field) ?? null))]));
   Object.entries(fields).forEach(([field, value]) => document.set(field, value));
@@ -212,9 +213,9 @@ export async function createDocument(actor, key, values) {
 export async function deleteDocument(actor, key, id) {
   const collection = findCollection(key);
   if (!collection.deletable) throw badRequest(collection.note ?? "Não é possível excluir documentos desta coleção por aqui.");
-  if (!mongoose.isValidObjectId(id)) throw notFound("Documento não encontrado.");
+  if (!mongoose.isValidObjectId(id)) throw notFound(MESSAGES.admin.documentNotFound);
   const document = await collection.model.findById(id, hiddenProjection(collection)).lean();
-  if (!document) throw notFound("Documento não encontrado.");
+  if (!document) throw notFound(MESSAGES.admin.documentNotFound);
   const before = toPlain(document, collection);
 
   await collection.model.deleteOne({ _id: id });

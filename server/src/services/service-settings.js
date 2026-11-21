@@ -3,6 +3,7 @@ import { SETTING_DEFINITIONS } from "../config/setting-definitions.js";
 import { PROGRESS_RULES } from "../config/rules.js";
 import { createTimedCache } from "../utils/util-timed-cache.js";
 import { badRequest } from "../utils/util-http-error.js";
+import { MESSAGES } from "../config/messages.js";
 
 const SETTINGS_CACHE_MS = 10 * 1000;
 const cache = createTimedCache(SETTINGS_CACHE_MS);
@@ -75,13 +76,13 @@ const PHRASE_TEXT_MAX = 90;
  */
 function readPhrases(definition, value) {
   if (!Array.isArray(value) || value.length === 0 || value.length > definition.maxItems) {
-    throw badRequest(`${definition.label}: envie de 1 a ${definition.maxItems} frases.`);
+    throw badRequest(MESSAGES.admin.setting.phraseCount(definition.label, definition.maxItems));
   }
   return value.map((phrase, index) => {
     const title = typeof phrase?.title === "string" ? phrase.title.trim() : "";
     const text = typeof phrase?.text === "string" ? phrase.text.trim() : "";
     if (!title || title.length > PHRASE_TITLE_MAX || text.length > PHRASE_TEXT_MAX) {
-      throw badRequest(`Frase ${index + 1}: título de 1 a ${PHRASE_TITLE_MAX} caracteres e texto de até ${PHRASE_TEXT_MAX}.`);
+      throw badRequest(MESSAGES.admin.setting.phraseLength(index + 1, PHRASE_TITLE_MAX, PHRASE_TEXT_MAX));
     }
     return { title, text };
   });
@@ -97,18 +98,18 @@ function readPhrases(definition, value) {
 function validateSettingValue(definition, value) {
   if (definition.type === "integer") {
     if (!Number.isInteger(value) || value < definition.min || value > definition.max) {
-      throw badRequest(`${definition.label}: use um número inteiro entre ${definition.min} e ${definition.max}.`);
+      throw badRequest(MESSAGES.admin.setting.integerRange(definition.label, definition.min, definition.max));
     }
     return value;
   }
   if (definition.type === "phrases") return readPhrases(definition, value);
   const minLength = definition.allowEmpty ? 0 : 1;
   if (typeof value !== "string" || value.trim().length < minLength || value.length > definition.maxLength) {
-    throw badRequest(`${definition.label}: texto de ${minLength} a ${definition.maxLength} caracteres.`);
+    throw badRequest(MESSAGES.admin.setting.textLength(definition.label, minLength, definition.maxLength));
   }
   const text = value.trim();
   if (definition.type === "url" && text && !/^https:\/\/\S+$/i.test(text)) {
-    throw badRequest(`${definition.label}: use um link começando com https://`);
+    throw badRequest(MESSAGES.admin.setting.httpsLink(definition.label));
   }
   return text;
 }
@@ -124,7 +125,7 @@ function validateSettingValue(definition, value) {
  */
 export async function setSetting(key, value, updatedBy = null) {
   const definition = definitionsByKey.get(key);
-  if (!definition) throw badRequest(`Configuração desconhecida: ${key}.`);
+  if (!definition) throw badRequest(MESSAGES.admin.unknownSetting(key));
   const normalized = validateSettingValue(definition, value);
   await SettingModel.updateOne({ key }, { $set: { value: normalized, updatedBy } }, { upsert: true });
   cache.clear();

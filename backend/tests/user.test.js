@@ -113,7 +113,10 @@ test("trocar e-mail exige a senha atual; campos desconhecidos são recusados", a
 test("excluir conta exige senha e invalida o token", async () => {
   const user = await registerTestUser(app);
   const wrong = await request(app).delete("/api/v1/profile").set(authorized(user.token)).send({ currentPassword: "errada123" });
-  assert.equal(wrong.status, 401);
+  // 400, não 401: senha atual errada não pode tirar a pessoa da conta (o app sai da conta em todo 401).
+  assert.equal(wrong.status, 400);
+  const stillSignedIn = await request(app).get("/api/v1/profile").set(authorized(user.token));
+  assert.equal(stillSignedIn.status, 200);
 
   const deleted = await request(app).delete("/api/v1/profile").set(authorized(user.token)).send({ currentPassword: user.password });
   assert.equal(deleted.status, 200);

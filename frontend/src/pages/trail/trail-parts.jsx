@@ -69,7 +69,6 @@ export function TrailProgress({ percent, label }) {
   );
 }
 
-/** Selo "XP" do cabeçalho (desenho do protótipo: termômetro com o selo XP). */
 /**
  * Ícone do topo que pode ser tocado: dá um pulinho e conta o toque para as conquistas ("toque X vezes no fogo"...).
  * event = tipo enviado ao servidor (tap_logo, tap_flame, tap_xp).

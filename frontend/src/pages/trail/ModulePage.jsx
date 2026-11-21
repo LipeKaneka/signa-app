@@ -8,6 +8,7 @@ import { EventBanner } from "../../components/EventBanner.jsx";
 import { TrailIcon } from "../../components/trail-icons.jsx";
 import { StatusPill, TimelineNode, TrailHeader, percentOf, useOpenWithAnimation } from "./trail-parts.jsx";
 import "./trail.css";
+import { MESSAGES } from "../../config/messages.js";
 
 /**
  * Cartão de unidade (protótipo "modulo alta 3"). 1º toque seleciona (borda roxa e botão "Continuar");
@@ -80,32 +81,24 @@ export function ModulePage() {
   const goBack = () => navigate("/trilha");
 
   // Enquanto carrega (ou se falhar), o cabeçalho e a navegação continuam na tela, como na trilha.
-  if (loading || error) {
-    return (
-      <div className="screen screen--with-nav trail-screen">
-        <TrailHeader user={user} onBack={goBack} title="Módulo" percent={0} progressLabel="Progresso no módulo" />
-        <main className="trail-content">
-          {loading ? <LoadingState message="Carregando o módulo…" /> : <ErrorState message={error.message} onRetry={reload} />}
-        </main>
-        <BottomNav />
-      </div>
-    );
-  }
+  const placeholder = (content) => (
+    <div className="screen screen--with-nav trail-screen">
+      <TrailHeader user={user} onBack={goBack} title="Módulo" percent={0} progressLabel="Progresso no módulo" />
+      <main className="trail-content">{content}</main>
+      <BottomNav />
+    </div>
+  );
+  const loadingState = <LoadingState message={MESSAGES.loading.module} />;
+  if (loading) return placeholder(loadingState);
+  if (error) return placeholder(<ErrorState message={error.message} onRetry={reload} />);
 
   const modules = data.modules;
   const position = modules.findIndex((module) => module.id === moduleId);
   const module = modules[position];
-  // Trilha guardada pode estar velha (ex.: acabou de liberar este módulo): espera a nova antes de mandar de volta.
-  if ((!module || module.status === "locked") && refreshing) {
-    return (
-      <div className="screen screen--with-nav trail-screen">
-        <TrailHeader user={user} onBack={goBack} title="Módulo" percent={0} progressLabel="Progresso no módulo" />
-        <main className="trail-content"><LoadingState message="Carregando o módulo…" /></main>
-        <BottomNav />
-      </div>
-    );
+  if (!module || module.status === "locked") {
+    // Trilha guardada pode estar velha (ex.: acabou de liberar este módulo): espera a nova antes de mandar de volta.
+    return refreshing ? placeholder(loadingState) : <Navigate to="/trilha" replace />;
   }
-  if (!module || module.status === "locked") return <Navigate to="/trilha" replace />;
 
   const activityPath = (activity) => `/atividade/${activity.id}?modulo=${module.id}`;
   const completed = module.activities.length > 0 && module.activities.every((activity) => activity.status === "completed");

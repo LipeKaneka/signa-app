@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
+import { loadAppPlugin } from "../../utils/native-app.js";
 
 /**
  * Versão do APK instalado: {name: "1.1", code: 2} (versionName e versionCode de android/app/build.gradle).
@@ -12,8 +13,8 @@ export function useAppVersion() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return undefined;
     let active = true;
-    import("@capacitor/app")
-      .then(({ App }) => App.getInfo())
+    loadAppPlugin()
+      .then((App) => App.getInfo())
       .then((info) => active && setVersion({ name: info.version, code: Number(info.build) || 0 }))
       .catch(() => {});
     return () => {

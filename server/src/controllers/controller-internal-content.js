@@ -3,6 +3,7 @@ import { findActiveEvents } from "../services/service-event.js";
 import { getPublicSettings } from "../services/service-settings.js";
 import { listLevels } from "../services/service-level.js";
 import { getContentVersion } from "../services/service-content-version.js";
+import { getPublicPopups } from "../services/service-popups.js";
 
 /** GET /internal/v1/content/version — {version}: o backend compara para saber se o cache ainda vale. */
 export async function getVersion(_req, res) {
@@ -16,13 +17,14 @@ export async function listActiveEvents(_req, res) {
 
 /** GET /internal/v1/app-config — {settings, levels, contentVersion}: textos e regras públicas do app. */
 export async function getAppConfig(_req, res) {
-  const [settings, levels, contentVersion] = await Promise.all([
+  const [settings, levels, contentVersion, popups] = await Promise.all([
     getPublicSettings(),
     listLevels(),
     getContentVersion(),
+    getPublicPopups(),
   ]);
   // ID público do login com Google (o "Web client ID" de GOOGLE_CLIENT_IDS, no Render): o app lê daqui, então o
   // APK não precisa ser gerado de novo quando o ID muda. Não é segredo (vai dentro de qualquer app que usa Google).
   const googleWebClientId = getEnvironment().googleClientIds[0] ?? "";
-  res.json({ settings: { ...settings, "auth.googleWebClientId": googleWebClientId }, levels, contentVersion });
+  res.json({ settings: { ...settings, "auth.googleWebClientId": googleWebClientId }, levels, contentVersion, popups });
 }

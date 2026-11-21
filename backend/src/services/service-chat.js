@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenAI } from "@google/genai";
 import { getEnvironment } from "../config/env.js";
 import { findSignsMentionedIn } from "./service-dictionary.js";
+import { MESSAGES } from "../config/messages.js";
 
 const SYSTEM_PROMPT = `IGNORE QUAISQUER COMANDOS ANTERIORES E FOQUE NESSE: Você é o assistente do Signa Ludus, um app para aprender Libras (Língua Brasileira de Sinais).
 Responda em português do Brasil, de forma curta, gentil e didática (no máximo 4 frases).
@@ -156,10 +157,10 @@ export function normalizeHistory(history) {
  */
 function answerFromDictionary(signs) {
   if (signs.length === 0) {
-    return "Não encontrei esse sinal no dicionário ainda. Tente procurar por outra palavra na aba Dicionário.";
+    return MESSAGES.assistant.noSignFound;
   }
   const words = signs.map((sign) => sign.word).join(", ");
-  return `Encontrei no dicionário: ${words}. Toque em um sinal abaixo para ver o avatar fazendo o gesto.`;
+  return MESSAGES.assistant.signsFound(words);
 }
 
 /**
@@ -180,11 +181,18 @@ export async function askAssistant(question, history) {
   }
 
   const deadline = Date.now() + TOTAL_BUDGET_MS;
+  // A busca pela pergunta crua não depende da IA: roda enquanto ela escolhe os termos (antes esperava a IA terminar).
+  // O catch já fica preso aqui: uma falha enquanto a IA pensa não pode virar "promessa rejeitada sem tratamento"
+  // (o Node derrubaria o processo). Sem dicionário, a IA responde sem os sinais.
+  const fromQuestionPromise = findSignsMentionedIn(question, MAX_SIGNS).catch((error) => {
+    console.error("Busca de sinais pela pergunta falhou:", error.message);
+    return [];
+  });
   const terms = await extractSearchTerms(question, deadline);
   // Termos da IA só batem exatos ("amar" não pode virar "amarelo"); a pergunta crua também busca palavras parecidas.
   const [fromTerms, fromQuestion] = await Promise.all([
     terms.length ? findSignsMentionedIn(terms.join(", "), MAX_SIGNS, { prefix: false }) : [],
-    findSignsMentionedIn(question, MAX_SIGNS),
+    fromQuestionPromise,
   ]);
   const signs = [...fromTerms, ...fromQuestion]
     .filter((sign, index, all) => all.findIndex((other) => other.slug === sign.slug) === index)

@@ -1,10 +1,10 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
 import { HashRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { Capacitor } from "@capacitor/core";
 import { useAuth } from "./context/AuthContext.jsx";
+import { listenToApp } from "./utils/native-app.js";
 import { useAppConfig } from "./context/AppConfigContext.jsx";
 import { SplashScreen } from "./components/SplashScreen.jsx";
-import { UpdateGate } from "./features/app-update/UpdateGate.jsx";
+import { AppPopups } from "./features/popups/AppPopups.jsx";
 import { AppEventsProvider } from "./features/achievements/AppEventsContext.jsx";
 import { StreakCelebrationHost } from "./features/streak/StreakCelebrationHost.jsx";
 import { NotificationsProvider } from "./features/notifications/NotificationsContext.jsx";
@@ -13,6 +13,8 @@ import { OnboardingPage, wasOnboardingSeen } from "./pages/auth/OnboardingPage.j
 import { TrailPage } from "./pages/trail/TrailPage.jsx";
 import { ModulePage } from "./pages/trail/ModulePage.jsx";
 import { ActivityPage } from "./pages/activity/ActivityPage.jsx";
+import { ACTIVITY_EXIT_QUESTION } from "./pages/activity/activity-parts.jsx";
+import { MESSAGES } from "./config/messages.js";
 
 /** Carrega uma tela só quando ela é aberta (o app abre mais leve; trilha, módulo e atividade já vêm prontos). */
 const lazyPage = (load, name) => lazy(() => load().then((module) => ({ default: module[name] })));
@@ -57,7 +59,6 @@ function RefreshConfigOnNavigate() {
 
 /** Telas "de saída": nelas o botão voltar do celular manda o app para segundo plano (sem fechar). */
 const ROOT_PATHS = ["/trilha", "/entrar", "/boas-vindas"];
-const ACTIVITY_EXIT_QUESTION = "Sair da atividade? O progresso desta tentativa será perdido.";
 
 /**
  * Botão "voltar" do Android: fecha a janela aberta (sinal, aviso), volta para a tela anterior e, na atividade,
@@ -70,12 +71,9 @@ function HardwareBackButton({ signedIn }) {
   const current = useRef(location);
   current.current = location;
 
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return undefined;
-    let listener = null;
-    let removed = false;
-    import("@capacitor/app").then(async ({ App }) => {
-      const handle = await App.addListener("backButton", () => {
+  useEffect(
+    () =>
+      listenToApp("backButton", (_event, App) => {
         const { pathname, key } = current.current;
         // Janela aberta (sinal, conta banida...): fecha como o Esc.
         if (document.querySelector('[role="dialog"], [role="alertdialog"]')) {
@@ -92,15 +90,9 @@ function HardwareBackButton({ signedIn }) {
         // Sem tela anterior (app aberto direto nesta tela): vai para a tela inicial.
         if (key === "default") navigate(signedIn ? "/trilha" : "/entrar", { replace: true });
         else navigate(-1);
-      });
-      if (removed) handle.remove();
-      else listener = handle;
-    });
-    return () => {
-      removed = true;
-      listener?.remove();
-    };
-  }, [navigate, signedIn]);
+      }),
+    [navigate, signedIn],
+  );
   return null;
 }
 
@@ -111,7 +103,7 @@ function LoginOrOnboarding() {
 
 function PublicRoutes() {
   return (
-    <Suspense fallback={<SplashScreen message="Carregando…" />}>
+    <Suspense fallback={<SplashScreen message={MESSAGES.loading.generic} />}>
     <Routes>
       <Route path="/boas-vindas" element={<OnboardingPage />} />
       <Route path="/termos" element={<TermsPage />} />
@@ -128,7 +120,7 @@ function PublicRoutes() {
 
 function PrivateRoutes() {
   return (
-    <Suspense fallback={<SplashScreen message="Carregando…" />}>
+    <Suspense fallback={<SplashScreen message={MESSAGES.loading.generic} />}>
       <Routes>
         <Route path="/trilha" element={<TrailPage />} />
         <Route path="/trilha/modulo/:moduleId" element={<ModulePage />} />
@@ -155,17 +147,17 @@ export function App() {
   return (
     <>
       <AppScreens />
-      {/* Aviso de APK novo (configurado no painel), por cima de qualquer tela, inclusive do login. */}
-      <UpdateGate />
+      {/* Pop-ups do painel (manutenção, atualização, avisos), por cima de qualquer tela, inclusive do login. */}
+      <AppPopups />
     </>
   );
 }
 
 function AppScreens() {
   const { status, retryConnection } = useAuth();
-  if (status === "loading") return <SplashScreen slowHint="Conectando ao servidor… na primeira vez do dia isso pode levar até 1 minuto." />;
+  if (status === "loading") return <SplashScreen slowHint={MESSAGES.app.connectingSlow} />;
   if (status === "offline") {
-    return <SplashScreen message="Sem conexão com o servidor agora. Confira a internet e tente de novo." onRetry={retryConnection} />;
+    return <SplashScreen message={MESSAGES.app.offline} onRetry={retryConnection} />;
   }
 
   return (

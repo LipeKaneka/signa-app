@@ -38,6 +38,7 @@ const SECTIONS = [
     tabs: [
       { to: "/usuarios", label: "Usuários", icon: "users", permission: "read" },
       { to: "/notificacoes", label: "Notificações", icon: "bell", permission: "read" },
+      { to: "/popups", label: "Pop-ups", icon: "bell", permission: "read" },
     ],
   },
   {

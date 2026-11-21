@@ -47,5 +47,7 @@ const attemptSchema = new mongoose.Schema(
 );
 
 attemptSchema.index({ user: 1, activity: 1, status: 1 });
+// Estatísticas do painel (tentativas concluídas por período): sem este índice, cada gráfico lia a coleção inteira.
+attemptSchema.index({ status: 1, finishedAt: -1 });
 
 export const AttemptModel = mongoose.model("Attempt", attemptSchema);

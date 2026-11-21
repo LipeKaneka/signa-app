@@ -61,7 +61,7 @@ export const NOTIFICATION_TYPES = Object.freeze([
   {
     type: "app_update",
     label: "Nova versão do app",
-    when: "Quando o número da versão nova muda em Configurações → Atualização do app (ou \"Buscar no GitHub\").",
+    when: "Quando o número da versão nova muda em Pop-ups → Atualizações (ou \"Buscar no GitHub\").",
     audience: "all",
     title: "Nova versão do Signa",
     body: "A versão {version} chegou. Abra o app para atualizar.",

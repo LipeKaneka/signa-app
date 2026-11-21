@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Icon } from "../../components/Icon.jsx";
 import { SignDialog } from "../../components/SignDialog.jsx";
 import { prefersReducedMotion } from "../../utils/motion.js";
-import { AchievementToast } from "../../components/AchievementToast.jsx";
+import { AchievementToast, toAchievementToast } from "../../components/AchievementToast.jsx";
 import { formatMultiplier } from "../../components/EventBanner.jsx";
 import { useAppConfig } from "../../context/AppConfigContext.jsx";
 import { formatCompact, formatFull } from "../../utils/format-number.js";
@@ -26,6 +26,9 @@ function WrongMark() {
   );
 }
 
+/** Duração da abertura (círculo + título + subtítulo + resto), como na animação do protótipo. */
+const INTRO_MS = 3000;
+
 /**
  * Tela "Você viu N sinais nessa atividade" (protótipo 14/15).
  * reviewItems = [{key, correct, answer, avatar}] na ordem das perguntas.
@@ -33,9 +36,6 @@ function WrongMark() {
  * Conquistas novas e nível novo aparecem como aviso no topo (AchievementToast) e ficam listados na tela.
  * earnedDuringActivity = conquistas já avisadas durante a atividade (só listadas aqui, sem aviso de novo).
  */
-/** Duração da abertura (círculo + título + subtítulo + resto), como na animação do protótipo. */
-const INTRO_MS = 3000;
-
 export function ActivityResult({ result, levelUp, reviewItems, earnedDuringActivity = [], onContinue, onBack }) {
   const [openItem, setOpenItem] = useState(null);
   // Abertura animada: um toque na tela pula direto para o fim (e não aciona nada escondido durante ela).
@@ -56,7 +56,7 @@ export function ActivityResult({ result, levelUp, reviewItems, earnedDuringActiv
   const { minScoreToPass } = useAppConfig();
   const multiplier = result.xpMultiplier ?? 1;
   const toasts = [
-    ...result.newAchievements.map((achievement) => ({ id: `achievement-${achievement.id}`, kind: "achievement", title: achievement.title, appearance: achievement.appearance, rarity: achievement.rarity })),
+    ...result.newAchievements.map(toAchievementToast),
     ...(levelUp ? [{ id: `level-${levelUp.level}`, kind: "level", title: `Nível ${levelUp.level}: ${levelUp.title}` }] : []),
   ];
 

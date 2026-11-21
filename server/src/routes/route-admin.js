@@ -8,6 +8,7 @@ import * as UsersController from "../controllers/admin/controller-admin-users.js
 import * as OverviewController from "../controllers/admin/controller-admin-overview.js";
 import * as DatabaseController from "../controllers/admin/controller-admin-database.js";
 import * as NotificationsController from "../controllers/admin/controller-admin-notifications.js";
+import * as PopupsController from "../controllers/admin/controller-admin-popups.js";
 import { requireAdminRequest, requireAdmin, requireRole } from "../middlewares/admin-auth-middleware.js";
 import { PERMISSIONS } from "../config/admin-permissions.js";
 import { asyncHandler } from "../utils/util-async-handler.js";
@@ -83,6 +84,14 @@ adminRouter.put("/notifications/types/:type", manage, asyncHandler(Notifications
 adminRouter.delete("/notifications/types/:type", manage, asyncHandler(NotificationsController.resetType));
 adminRouter.post("/notifications/send", manage, asyncHandler(NotificationsController.send));
 adminRouter.get("/notifications/history", read, asyncHandler(NotificationsController.history));
+
+// Pop-ups do app: avisos, manutenção (as atualizações usam as configurações app.update.*).
+adminRouter.get("/popups/announcements", read, asyncHandler(PopupsController.listAnnouncements));
+adminRouter.post("/popups/announcements", manage, asyncHandler(PopupsController.createAnnouncement));
+adminRouter.patch("/popups/announcements/:id", manage, asyncHandler(PopupsController.updateAnnouncement));
+adminRouter.delete("/popups/announcements/:id", manage, asyncHandler(PopupsController.deleteAnnouncement));
+adminRouter.get("/popups/maintenance", read, asyncHandler(PopupsController.getMaintenance));
+adminRouter.put("/popups/maintenance", manage, asyncHandler(PopupsController.updateMaintenance));
 
 adminRouter.get("/users", read, asyncHandler(UsersController.list));
 adminRouter.get("/users/:id", read, asyncHandler(UsersController.detail));

@@ -1,6 +1,7 @@
 import { SignModel } from "../models/model-sign.js";
 import { notFound } from "../utils/util-http-error.js";
 import { normalizeText, escapeRegExp } from "../utils/util-text.js";
+import { MESSAGES } from "../config/messages.js";
 
 /**
  * Verbete no formato da API (com avatar: {gloss, reviewed} quando houver glosa VLibras).
@@ -63,7 +64,7 @@ export async function listCategories() {
  */
 export async function getSignBySlug(slug) {
   const sign = await SignModel.findOne({ slug, active: { $ne: false } }).lean();
-  if (!sign) throw notFound("Sinal não encontrado no dicionário.");
+  if (!sign) throw notFound(MESSAGES.dictionary.signNotFound);
   return toPublicSign(sign);
 }
 

@@ -355,7 +355,6 @@ button:disabled {
 .button-primary,
 .option-button,
 .icon-button,
-.trail-node__button,
 .profile-shortcut,
 .ranking-tabs__tab,
 .sign-list__item,
@@ -373,7 +372,6 @@ button:disabled {
 .button-primary:active:not(:disabled),
 .option-button:active:not(:disabled),
 .icon-button:active,
-.trail-node__button:active:not(:disabled),
 .profile-shortcut:active,
 .ranking-tabs__tab:active,
 .sign-list__item:active,
@@ -387,11 +385,6 @@ button:disabled {
 .translator-drawer__links a:active {
   transform: scale(var(--press-scale));
   filter: brightness(0.95);
-}
-
-/* O nó da trilha pulsa: o toque reduz a partir da escala atual sem brigar com a animação. */
-.trail-node__button--available:active {
-  animation-play-state: paused;
 }
 
 /* ---------- Reduzir movimento (configuração de acessibilidade do aparelho) ---------- */
@@ -408,18 +401,12 @@ button:disabled {
     transition-duration: 0.01ms !important;
   }
 
-  /* Loops decorativos param de vez (com duração mínima eles piscariam). */
-  .trail-node__button--available {
-    animation: none !important;
-  }
-
   .spinner {
     animation: spin 1.5s linear infinite !important;
   }
 
   .button-primary:active,
-  .option-button:active,
-  .trail-node__button:active {
+  .option-button:active {
     transform: none;
   }
 }

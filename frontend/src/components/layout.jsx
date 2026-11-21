@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { Icon } from "./Icon.jsx";
 import { RankMedal } from "./illustrations.jsx";
+import { MESSAGES } from "../config/messages.js";
 
 /**
  * Cabeçalho roxo com voltar opcional. subtitle aparece em verde (ex.: "Online").
@@ -82,7 +83,7 @@ export function ScreenWithNav({
 /**
  * Indicador de carregamento dentro de uma tela.
  */
-export function LoadingState({ message = "Carregando…" }) {
+export function LoadingState({ message = MESSAGES.loading.generic }) {
   return (
     <div className="state-message" role="status">
       <div className="spinner" aria-hidden="true" />

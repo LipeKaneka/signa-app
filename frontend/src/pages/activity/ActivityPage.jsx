@@ -10,11 +10,12 @@ import { SignAvatar } from "../../features/vlibras/SignAvatar.jsx";
 import { replayLastSign } from "../../features/vlibras/vlibras-player.js";
 import { Icon } from "../../components/Icon.jsx";
 import { playAnswerFeedback } from "../../utils/feedback-effects.js";
-import { ActivityHeader, FeedbackSheet, OptionsGrid } from "./activity-parts.jsx";
+import { ACTIVITY_EXIT_QUESTION, ActivityHeader, FeedbackSheet, OptionsGrid } from "./activity-parts.jsx";
 import { ActivityResult } from "./ActivityResult.jsx";
 import { EventBanner } from "../../components/EventBanner.jsx";
-import { AchievementToast } from "../../components/AchievementToast.jsx";
+import { AchievementToast, toAchievementToast } from "../../components/AchievementToast.jsx";
 import "./activity.css";
+import { MESSAGES } from "../../config/messages.js";
 
 // A pergunta de câmera carrega o MediaPipe (pesado): só baixa quando a atividade tem uma.
 const CameraSignQuestion = lazy(() => import("./CameraSignQuestion.jsx"));
@@ -70,7 +71,7 @@ export function ActivityPage() {
 
   const goToTrail = () => navigate(moduleId ? `/trilha/modulo/${moduleId}` : "/trilha");
 
-  if (loading) return <LoadingState message="Preparando a atividade…" />;
+  if (loading) return <LoadingState message={MESSAGES.loading.activity} />;
   if (error) return <ErrorState message={error.message} onRetry={error.status === 403 ? goToTrail : reload} />;
 
   const questions = attempt.activity.questions;
@@ -142,7 +143,7 @@ export function ActivityPage() {
   }
 
   function exitActivity() {
-    if (window.confirm("Sair da atividade? O progresso desta tentativa será perdido.")) goToTrail();
+    if (window.confirm(ACTIVITY_EXIT_QUESTION)) goToTrail();
   }
 
   return (
@@ -163,7 +164,7 @@ export function ActivityPage() {
         </div>
 
         {question.type === "camera_sign" ? (
-          <Suspense fallback={<LoadingState message="Abrindo a câmera…" />}>
+          <Suspense fallback={<LoadingState message={MESSAGES.loading.camera} />}>
             <CameraSignQuestion key={question.key} question={question} answered={Boolean(feedback)} onAnswer={selectOption} />
           </Suspense>
         ) : (
@@ -198,7 +199,7 @@ export function ActivityPage() {
           explanation={isTextQuestion(question) ? feedback.explanation : ""}
         />
       )}
-      <AchievementToast items={liveAchievements.map((achievement) => ({ id: `achievement-${achievement.id}`, kind: "achievement", title: achievement.title, appearance: achievement.appearance, rarity: achievement.rarity }))} />
+      <AchievementToast items={liveAchievements.map(toAchievementToast)} />
     </div>
   );
 }

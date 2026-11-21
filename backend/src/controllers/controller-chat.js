@@ -1,6 +1,7 @@
 import * as ChatService from "../services/service-chat.js";
 import { readRequiredString } from "../utils/util-validators.js";
 import { badRequest } from "../utils/util-http-error.js";
+import { MESSAGES } from "../config/messages.js";
 
 const MAX_HISTORY_MESSAGES = 10;
 
@@ -12,10 +13,10 @@ const MAX_HISTORY_MESSAGES = 10;
  */
 function readHistory(value) {
   if (value === undefined) return [];
-  if (!Array.isArray(value)) throw badRequest("Histórico inválido.");
+  if (!Array.isArray(value)) throw badRequest(MESSAGES.validation.chatHistory);
 
   const messages = value.slice(-MAX_HISTORY_MESSAGES).map((message) => {
-    if (!["user", "assistant"].includes(message?.role)) throw badRequest("Histórico inválido.");
+    if (!["user", "assistant"].includes(message?.role)) throw badRequest(MESSAGES.validation.chatHistory);
     return { role: message.role, content: readRequiredString(message.content, "a mensagem", 2000) };
   });
   while (messages.length > 0 && messages[0].role !== "user") messages.shift();

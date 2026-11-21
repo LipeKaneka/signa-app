@@ -13,6 +13,7 @@ import { SENSITIVITIES, useSignTranslator } from "../../features/translator/useS
 import { wasHandAnalysisSeen } from "../../features/translator/translator-preferences.js";
 import { TranslatorDrawer } from "./TranslatorDrawer.jsx";
 import { CameraStatusCover } from "./CameraStatusCover.jsx";
+import { CameraFeed } from "./CameraFeed.jsx";
 import "./camera.css";
 
 const NEXT_TARGET_DELAY_MS = 1200;
@@ -117,8 +118,7 @@ function CameraScreen() {
       </header>
 
       <div className={`camera-view${mirrored ? " camera-view--mirrored" : ""}`}>
-        <video ref={camera.videoRef} playsInline muted aria-label="Imagem da câmera" />
-        <canvas ref={camera.canvasRef} aria-hidden="true" />
+        <CameraFeed camera={camera} />
       </div>
       {camera.status !== "ready" && <CameraStatusCover camera={camera} />}
 

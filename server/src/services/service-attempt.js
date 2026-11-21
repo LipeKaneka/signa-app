@@ -1,16 +1,16 @@
 import { AttemptModel } from "../models/model-attempt.js";
-import { ActivityModel } from "../models/model-activity.js";
 import { getProgressRules } from "./service-settings.js";
 import { getXpMultiplier } from "./service-event.js";
 import { describeLevel } from "./service-level.js";
 import { notFound, conflict, badRequest } from "../utils/util-http-error.js";
 import { UserModel } from "../models/model-user.js";
-import { findUnlockedActivity } from "./service-trail.js";
+import { findActivityForGrading, findUnlockedActivity } from "./service-trail.js";
 import { registerActivityDay } from "./service-streak.js";
 import { readUserAchievementMetrics, readAchievementOverrides, findNewlyUnlocked, listAchievementsWithProgress, recordUnlockDates } from "./service-achievement.js";
-import { toPublicProfile } from "./service-user.js";
+import { SESSION_PROFILE, toPublicProfile } from "./service-user.js";
 import { notifyAchievements, notifyLevelUp } from "./service-notification.js";
 import { CAMERA_UNAVAILABLE_OPTION, findCameraTarget } from "../config/camera-targets.js";
+import { MESSAGES } from "../config/messages.js";
 
 /**
  * Versão da pergunta que pode ir para o app: SEM gabarito e, em "sign_choice", só com a glosa
@@ -109,12 +109,12 @@ export async function startAttempt(user, activityId) {
  */
 async function findOpenAttempt(user, attemptId) {
   const attempt = await AttemptModel.findOne({ _id: attemptId, user: user._id });
-  if (!attempt) throw notFound("Tentativa não encontrada.");
-  if (attempt.status !== "in_progress") throw conflict("Esta tentativa já foi encerrada.");
+  if (!attempt) throw notFound(MESSAGES.attempt.notFound);
+  if (attempt.status !== "in_progress") throw conflict(MESSAGES.attempt.alreadyFinished);
   if (attempt.expiresAt < new Date()) {
     attempt.status = "expired";
     await attempt.save();
-    throw conflict("Esta tentativa expirou. Comece de novo.");
+    throw conflict(MESSAGES.attempt.expired);
   }
   return attempt;
 }
@@ -134,22 +134,24 @@ async function findOpenAttempt(user, attemptId) {
  */
 export async function answerQuestion(user, attemptId, questionKey, optionId) {
   const attempt = await findOpenAttempt(user, attemptId);
-  const activity = await ActivityModel.findById(attempt.activity).lean();
+  // Em cache (findActivityForGrading): a mesma atividade era lida do banco a cada resposta.
+  const activity = await findActivityForGrading(String(attempt.activity));
+  if (!activity) throw notFound(MESSAGES.attempt.activityNotFound);
   const question = activity.questions.find((q) => q.key === questionKey);
-  if (!question) throw badRequest("Pergunta não encontrada nesta atividade.");
+  if (!question) throw badRequest(MESSAGES.attempt.questionNotFound);
   if (attempt.questionKeys?.length && !attempt.questionKeys.includes(questionKey)) {
-    throw badRequest("Esta pergunta não faz parte desta tentativa.");
+    throw badRequest(MESSAGES.attempt.questionNotInAttempt);
   }
   // Pergunta de câmera sem câmera no aparelho: registra como pulada (fora da nota), sem contar como erro.
   const skipped = question.type === "camera_sign" && optionId === CAMERA_UNAVAILABLE_OPTION;
-  if (!skipped && !question.options.some((option) => option.id === optionId)) throw badRequest("Alternativa inválida.");
+  if (!skipped && !question.options.some((option) => option.id === optionId)) throw badRequest(MESSAGES.attempt.invalidOption);
 
   const correct = !skipped && question.correctOptionId === optionId;
   const updated = await AttemptModel.findOneAndUpdate(
     { _id: attempt._id, status: "in_progress", "answers.questionKey": { $ne: questionKey } },
     { $push: { answers: { questionKey, optionId, correct, skipped } } },
   );
-  if (!updated) throw conflict("Esta pergunta já foi respondida.");
+  if (!updated) throw conflict(MESSAGES.attempt.alreadyAnswered);
 
   const newAchievements = correct && attempt.liveCorrectAnswers ? await countCorrectAnswerNow(user) : [];
   const rules = await getProgressRules();
@@ -237,9 +239,9 @@ export async function finishAttempt(user, attemptId) {
     { status: "finished", finishedAt: new Date() },
     { returnDocument: "after" },
   );
-  if (!closed) throw conflict("Esta tentativa já foi encerrada.");
+  if (!closed) throw conflict(MESSAGES.attempt.alreadyFinished);
 
-  const activity = await ActivityModel.findById(closed.activity).select("questions.key").lean();
+  const activity = (await findActivityForGrading(String(closed.activity))) ?? { questions: [] };
   // Tentativas antigas (antes do sorteio) não têm questionKeys: valem todas as perguntas da atividade.
   // Perguntas de câmera puladas por falta de câmera não contam na nota.
   const skippedAnswers = closed.answers.filter((answer) => answer.skipped).length;
@@ -274,5 +276,5 @@ export async function finishAttempt(user, attemptId) {
   const levelAfter = await describeLevel(user.xp);
   // Notificações (sino e celular): não esperam, para não atrasar a tela de resultado.
   notifyAchievements(user._id, newAchievements).then(() => notifyLevelUp(user._id, levelBefore, levelAfter)).catch(() => {});
-  return { result, user: { ...toPublicProfile(user), level: levelAfter } };
+  return { result, user: { ...toPublicProfile(user, SESSION_PROFILE), level: levelAfter } };
 }

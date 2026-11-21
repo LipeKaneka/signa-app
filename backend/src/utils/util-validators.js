@@ -1,5 +1,6 @@
 import { PASSWORD_RULES } from "../config/rules.js";
 import { badRequest } from "./util-http-error.js";
+import { MESSAGES } from "../config/messages.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -14,11 +15,11 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  */
 export function readRequiredString(value, fieldLabel, maxLength = 200) {
   if (typeof value !== "string" || value.trim() === "") {
-    throw badRequest(`Informe ${fieldLabel}.`);
+    throw badRequest(MESSAGES.validation.required(fieldLabel));
   }
   const text = value.trim();
   if (text.length > maxLength) {
-    throw badRequest(`${fieldLabel} pode ter no máximo ${maxLength} caracteres.`);
+    throw badRequest(MESSAGES.validation.tooLong(fieldLabel, maxLength));
   }
   return text;
 }
@@ -29,10 +30,10 @@ export function readRequiredString(value, fieldLabel, maxLength = 200) {
  */
 export function readOptionalString(value, fieldLabel, maxLength = 200) {
   if (value === undefined || value === null) return undefined;
-  if (typeof value !== "string") throw badRequest(`${fieldLabel} inválido.`);
+  if (typeof value !== "string") throw badRequest(MESSAGES.validation.invalid(fieldLabel));
   const text = value.trim();
   if (text.length > maxLength) {
-    throw badRequest(`${fieldLabel} pode ter no máximo ${maxLength} caracteres.`);
+    throw badRequest(MESSAGES.validation.tooLong(fieldLabel, maxLength));
   }
   return text;
 }
@@ -44,7 +45,7 @@ export function readOptionalString(value, fieldLabel, maxLength = 200) {
  */
 export function readEmail(value) {
   const email = readRequiredString(value, "o e-mail", 254).toLowerCase();
-  if (!EMAIL_PATTERN.test(email)) throw badRequest("E-mail inválido.");
+  if (!EMAIL_PATTERN.test(email)) throw badRequest(MESSAGES.validation.invalidEmail);
   return email;
 }
 
@@ -55,11 +56,11 @@ export function readEmail(value) {
  */
 export function readNewPassword(value) {
   if (typeof value !== "string" || value.length < PASSWORD_RULES.MIN_LENGTH) {
-    throw badRequest(`A senha precisa ter pelo menos ${PASSWORD_RULES.MIN_LENGTH} caracteres.`);
+    throw badRequest(MESSAGES.validation.passwordTooShort(PASSWORD_RULES.MIN_LENGTH));
   }
-  if (value.length > 128) throw badRequest("A senha pode ter no máximo 128 caracteres.");
+  if (value.length > 128) throw badRequest(MESSAGES.validation.passwordTooLong);
   if (!/[a-zA-Z]/.test(value) || !/[0-9]/.test(value)) {
-    throw badRequest("A senha precisa ter letras e números.");
+    throw badRequest(MESSAGES.validation.passwordNeedsLettersAndNumbers);
   }
   return value;
 }
@@ -71,7 +72,7 @@ export function readNewPassword(value) {
  */
 export function readBoolean(value, fieldLabel) {
   if (value === undefined) return undefined;
-  if (typeof value !== "boolean") throw badRequest(`${fieldLabel} deve ser verdadeiro ou falso.`);
+  if (typeof value !== "boolean") throw badRequest(MESSAGES.validation.mustBeBoolean(fieldLabel));
   return value;
 }
 
@@ -104,7 +105,7 @@ export const AVATAR_THUMB_MAX_LENGTH = 8000;
  */
 export function readAvatar(value, maxLength = AVATAR_MAX_LENGTH) {
   if (value === undefined || value === "") return value;
-  if (typeof value !== "string" || !AVATAR_PATTERN.test(value)) throw badRequest("A foto precisa ser uma imagem JPEG, PNG ou WebP.");
-  if (value.length > maxLength) throw badRequest("A foto é grande demais. Escolha outra imagem.");
+  if (typeof value !== "string" || !AVATAR_PATTERN.test(value)) throw badRequest(MESSAGES.validation.avatarType);
+  if (value.length > maxLength) throw badRequest(MESSAGES.validation.avatarTooBig);
   return value;
 }

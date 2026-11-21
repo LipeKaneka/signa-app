@@ -2,6 +2,7 @@ import { AdminModel, ADMIN_ROLES } from "../models/model-admin.js";
 import { badRequest, conflict, notFound } from "../utils/util-http-error.js";
 import { toPublicAdmin, hashAdminPassword, endAllAdminSessions } from "./service-admin-auth.js";
 import { recordAudit } from "./service-audit.js";
+import { MESSAGES } from "../config/messages.js";
 
 /**
  * Confere se o papel existe.
@@ -10,7 +11,7 @@ import { recordAudit } from "./service-audit.js";
  * @throws {HttpError} 400 se não for um de ADMIN_ROLES.
  */
 export function readRole(role) {
-  if (!ADMIN_ROLES.includes(role)) throw badRequest(`Papel inválido. Use: ${ADMIN_ROLES.join(", ")}.`);
+  if (!ADMIN_ROLES.includes(role)) throw badRequest(MESSAGES.admin.invalidRole(ADMIN_ROLES));
   return role;
 }
 
@@ -33,7 +34,7 @@ export async function listAdmins() {
  * Usado por: POST /admin/api/v1/admins e scripts/create-owner.js.
  */
 export async function createAdmin(actor, { email, name, role, password }) {
-  if (await AdminModel.exists({ email })) throw conflict("Já existe uma conta do painel com este e-mail.");
+  if (await AdminModel.exists({ email })) throw conflict(MESSAGES.admin.accountEmailTaken);
   const admin = await AdminModel.create({ email, name, role: readRole(role), passwordHash: await hashAdminPassword(password) });
   await recordAudit(actor, { action: "create", entity: "admin", entityId: admin._id, summary: `Conta ${email} (${role})`, after: admin });
   return toPublicAdmin(admin);
@@ -51,7 +52,7 @@ async function keepAnActiveOwner(target, changes) {
     ((changes.role !== undefined && changes.role !== "owner") || changes.status === "disabled");
   if (!stopsBeingActiveOwner) return;
   const activeOwners = await AdminModel.countDocuments({ role: "owner", status: "active" });
-  if (activeOwners <= 1) throw badRequest("O painel precisa de pelo menos um owner ativo.");
+  if (activeOwners <= 1) throw badRequest(MESSAGES.admin.needsOneOwner);
 }
 
 /**
@@ -66,13 +67,13 @@ async function keepAnActiveOwner(target, changes) {
  */
 export async function updateAdmin(actor, adminId, changes) {
   const target = await AdminModel.findById(adminId);
-  if (!target) throw notFound("Conta do painel não encontrada.");
+  if (!target) throw notFound(MESSAGES.admin.accountNotFound);
   const isSelf = String(target._id) === String(actor.admin._id);
   if (isSelf && (changes.role !== undefined || changes.status !== undefined)) {
-    throw badRequest("Você não pode mudar o seu próprio papel ou status.");
+    throw badRequest(MESSAGES.admin.cannotChangeOwnAccount);
   }
   if (changes.role !== undefined) readRole(changes.role);
-  if (changes.status !== undefined && !["active", "disabled"].includes(changes.status)) throw badRequest("Status inválido.");
+  if (changes.status !== undefined && !["active", "disabled"].includes(changes.status)) throw badRequest(MESSAGES.admin.invalidStatus);
   await keepAnActiveOwner(target, changes);
 
   const before = target.toObject();
@@ -97,7 +98,7 @@ export async function updateAdmin(actor, adminId, changes) {
  */
 export async function resetAdminPassword(actor, adminId, password) {
   const target = await AdminModel.findById(adminId);
-  if (!target) throw notFound("Conta do painel não encontrada.");
+  if (!target) throw notFound(MESSAGES.admin.accountNotFound);
   target.passwordHash = await hashAdminPassword(password);
   await target.save();
   await endAllAdminSessions(target._id);

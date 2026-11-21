@@ -1,6 +1,7 @@
 import * as DatabaseService from "../../services/service-admin-database.js";
 import { readActor } from "../../middlewares/admin-auth-middleware.js";
 import { readOptionalString, readPositiveInteger } from "../../utils/util-validators.js";
+import { MESSAGES } from "../../config/messages.js";
 
 /** GET /admin/api/v1/database/collections — coleções do explorador com contagem e permissões. */
 export async function listCollections(_req, res) {
@@ -36,7 +37,7 @@ export async function createDocument(req, res) {
 /** DELETE /admin/api/v1/database/collections/:key/documents/:id — exige {confirm: "EXCLUIR"}. */
 export async function deleteDocument(req, res) {
   if (req.body?.confirm !== "EXCLUIR") {
-    res.status(400).json({ error: "Para excluir, confirme digitando EXCLUIR." });
+    res.status(400).json({ error: MESSAGES.admin.confirmDeletion });
     return;
   }
   await DatabaseService.deleteDocument(readActor(req), req.params.key, req.params.id);

@@ -1,11 +1,11 @@
 import { randomBytes, createHash } from "node:crypto";
-import bcrypt from "bcryptjs";
+import { hashPassword, verifyPassword } from "../utils/util-password.js";
 import { AdminModel } from "../models/model-admin.js";
 import { AdminSessionModel } from "../models/model-admin-session.js";
-import { PASSWORD_RULES } from "../config/rules.js";
 import { getEnvironment } from "../config/env.js";
-import { HttpError, unauthorized, forbidden } from "../utils/util-http-error.js";
+import { HttpError, badRequest, unauthorized, forbidden } from "../utils/util-http-error.js";
 import { recordAudit } from "./service-audit.js";
+import { MESSAGES } from "../config/messages.js";
 
 /** Limites de tentativas de login erradas numa janela de tempo (protege contra adivinhação de senha). */
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
@@ -16,7 +16,7 @@ const failures = new Map();
 
 /** Hash qualquer para comparar quando o e-mail não existe (o tempo de resposta não revela quem tem conta). */
 let dummyHashPromise = null;
-const readDummyHash = () => (dummyHashPromise ??= bcrypt.hash(randomBytes(16).toString("hex"), PASSWORD_RULES.BCRYPT_ROUNDS));
+const readDummyHash = () => (dummyHashPromise ??= hashPassword(randomBytes(16).toString("hex")));
 
 /**
  * SHA-256 do token de sessão (o banco guarda só isto).
@@ -85,18 +85,18 @@ export async function signInAdmin({ email, password, ip, userAgent }) {
   const emailKey = `email:${email}`;
   const ipKey = `ip:${ip}`;
   if (countRecentFailures(emailKey, now) >= MAX_FAILURES_PER_EMAIL || countRecentFailures(ipKey, now) >= MAX_FAILURES_PER_IP) {
-    throw new HttpError(429, "Muitas tentativas de login. Espere 15 minutos e tente de novo.");
+    throw new HttpError(429, MESSAGES.admin.tooManyLoginAttempts);
   }
 
   const admin = await AdminModel.findOne({ email }).select("+passwordHash");
-  const passwordMatches = await bcrypt.compare(password, admin ? admin.passwordHash : await readDummyHash());
+  const passwordMatches = await verifyPassword(password, admin ? admin.passwordHash : await readDummyHash());
   if (!admin || !passwordMatches) {
     registerFailure(emailKey, now);
     registerFailure(ipKey, now);
     await recordAudit({ admin: null, ip }, { action: "login_failed", entity: "admin", summary: `Login recusado para ${email}` });
-    throw unauthorized("E-mail ou senha incorretos.");
+    throw unauthorized(MESSAGES.account.wrongCredentials);
   }
-  if (admin.status !== "active") throw forbidden("Conta do painel desativada.");
+  if (admin.status !== "active") throw forbidden(MESSAGES.admin.accountDisabled);
 
   failures.delete(emailKey);
   const token = randomBytes(32).toString("hex");
@@ -150,7 +150,7 @@ export async function endAllAdminSessions(adminId, exceptSessionId = null) {
  * @returns {Promise<string>}
  */
 export function hashAdminPassword(password) {
-  return bcrypt.hash(password, PASSWORD_RULES.BCRYPT_ROUNDS);
+  return hashPassword(password);
 }
 
 /**
@@ -163,8 +163,9 @@ export function hashAdminPassword(password) {
  */
 export async function changeOwnPassword(actor, currentPassword, newPassword) {
   const admin = await AdminModel.findById(actor.admin._id).select("+passwordHash");
-  if (typeof currentPassword !== "string" || !(await bcrypt.compare(currentPassword, admin.passwordHash))) {
-    throw unauthorized("Senha atual incorreta.");
+  if (typeof currentPassword !== "string" || !(await verifyPassword(currentPassword, admin.passwordHash))) {
+    // 400, não 401: o app e o painel entendem 401 como sessão vencida e tirariam a pessoa da conta.
+    throw badRequest(MESSAGES.account.currentPasswordWrong);
   }
   admin.passwordHash = await hashAdminPassword(newPassword);
   await admin.save();

@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEscapeKey } from "../hooks/useEscapeKey.js";
 import { Icon } from "./Icon.jsx";
 import "./ban-dialog.css";
+import { MESSAGES } from "../config/messages.js";
 
 /** "12/11/2026 às 14:30" no horário do aparelho. */
 function formatEnd(until) {
@@ -23,11 +24,7 @@ function describeRemaining(until) {
  * Usado por: LoginPage.
  */
 export function BanDialog({ ban, onClose }) {
-  useEffect(() => {
-    const closeOnEscape = (event) => event.key === "Escape" && onClose();
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [onClose]);
+  useEscapeKey(onClose);
 
   return (
     <div className="ban-dialog" role="alertdialog" aria-modal="true" aria-labelledby="ban-dialog-title" aria-describedby="ban-dialog-body">
@@ -36,7 +33,7 @@ export function BanDialog({ ban, onClose }) {
         <h2 id="ban-dialog-title" className="ban-dialog__title">Conta banida</h2>
         <div id="ban-dialog-body">
           <p className="ban-dialog__label">Motivo</p>
-          <p className="ban-dialog__value">{ban.reason || "Não informado."}</p>
+          <p className="ban-dialog__value">{ban.reason || MESSAGES.empty.banReason}</p>
           <p className="ban-dialog__label">Duração</p>
           <p className="ban-dialog__value">
             {ban.until ? <>Até {formatEnd(ban.until)} <span className="ban-dialog__muted">({describeRemaining(ban.until)})</span></> : "Sem prazo para terminar."}

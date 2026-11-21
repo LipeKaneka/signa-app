@@ -1,5 +1,6 @@
 import * as NotificationService from "../services/service-notification.js";
 import { badRequest } from "../utils/util-http-error.js";
+import { MESSAGES } from "../config/messages.js";
 
 /** Intervalo do "estou vivo" no fluxo (proxies do Render fecham conexões paradas). */
 const HEARTBEAT_MS = 25 * 1000;
@@ -34,7 +35,7 @@ export async function markRead(req, res) {
     return;
   }
   if (!Array.isArray(body.ids) || body.ids.length === 0 || body.ids.length > 100 || body.ids.some((id) => typeof id !== "string")) {
-    throw badRequest("Envie ids (lista de até 100) ou all: true.");
+    throw badRequest(MESSAGES.notifications.invalidIds);
   }
   res.json(await NotificationService.markNotificationsRead(req.user, body.ids));
 }
@@ -42,7 +43,7 @@ export async function markRead(req, res) {
 /** Token do Firebase: texto curto sem espaços. */
 function readToken(value, label) {
   if (value === undefined || value === null || value === "") return "";
-  if (typeof value !== "string" || value.length > 4096 || /\s/.test(value)) throw badRequest(`${label} inválido.`);
+  if (typeof value !== "string" || value.length > 4096 || /\s/.test(value)) throw badRequest(MESSAGES.notifications.invalidToken(label));
   return value;
 }
 

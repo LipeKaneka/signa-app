@@ -3,6 +3,7 @@ import { CONEXOES as HAND_CONNECTIONS, SCORE_MINIMO as MIN_HAND_SCORE, maoPrinci
 import { criarDetector as createDetector } from "./engine/detectorRemoto.js";
 import { pontosNormalizados as normalizePoints } from "./engine/classificador.js";
 import { motivoImplausivel as findImplausibility, movimento as measureMovement } from "./engine/perfil.js";
+import { MESSAGES } from "../../config/messages.js";
 
 /** Quadros seguidos com mão válida antes de considerá-la presente (filtra detecções relâmpago). */
 const PRESENCE_FRAMES = 3;
@@ -24,7 +25,9 @@ export const FINGER_COLORS = [
 ];
 const BODY_CONNECTIONS = [[11, 12], [11, 13], [13, 15], [12, 14], [14, 16]];
 
-const colorOfPoint = (index) => FINGER_COLORS.find((finger) => finger.points.includes(index))?.color ?? "#ffffff";
+/** Cor de cada um dos 21 pontos e de cada ligação, calculadas uma vez (o desenho roda a cada quadro). */
+const POINT_COLORS = Array.from({ length: 21 }, (_, index) => FINGER_COLORS.find((finger) => finger.points.includes(index))?.color ?? "#ffffff");
+const CONNECTION_FINGERS = HAND_CONNECTIONS.map(([from, to]) => FINGER_COLORS.find((item) => item.points.includes(from) && item.points.includes(to)));
 
 /**
  * Explica o erro da câmera em linguagem simples (sem detalhes técnicos).
@@ -35,15 +38,15 @@ export function describeCameraError(error) {
   switch (error?.name) {
     case "NotAllowedError":
     case "SecurityError":
-      return "Permita o acesso à câmera nas configurações do aparelho.";
+      return MESSAGES.camera.permissionDenied;
     case "NotReadableError":
     case "AbortError":
-      return "A câmera está sendo usada por outro programa ou aba. Feche-o e tente de novo.";
+      return MESSAGES.camera.inUse;
     case "NotFoundError":
     case "OverconstrainedError":
-      return "Nenhuma câmera foi encontrada.";
+      return MESSAGES.camera.notFound;
     default:
-      return "Não foi possível abrir a câmera agora. Tente de novo em instantes.";
+      return MESSAGES.camera.unavailable;
   }
 }
 
@@ -52,17 +55,17 @@ export function describeCameraError(error) {
  */
 function drawHand(context, toCanvas, landmarks, main) {
   const points = landmarks.map(toCanvas);
-  for (const [from, to] of HAND_CONNECTIONS) {
-    const finger = FINGER_COLORS.find((item) => item.points.includes(from) && item.points.includes(to));
+  HAND_CONNECTIONS.forEach(([from, to], connection) => {
+    const finger = CONNECTION_FINGERS[connection];
     context.strokeStyle = finger ? finger.color : "rgba(255,255,255,.85)";
     context.lineWidth = (finger ? 5 : 3) * (main ? 1 : 0.7);
     context.beginPath();
     context.moveTo(...points[from]);
     context.lineTo(...points[to]);
     context.stroke();
-  }
+  });
   points.forEach(([x, y], index) => {
-    context.fillStyle = colorOfPoint(index);
+    context.fillStyle = POINT_COLORS[index];
     context.strokeStyle = "rgba(0,0,0,.55)";
     context.lineWidth = 1.5;
     context.beginPath();
@@ -129,7 +132,7 @@ function fixHandedness(hand, facingMode) {
  */
 async function openCameraStream(facingMode) {
   if (!navigator.mediaDevices?.getUserMedia) {
-    throw new Error("Este navegador não dá acesso à câmera (abra por https ou localhost).");
+    throw new Error(MESSAGES.camera.unsupportedBrowser);
   }
   return navigator.mediaDevices.getUserMedia({
     video: { facingMode, ...RESOLUTION, frameRate: { ideal: 30 } },
@@ -152,10 +155,18 @@ export function useHandCamera(onFrame, { detectBody = false, stillThreshold = DE
   onFrameRef.current = onFrame;
   const thresholdRef = useRef(stillThreshold);
   thresholdRef.current = stillThreshold;
+  // O corpo (pose) liga e desliga no detector já aberto: trocar o modo da câmera não reabre a câmera nem o MediaPipe.
+  const detectBodyRef = useRef(detectBody);
+  detectBodyRef.current = detectBody;
+  const detectorRef = useRef(null);
 
   const [status, setStatus] = useState("loading");
-  const [step, setStep] = useState("Abrindo a câmera…");
+  const [step, setStep] = useState(MESSAGES.camera.opening);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    detectorRef.current?.definirCorpo(detectBody).catch((bodyError) => console.warn("Não deu para trocar o modo do detector:", bodyError));
+  }, [detectBody]);
 
   useEffect(() => {
     let active = true;
@@ -163,7 +174,7 @@ export function useHandCamera(onFrame, { detectBody = false, stillThreshold = DE
     let animationFrame;
     let detector = null;
     setStatus("loading");
-    setStep("Abrindo a câmera…");
+    setStep(MESSAGES.camera.opening);
 
     async function start() {
       const openedStream = await openCameraStream(facingMode);
@@ -174,11 +185,15 @@ export function useHandCamera(onFrame, { detectBody = false, stillThreshold = DE
       video.srcObject = stream;
       await video.play();
 
-      setStep("Preparando o reconhecimento das mãos…");
+      setStep(MESSAGES.camera.preparingHands);
       // Na primeira vez o motor mede CPU e GPU do aparelho; o texto técnico dele não vai para a tela.
       const showFirstRunStep = () => setStep("Ajustando ao seu aparelho (só na primeira vez)…");
-      detector = await createDetector({ corpo: detectBody, fonte: video, avisar: showFirstRunStep });
+      detector = await createDetector({ corpo: detectBodyRef.current, fonte: video, avisar: showFirstRunStep });
       if (!active) return detector.fechar();
+      // O modo pode ter mudado enquanto o detector carregava.
+      await detector.definirCorpo(detectBodyRef.current);
+      if (!active) return detector.fechar();
+      detectorRef.current = detector;
       setStatus("ready");
       runDetectionLoop(video);
     }
@@ -197,7 +212,7 @@ export function useHandCamera(onFrame, { detectBody = false, stillThreshold = DE
           const detection = await detector.detectar(video);
           if (!active) return;
           const aspect = video.videoWidth / video.videoHeight;
-          const body = detectBody ? { hands: detection.rm.landmarks ?? [], pose: detection.pose } : null;
+          const body = detectBodyRef.current ? { hands: detection.rm.landmarks ?? [], pose: detection.pose } : null;
 
           let hand = fixHandedness(findMainHand(detection.rm, MIN_HAND_SCORE), facingMode);
           let points = hand ? normalizePoints(hand.pontos, hand.lado, aspect) : null;
@@ -257,9 +272,10 @@ export function useHandCamera(onFrame, { detectBody = false, stillThreshold = DE
       active = false;
       cancelAnimationFrame(animationFrame);
       detector?.fechar();
+      detectorRef.current = null;
       stream?.getTracks().forEach((track) => track.stop());
     };
-  }, [detectBody, facingMode]);
+  }, [facingMode]);
 
   return { videoRef, canvasRef, status, step, error };
 }

@@ -23,11 +23,12 @@ const FALLBACK_SETTINGS = Object.freeze({
 });
 
 /**
- * De quanto em quanto tempo o app pergunta de novo por eventos e textos (só com a tela visível). Curto para uma
- * mudança no painel (cor, multiplicador) aparecer sem reabrir o app; o backend responde do cache, então é leve.
- * Além disso, o app pergunta ao trocar de tela (App.jsx) e ao voltar para o app.
+ * De quanto em quanto tempo o app pergunta de novo por eventos e textos (só com a tela visível). Uma mudança no
+ * painel aparece em até 1 minuto; na prática antes, porque o app também pergunta ao trocar de tela (App.jsx) e ao
+ * voltar para o app. Era 15 s: 4x mais requisições por pessoa sem ganho visível. O fim de um evento não depende
+ * disto (o relógio local, CLOCK_TICK_MS, tira a faixa na hora).
  */
-const REFRESH_INTERVAL_MS = 15 * 1000;
+const REFRESH_INTERVAL_MS = 60 * 1000;
 /** Textos e níveis mudam pouco: são buscados de novo no máximo uma vez por minuto (os eventos, a cada consulta). */
 const CONFIG_REFRESH_MS = 60 * 1000;
 /** Ao trocar de tela, não pergunta de novo se a última resposta tem menos que isto. */
@@ -36,6 +37,9 @@ const NAVIGATION_REFRESH_MIN_MS = 3 * 1000;
 const CLOCK_TICK_MS = 15 * 1000;
 
 const AppConfigContext = createContext(null);
+
+/** Sem resposta do servidor ainda: nenhum aviso e sem manutenção. */
+const EMPTY_POPUPS = Object.freeze({ announcements: [], maintenance: { active: false } });
 
 /** Última frase sorteada de cada tipo (para não repetir a mesma duas vezes seguidas). */
 const lastPhrase = { correct: null, wrong: null };
@@ -77,14 +81,17 @@ export function AppConfigProvider({ children }) {
   const [settings, setSettings] = useState(FALLBACK_SETTINGS);
   const [levels, setLevels] = useState([]);
   const [events, setEvents] = useState([]);
+  // Pop-ups do painel: avisos valendo agora e o estado da manutenção (GET /app-config → popups).
+  const [popups, setPopups] = useState(EMPTY_POPUPS);
   const [now, setNow] = useState(() => Date.now());
 
   const lastRefreshAt = useRef(0);
   const lastConfigAt = useRef(0);
 
-  const refresh = useCallback(async () => {
+  /** forceConfig: busca /app-config mesmo antes de 1 minuto (ex.: conferir se a manutenção terminou). */
+  const refresh = useCallback(async (forceConfig = false) => {
     lastRefreshAt.current = Date.now();
-    const withConfig = Date.now() - lastConfigAt.current >= CONFIG_REFRESH_MS;
+    const withConfig = forceConfig === true || Date.now() - lastConfigAt.current >= CONFIG_REFRESH_MS;
     if (withConfig) lastConfigAt.current = Date.now();
     const [config, active] = await Promise.allSettled([
       withConfig ? ContentApi.fetchAppConfig() : Promise.resolve(null),
@@ -94,6 +101,7 @@ export function AppConfigProvider({ children }) {
     if (config.status === "fulfilled" && config.value) {
       setSettings(keepIfSame({ ...FALLBACK_SETTINGS, ...config.value.settings }));
       setLevels(keepIfSame(config.value.levels ?? []));
+      setPopups(keepIfSame(config.value.popups ?? EMPTY_POPUPS));
     }
     if (active.status === "fulfilled") setEvents(keepIfSame(active.value.events ?? []));
     setNow(Date.now());
@@ -131,11 +139,12 @@ export function AppConfigProvider({ children }) {
       },
       minScoreToPass: Number(settings["progress.minScoreToPass"] ?? FALLBACK_SETTINGS["progress.minScoreToPass"]),
       levels,
+      popups,
       xpEvent,
       refresh,
       refreshIfStale,
     }),
-    [settings, levels, xpEvent, refresh, refreshIfStale],
+    [settings, levels, popups, xpEvent, refresh, refreshIfStale],
   );
   return <AppConfigContext.Provider value={value}>{children}</AppConfigContext.Provider>;
 }

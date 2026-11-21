@@ -4,6 +4,7 @@ import * as RankingService from "../services/service-ranking.js";
 import { RANKING_RULES } from "../config/rules.js";
 import { readRequiredString, readPositiveInteger } from "../utils/util-validators.js";
 import { badRequest } from "../utils/util-http-error.js";
+import { MESSAGES } from "../config/messages.js";
 
 /** GET /internal/v1/users/:userId/trail — {modules} com o status de cada módulo/atividade. */
 export async function getTrail(req, res) {
@@ -35,7 +36,7 @@ export async function finishAttempt(req, res) {
 function readMetric(value) {
   const metric = value ?? "activities";
   if (!Object.hasOwn(RankingService.RANKING_METRICS, metric)) {
-    throw badRequest("Critério de ranking inválido. Use activities, xp ou streak.");
+    throw badRequest(MESSAGES.ranking.invalidMetric);
   }
   return metric;
 }

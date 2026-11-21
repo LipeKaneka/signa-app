@@ -1,3 +1,5 @@
+import { MESSAGES } from "../config/messages.js";
+
 /** Lado da foto de perfil salva (quadrada) e qualidade do JPEG: ~15–30 KB, dentro do limite do servidor. */
 const AVATAR_SIZE = 256;
 const JPEG_QUALITY = 0.82;
@@ -25,7 +27,7 @@ function renderSquareJpeg(bitmap, size, maxLength) {
     quality -= 0.15;
     dataUrl = canvas.toDataURL("image/jpeg", quality);
   }
-  if (dataUrl.length > maxLength) throw new Error("A foto ficou grande demais. Tente outra imagem.");
+  if (dataUrl.length > maxLength) throw new Error(MESSAGES.profilePhoto.tooBig);
   return dataUrl;
 }
 
@@ -38,9 +40,9 @@ function renderSquareJpeg(bitmap, size, maxLength) {
  * Usado por: ProfilePage (trocar a foto de perfil).
  */
 export async function fileToAvatarImages(file) {
-  if (!file.type.startsWith("image/")) throw new Error("Escolha um arquivo de imagem.");
+  if (!file.type.startsWith("image/")) throw new Error(MESSAGES.profilePhoto.notAnImage);
   const bitmap = await createImageBitmap(file).catch(() => {
-    throw new Error("Não foi possível abrir essa imagem. Tente outra.");
+    throw new Error(MESSAGES.profilePhoto.cannotOpen);
   });
   try {
     return {

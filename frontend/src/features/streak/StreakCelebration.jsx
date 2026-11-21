@@ -44,17 +44,24 @@ const FIRE_FRAME_MS = 70;
  * Com "menos movimento", fica parado no primeiro quadro.
  */
 function AnimatedFire({ still }) {
-  const [step, setStep] = useState(0);
+  const containerRef = useRef(null);
+  // Troca a opacidade direto nas imagens: antes era um setState a cada 70 ms (~48 redesenhos por animação).
   useEffect(() => {
     if (still) return undefined;
-    const timer = setInterval(() => setStep((value) => (value + 1) % FIRE_SEQUENCE.length), FIRE_FRAME_MS);
+    const images = containerRef.current?.children ?? [];
+    let step = 0;
+    const timer = setInterval(() => {
+      const previous = FIRE_SEQUENCE[step];
+      step = (step + 1) % FIRE_SEQUENCE.length;
+      images[previous].style.opacity = "0";
+      images[FIRE_SEQUENCE[step]].style.opacity = "1";
+    }, FIRE_FRAME_MS);
     return () => clearInterval(timer);
   }, [still]);
-  const current = FIRE_SEQUENCE[step];
   return (
-    <span className="streak-fire" aria-hidden="true">
+    <span className="streak-fire" aria-hidden="true" ref={containerRef}>
       {FIRE_FRAMES.map((frame, index) => (
-        <img key={frame} src={frame} alt="" style={{ opacity: index === current ? 1 : 0 }} />
+        <img key={frame} src={frame} alt="" style={{ opacity: index === FIRE_SEQUENCE[0] ? 1 : 0 }} />
       ))}
     </span>
   );

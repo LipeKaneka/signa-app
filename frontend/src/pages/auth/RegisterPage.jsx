@@ -2,18 +2,17 @@ import { useState } from "react";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { AuthBrand, GoogleButton, IconField, PasswordField } from "./AuthForm.jsx";
 import { TermsScreen } from "./TermsPage.jsx";
+import { isValidEmail, validateNewPassword } from "./validation.js";
 import "./auth.css";
-
-const MIN_PASSWORD_LENGTH = 8;
+import { MESSAGES } from "../../config/messages.js";
 
 /** Mesmas regras do backend, para avisar antes de enviar. */
 function validateRegistration({ nickname, email, password, passwordConfirmation, acceptedTerms }) {
-  if (!nickname.trim()) return "Informe seu nome.";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return "E-mail inválido.";
-  if (password.length < MIN_PASSWORD_LENGTH) return `A senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.`;
-  if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) return "A senha precisa ter letras e números.";
-  if (password !== passwordConfirmation) return "As senhas não são iguais.";
-  if (!acceptedTerms) return "Para criar a conta, aceite o Termo de Uso.";
+  if (!nickname.trim()) return MESSAGES.auth.nameRequired;
+  if (!isValidEmail(email)) return MESSAGES.auth.invalidEmail;
+  const passwordError = validateNewPassword(password, passwordConfirmation);
+  if (passwordError) return passwordError;
+  if (!acceptedTerms) return MESSAGES.auth.acceptTerms;
   return "";
 }
 

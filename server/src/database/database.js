@@ -8,7 +8,8 @@ import mongoose from "mongoose";
  */
 export async function connectDatabase(databaseUrl) {
   mongoose.set("strictQuery", true);
-  await mongoose.connect(databaseUrl);
+  // 10 s (o padrão é 30): com o banco fora do ar, a tentativa falha logo e o index.js tenta de novo.
+  await mongoose.connect(databaseUrl, { serverSelectionTimeoutMS: 10000 });
   return mongoose.connection;
 }
 

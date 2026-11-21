@@ -5,3 +5,5 @@ node_modules/
 docs
 # APKs gerados por versão (grandes demais para o git; o histórico e o script ficam versionados)
 releases/*.apk
+Iniciar Signa
+Parar Signa

@@ -191,7 +191,7 @@ input:disabled, select:disabled { background: var(--off-bg); }
 .setting .notice { grid-column: 1 / -1; margin: 0; }
 .setting__actions { display: flex; gap: 6px; }
 
-/* "Buscar no GitHub" (Configurações → Atualização do app): botão e prévia da release antes de aplicar. */
+/* "Buscar no GitHub" (Pop-ups → Atualizações): botão e prévia da release antes de aplicar. */
 .github-import { display: grid; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); }
 .github-import__result { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); min-width: 0; overflow-wrap: anywhere; }
 .github-import__result p { margin: 0; }
@@ -573,3 +573,26 @@ input:disabled, select:disabled { background: var(--off-bg); }
 .notification-send__results { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
 .notification-send__results .button { width: 100%; justify-content: flex-start; text-align: left; }
 .notification-type .checkbox { display: inline-flex; cursor: pointer; }
+
+/* ---------- Pop-ups do app: formulário com prévia (mesmo modelo do Figma usado no app) ---------- */
+.popup-editor { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
+.popup-editor__fields { min-width: 0; }
+.popup-editor h3 { margin: 22px 0 8px; font-size: 1rem; }
+.popup-email { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin: 0 0 12px; }
+.popup-email legend { padding: 0 6px; font-weight: 600; }
+.maintenance-status { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+@media (max-width: 900px) { .popup-editor { grid-template-columns: 1fr; } }
+
+.popup-preview { position: sticky; top: 16px; padding: 24px 16px; border-radius: 16px; background: linear-gradient(180deg, #2a1771 0%, #120739 100%); }
+.popup-preview__card { display: flex; flex-direction: column; gap: 12px; padding: 22px 20px 20px; border-radius: 24px; background: #fff; color: #111; text-align: center; box-shadow: 0 18px 40px rgba(10, 4, 40, 0.45); }
+.popup-preview__brand { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.popup-preview__brand img:first-child { height: 46px; }
+.popup-preview__brand img:last-child { height: 26px; }
+.popup-preview__line { width: 100%; margin: 0; border: 0; border-top: 1.5px solid #1b1b1b; }
+.popup-preview__title { margin: 0; font-size: 1.05rem; font-weight: 700; }
+.popup-preview__message { margin: 0; font-size: 0.9rem; color: #3b3b3b; white-space: pre-line; }
+.popup-preview__notes { min-height: 72px; padding: 10px 14px 12px; border-radius: 10px; background: #ab9ee3; text-align: left; }
+.popup-preview__notes strong { display: block; margin-bottom: 4px; color: #4f31bb; font-size: 0.92rem; }
+.popup-preview__notes p { margin: 0; color: #24175e; font-size: 0.85rem; white-space: pre-line; }
+.popup-preview__button { display: block; margin-top: 8px; padding: 13px 16px; border-radius: 10px; background: #4f31bb; color: #fff; font-weight: 700; }
+.popup-preview__secondary { color: #4f31bb; font-size: 0.85rem; font-weight: 600; }

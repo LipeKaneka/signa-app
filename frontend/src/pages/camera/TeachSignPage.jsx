@@ -6,8 +6,8 @@ import { playAnswerFeedback } from "../../utils/feedback-effects.js";
 import {
   adicionarAmostras as addOwnSamples,
   amostrasBase as readBaseSamples,
-  amostrasProprias as readOwnSamples,
   contagem as countByLabel,
+  contagemProprias as countOwnSamples,
   exportarProprias as exportOwnSamples,
   importarProprias as importOwnSamples,
   removerRotulo as removeOwnLabel,
@@ -19,7 +19,6 @@ import {
   contagemGestos as countGestures,
   removerGestos as removeGestures,
 } from "../../features/translator/engine/movimento.js";
-import { lerPerfil as readHandProfile } from "../../features/translator/engine/perfil.js";
 import { useHandCamera, DEFAULT_STILL_THRESHOLD } from "../../features/translator/useHandCamera.js";
 import { MOVEMENT_LETTERS, buildGestureFrame } from "../../features/translator/useSignTranslator.js";
 import { CameraToolLayout, RecordingBadge } from "./CameraToolLayout.jsx";
@@ -39,7 +38,8 @@ function downloadOwnSamples() {
   link.href = URL.createObjectURL(new Blob([exportOwnSamples()], { type: "application/json" }));
   link.download = "signa-sinais.json";
   link.click();
-  URL.revokeObjectURL(link.href);
+  // Revogar na hora pode cancelar o download em alguns navegadores: espera o clique ser atendido.
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 
 function describeRecording(recording) {
@@ -106,14 +106,14 @@ function StaticSampleList({ baseCounts, ownCounts, onRemove }) {
  */
 export default function TeachSignPage() {
   const { settings } = useSettings();
-  const profile = readHandProfile();
   const [signType, setSignType] = useState("static");
   const [label, setLabel] = useState("");
   const [message, setMessage] = useState("");
   const [recording, setRecording] = useState(null); // {type:'static', samples[]} | {type:'movement', done, detector}
   const [gestureCounts, setGestureCounts] = useState(countGestures);
-  const [ownCounts, setOwnCounts] = useState(() => countByLabel(readOwnSamples(profile?.escala)));
-  const baseCounts = useRef(countByLabel(readBaseSamples())).current;
+  const [ownCounts, setOwnCounts] = useState(countOwnSamples);
+  // Calculado uma vez (useRef(valor) recalcularia a cada redesenho).
+  const [baseCounts] = useState(() => countByLabel(readBaseSamples()));
   const recordingRef = useRef(null);
   const fileInputRef = useRef(null);
   const countdown = useCountdown();
@@ -122,7 +122,7 @@ export default function TeachSignPage() {
     recordingRef.current = value;
     setRecording(value ? { ...value, samples: value.samples ? [...value.samples] : undefined } : null);
   };
-  const refreshOwnCounts = () => setOwnCounts(countByLabel(readOwnSamples(profile?.escala)));
+  const refreshOwnCounts = () => setOwnCounts(countOwnSamples());
   const celebrate = () => playAnswerFeedback(true, settings.soundsAndVibration);
 
   function recordGestureFrame(current, hand, points, video, info) {

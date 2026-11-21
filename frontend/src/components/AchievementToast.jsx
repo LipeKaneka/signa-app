@@ -1,11 +1,25 @@
-import { useEffect, useState } from "react";
 import { useSettings } from "../context/SettingsContext.jsx";
+import { useToastQueue } from "../hooks/useToastQueue.js";
 import { playCelebrationFeedback } from "../utils/feedback-effects.js";
 import { AchievementBadge, achievementStyle } from "./AchievementCard.jsx";
 import "./achievement-toast.css";
 
 /** Quanto tempo cada aviso fica na tela. */
 const TOAST_DURATION_MS = 3800;
+
+/**
+ * Conquista do servidor ({id, title, appearance, rarity}) no formato de um aviso do AchievementToast.
+ * Usado por: ActivityPage, ActivityResult e AppEventsProvider.
+ */
+export function toAchievementToast(achievement) {
+  return {
+    id: `achievement-${achievement.id}`,
+    kind: "achievement",
+    title: achievement.title,
+    appearance: achievement.appearance,
+    rarity: achievement.rarity,
+  };
+}
 
 /**
  * Avisos que descem do topo, um de cada vez: conquistas desbloqueadas e subida de nível.
@@ -16,16 +30,7 @@ const TOAST_DURATION_MS = 3800;
  */
 export function AchievementToast({ items }) {
   const { settings } = useSettings();
-  const [index, setIndex] = useState(0);
-  const current = items[index];
-
-  useEffect(() => {
-    if (!current) return undefined;
-    playCelebrationFeedback(settings.soundsAndVibration);
-    const timer = setTimeout(() => setIndex((value) => value + 1), TOAST_DURATION_MS);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, current?.id]);
+  const { current, next } = useToastQueue(items, TOAST_DURATION_MS, () => playCelebrationFeedback(settings.soundsAndVibration));
 
   if (!current) return null;
   return (
@@ -35,7 +40,7 @@ export function AchievementToast({ items }) {
         type="button"
         className="achievement-toast"
         style={achievementStyle(current.appearance)}
-        onClick={() => setIndex((value) => value + 1)}
+        onClick={next}
         aria-label={`${current.kind === "level" ? "Novo nível" : "Conquista desbloqueada"}: ${current.title}. Toque para fechar.`}
       >
         <span className="achievement-toast__medal" aria-hidden="true">

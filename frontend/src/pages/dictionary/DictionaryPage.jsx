@@ -7,6 +7,7 @@ import { SignLanguageHands } from "../../components/illustrations.jsx";
 import { SignDialog } from "../../components/SignDialog.jsx";
 import { useAppEvents } from "../../features/achievements/AppEventsContext.jsx";
 import "./dictionary.css";
+import { MESSAGES } from "../../config/messages.js";
 
 const SEARCH_DELAY_MS = 300;
 
@@ -36,7 +37,7 @@ function FeaturedEntry() {
 }
 
 function SignList({ signs, onOpen }) {
-  if (signs.length === 0) return <p className="dictionary-empty">Nenhum sinal encontrado.</p>;
+  if (signs.length === 0) return <p className="dictionary-empty">{MESSAGES.empty.dictionarySearch}</p>;
   return (
     <ul className="sign-list">
       {signs.map((sign) => (

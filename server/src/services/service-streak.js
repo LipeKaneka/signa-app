@@ -3,6 +3,11 @@
  * Brasília, para que "hoje" vire à meia-noite do aluno e não à meia-noite UTC.
  */
 const STREAK_TIME_ZONE = "America/Sao_Paulo";
+/**
+ * Formatador criado uma vez: criar um Intl.DateTimeFormat custa ~77 µs, reaproveitar ~1,6 µs. toDayKey roda para
+ * cada usuário em cada perfil, resposta, fim de atividade e ranking.
+ */
+const DAY_KEY_FORMAT = new Intl.DateTimeFormat("en-CA", { timeZone: STREAK_TIME_ZONE });
 
 /**
  * Data no formato "AAAA-MM-DD" no fuso de Brasília (o dia vira à meia-noite do aluno).
@@ -11,7 +16,7 @@ const STREAK_TIME_ZONE = "America/Sao_Paulo";
  * Usado por: registerActivityDay, readCurrentStreak, service-ranking.js (filtro de ofensiva).
  */
 export function toDayKey(date) {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: STREAK_TIME_ZONE }).format(date);
+  return DAY_KEY_FORMAT.format(date);
 }
 
 /**

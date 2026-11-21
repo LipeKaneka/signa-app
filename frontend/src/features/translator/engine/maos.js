@@ -7,14 +7,21 @@
 // offline no APK. Modelos oficiais do Google (Apache-2.0), cópias de
 // storage.googleapis.com/mediapipe-models/{hand_landmarker/hand_landmarker,pose_landmarker/pose_landmarker_lite}/float16/1/
 export const WASM = './mediapipe/wasm'
-export const MODELO = './mediapipe/modelos/hand_landmarker.task' 
+export const MODELO = './mediapipe/modelos/hand_landmarker.task'
 export const MODELO_POSE = './mediapipe/modelos/pose_landmarker_lite.task'
 // Confianças moderadas: valores altos (0,7+) perdiam letras de mão fechada (A, S, E, M, N).
 // Mãos fantasmas são barradas depois, pelo filtro de formato e de presença contínua.
 // Sempre procura as duas mãos: a principal soletra e a outra aparece na tela e entra nos sinais com movimento.
 export const OPCOES_MAO = {numHands: 2, minHandDetectionConfidence: 0.6, minHandPresenceConfidence: 0.6, minTrackingConfidence: 0.5}
 
-/** Mão usada para soletrar quando há duas: a de maior confiança. Mesmo formato de primeiraMao. */
+/** Confiança mínima para aceitar uma mão detectada. */
+export const SCORE_MINIMO = 0.5
+
+/**
+ * Mão usada para soletrar quando há duas: a de maior confiança.
+ * Devolve {pontos: [{x,y,z}] x21, mundo, lado: 'Left'|'Right', score}, ou null.
+ * O "lado" do MediaPipe considera a imagem espelhada (selfie); usamos só para normalizar.
+ */
 export function maoPrincipal(r, scoreMinimo = 0) {
   if (!r?.landmarks?.length) return null
   let k = 0
@@ -22,22 +29,6 @@ export function maoPrincipal(r, scoreMinimo = 0) {
   const h = r.handedness[k][0]
   if ((h?.score ?? 0) < scoreMinimo) return null
   return {pontos: r.landmarks[k], mundo: r.worldLandmarks?.[k] ?? null, lado: h?.categoryName ?? 'Right', score: h?.score ?? 0}
-}
-
-/**
- * Primeira mão encontrada: {pontos: [{x,y,z}] x21, lado: 'Left'|'Right', score}.
- * O "lado" do MediaPipe considera a imagem espelhada (selfie); usamos só para normalizar.
- */
-export const SCORE_MINIMO = 0.5
-
-export function primeiraMao(r, scoreMinimo = 0) {
-  if (!r?.landmarks?.length) return null
-  const h = r.handedness?.[0]?.[0]
-  const score = h?.score ?? 0
-  if (score < scoreMinimo) return null
-  // mundo: coordenadas 3D em metros (origem no centro da mão), bem mais estáveis
-  // em profundidade que as coordenadas da imagem — usadas na classificação.
-  return {pontos: r.landmarks[0], mundo: r.worldLandmarks?.[0] ?? null, lado: h?.categoryName ?? 'Right', score}
 }
 
 // Conexões entre pontos para desenhar o "esqueleto" da mão.

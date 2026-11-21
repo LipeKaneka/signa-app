@@ -11,8 +11,10 @@ APK (frontend) ──► BACKEND ──► SERVIDOR DE GERENCIAMENTO ──► M
 - [`server/`](server/README.md): servidor de gerenciamento; dono do banco e das regras, com o painel administrativo em
   `http://127.0.0.1:8090/admin` ([docs/PAINEL-ADMIN.md](docs/PAINEL-ADMIN.md)).
 
-Desenvolvimento local (Windows): `powershell -ExecutionPolicy Bypass -File scripts/restart-dev.ps1 -Force` sobe
-banco, servidor e painel (127.0.0.1:8090 e /admin), backend (8080) e frontend (5173).
+Desenvolvimento local (Windows): dois cliques em **`Iniciar Signa Ludus.bat`** (na raiz) sobe banco, servidor e painel
+(127.0.0.1:8090 e /admin), backend (8080) e frontend (5173) em segundo plano e abre o app no navegador; na primeira vez
+instala as dependências. **`Parar Signa Ludus.bat`** desliga tudo. Os registros ficam em `.claude/dev-servers/*.log`.
+Pelo terminal: `powershell -ExecutionPolicy Bypass -File scripts/restart-dev.ps1 -Force` (ou `-Stop` para parar).
 
 Para o front em outro domínio, coloque a origem dele em `FRONTEND_URL` no backend (CORS).
 

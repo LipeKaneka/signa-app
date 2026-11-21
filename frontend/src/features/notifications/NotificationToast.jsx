@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useToastQueue } from "../../hooks/useToastQueue.js";
 import "../../components/achievement-toast.css";
 import "./notifications.css";
 
@@ -12,14 +12,7 @@ const TOAST_DURATION_MS = 4500;
  * Usado por: NotificationsProvider.
  */
 export function NotificationToast({ items, onOpen }) {
-  const [index, setIndex] = useState(0);
-  const current = items[index];
-
-  useEffect(() => {
-    if (!current) return undefined;
-    const timer = setTimeout(() => setIndex((value) => value + 1), TOAST_DURATION_MS);
-    return () => clearTimeout(timer);
-  }, [index, current?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const { current, next } = useToastQueue(items, TOAST_DURATION_MS);
 
   if (!current) return null;
   return (
@@ -29,7 +22,7 @@ export function NotificationToast({ items, onOpen }) {
         type="button"
         className="achievement-toast notification-toast"
         onClick={() => {
-          setIndex((value) => value + 1);
+          next();
           onOpen(current);
         }}
         aria-label={`Notificação: ${current.title}. ${current.body ?? ""} Toque para abrir.`}

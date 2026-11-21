@@ -1,6 +1,7 @@
 import * as TrailService from "../services/service-trail.js";
 import * as AttemptService from "../services/service-attempt.js";
 import { readRequiredString } from "../utils/util-validators.js";
+import { MESSAGES } from "../config/messages.js";
 
 /**
  * GET /trail — responde {modules} com o status de cada módulo/atividade.
@@ -15,7 +16,7 @@ export async function getTrail(req, res) {
  */
 export async function startAttempt(req, res) {
   const attempt = await AttemptService.startAttempt(req.userId, req.params.activityId);
-  res.status(201).json({ message: "Atividade iniciada.", ...attempt });
+  res.status(201).json({ message: MESSAGES.success.activityStarted, ...attempt });
 }
 
 /**
@@ -34,5 +35,5 @@ export async function answerQuestion(req, res) {
  */
 export async function finishAttempt(req, res) {
   const summary = await AttemptService.finishAttempt(req.userId, req.params.attemptId);
-  res.json({ message: "Atividade concluída.", ...summary });
+  res.json({ message: MESSAGES.success.activityFinished, ...summary });
 }

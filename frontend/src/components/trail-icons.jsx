@@ -149,11 +149,9 @@ const KEYWORDS = [
   [/vogal|vogais/i, "vowels"],
   [/consoante/i, "consonants"],
   [/n[uú]mero/i, "numbers"],
-  [/revis/i, "review"],
   [/cor(es)?\b/i, "colors"],
   [/anima/i, "animals"],
   [/cumpriment|sauda/i, "greetings"],
-  [/c[aâ]mera|treino/i, "camera"],
   [/palavr|frase/i, "words"],
   [/alfabet|letra/i, "letters"],
 ];

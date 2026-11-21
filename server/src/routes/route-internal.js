@@ -26,9 +26,11 @@ internalRouter.post("/auth/password-reset/request", asyncHandler(UserController.
 internalRouter.post("/auth/password-reset/verify", asyncHandler(UserController.verifyPasswordReset));
 internalRouter.post("/auth/password-reset/confirm", asyncHandler(UserController.confirmPasswordReset));
 
+// Antes do loadUser: a conferência de sessão lê só status e banimento.
+internalRouter.get("/users/:userId/session", asyncHandler(UserController.getSession));
+
 const userRoutes = Router({ mergeParams: true });
 userRoutes.use(loadUser);
-userRoutes.get("/session", UserController.getSession);
 userRoutes.get("/profile", asyncHandler(UserController.getProfile));
 userRoutes.post("/events", asyncHandler(UserController.recordEvents));
 userRoutes.patch("/", asyncHandler(UserController.updateProfile));

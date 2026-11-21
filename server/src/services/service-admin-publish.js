@@ -3,6 +3,9 @@ import { clearAchievementsCache } from "./service-achievement.js";
 import { clearEventsCache } from "./service-event.js";
 import { clearLevelsCache } from "./service-level.js";
 import { clearSettingsCache } from "./service-settings.js";
+import { clearTrailCache } from "./service-trail.js";
+import { clearPopupsCache } from "./service-popups.js";
+import { clearNotificationTypesCache } from "./service-notification.js";
 
 /**
  * Chame depois de QUALQUER alteração de conteúdo público feita pelo painel: limpa os caches do servidor
@@ -16,5 +19,8 @@ export async function publishContentChange() {
   clearEventsCache();
   clearLevelsCache();
   clearSettingsCache();
+  clearTrailCache();
+  clearPopupsCache();
+  clearNotificationTypesCache();
   return bumpContentVersion();
 }

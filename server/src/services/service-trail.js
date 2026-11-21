@@ -1,6 +1,8 @@
 import { ModuleModel } from "../models/model-module.js";
 import { ActivityModel } from "../models/model-activity.js";
 import { notFound, forbidden } from "../utils/util-http-error.js";
+import { createTimedCache } from "../utils/util-timed-cache.js";
+import { MESSAGES } from "../config/messages.js";
 
 /**
  * Mapa activityId -> melhor nota do usuário (atividades aprovadas).
@@ -15,20 +17,49 @@ function readBestScores(user) {
 const NOT_DEACTIVATED = Object.freeze({ active: { $ne: false } });
 
 /**
+ * Módulos e atividades são iguais para todo mundo e só mudam pelo painel (que limpa o cache em publishContentChange)
+ * ou pelo seed. Antes eram lidos do banco em cada /trail, ao começar uma atividade e em cada cálculo de conquistas
+ * (a cada acerto e duas vezes ao concluir). A validade é só uma garantia para mudanças feitas fora do servidor.
+ */
+const CONTENT_CACHE_MS = 60 * 1000;
+const contentCache = createTimedCache(CONTENT_CACHE_MS);
+
+/**
  * Carrega módulos ativos (por ordem) com suas atividades ativas (sem o conteúdo das perguntas, só as chaves).
  * Módulos sem nenhuma atividade ativa também vêm (o app mostra "em breve"), mas não travam o próximo (veja buildTrail).
+ * O resultado é compartilhado (cache): quem usa só lê, nunca altera.
  * @returns {Promise<{module: object, activities: object[]}[]>}
  */
-async function loadModulesWithActivities() {
-  const [modules, activities] = await Promise.all([
-    ModuleModel.find(NOT_DEACTIVATED).sort({ order: 1 }).lean(),
-    ActivityModel.find(NOT_DEACTIVATED).select("module order title description questionsPerAttempt questions.key").sort({ order: 1 }).lean(),
-  ]);
-  return modules
-    .map((module) => ({
-      module,
-      activities: activities.filter((activity) => String(activity.module) === String(module._id)),
-    }));
+function loadModulesWithActivities() {
+  return contentCache.get("modules", async () => {
+    const [modules, activities] = await Promise.all([
+      ModuleModel.find(NOT_DEACTIVATED).sort({ order: 1 }).lean(),
+      ActivityModel.find(NOT_DEACTIVATED).select("module order title description questionsPerAttempt questions.key").sort({ order: 1 }).lean(),
+    ]);
+    const activitiesByModule = new Map();
+    for (const activity of activities) {
+      const key = String(activity.module);
+      if (!activitiesByModule.has(key)) activitiesByModule.set(key, []);
+      activitiesByModule.get(key).push(activity);
+    }
+    return modules.map((module) => ({ module, activities: activitiesByModule.get(String(module._id)) ?? [] }));
+  });
+}
+
+/**
+ * Atividade completa (perguntas com gabarito), sem os dados do sinal. Fica em cache: cada resposta precisa dela.
+ * O resultado é compartilhado: quem usa só lê.
+ * @param {string} activityId
+ * @returns {Promise<object|null>}
+ * Usado por: service-attempt.js (correção de cada resposta e nota no fim).
+ */
+export function findActivityForGrading(activityId) {
+  return contentCache.get(`activity:${activityId}`, () => ActivityModel.findById(activityId).lean());
+}
+
+/** Esquece a trilha e as atividades em cache (depois de mudar o conteúdo no painel ou no seed). */
+export function clearTrailCache() {
+  contentCache.clear();
 }
 
 /**
@@ -117,12 +148,12 @@ export async function countCompletedModules(user) {
  */
 export async function findUnlockedActivity(user, activityId) {
   const activity = await ActivityModel.findById(activityId).populate("questions.sign");
-  if (!activity) throw notFound("Atividade não encontrada.");
+  if (!activity) throw notFound(MESSAGES.attempt.activityNotFound);
 
   const trail = await buildTrail(user);
   const trailActivity = trail.flatMap((module) => module.activities).find((a) => a.id === String(activity._id));
   if (!trailActivity || trailActivity.status === "locked") {
-    throw forbidden("Conclua as atividades anteriores para liberar esta.");
+    throw forbidden(MESSAGES.attempt.activityLocked);
   }
   return { activity, alreadyCompleted: trailActivity.status === "completed" };
 }

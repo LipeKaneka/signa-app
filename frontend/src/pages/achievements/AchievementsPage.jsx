@@ -3,6 +3,7 @@ import { useAsyncData } from "../../hooks/useAsyncData.js";
 import { ErrorState, LoadingState, ScreenWithNav } from "../../components/layout.jsx";
 import { AchievementCard, sortByUnlockDate } from "../../components/AchievementCard.jsx";
 import "./achievements.css";
+import { MESSAGES } from "../../config/messages.js";
 
 /**
  * Conquistas: desbloqueadas (mais recentes primeiro, com a data) e bloqueadas (mais claras).
@@ -15,7 +16,7 @@ export function AchievementsPage() {
 
   return (
     <ScreenWithNav title="Conquistas" backTo={-1} headerRounded contentClassName="page-content achievements-content">
-      {loading && <LoadingState message="Carregando as conquistas…" />}
+      {loading && <LoadingState message={MESSAGES.loading.achievements} />}
       {error && <ErrorState message={error.message} onRetry={reload} />}
       {data && (
         <>
@@ -27,7 +28,7 @@ export function AchievementsPage() {
               ))}
             </ul>
           ) : (
-            <p className="achievement-empty">Nenhuma conquista ainda. Conclua atividades na trilha para ganhar a primeira!</p>
+            <p className="achievement-empty">{MESSAGES.empty.achievements}</p>
           )}
 
           {locked.length > 0 && (

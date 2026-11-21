@@ -13,8 +13,8 @@ import { App } from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { SettingsProvider } from "./context/SettingsContext.jsx";
 import { AppConfigProvider } from "./context/AppConfigContext.jsx";
-import { Capacitor } from "@capacitor/core";
 import { wakeUpApi } from "./api/http-client.js";
+import { listenToApp } from "./utils/native-app.js";
 
 // Acorda o backend do Render antes de qualquer tela: ele vai subindo enquanto o app carrega e a pessoa entra.
 wakeUpApi();
@@ -22,9 +22,7 @@ wakeUpApi();
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") wakeUpApi();
 });
-if (Capacitor.isNativePlatform()) {
-  import("@capacitor/app").then(({ App }) => App.addListener("resume", wakeUpApi));
-}
+listenToApp("resume", wakeUpApi);
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

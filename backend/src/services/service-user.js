@@ -104,13 +104,15 @@ export async function verifyPasswordReset(email, code) {
 }
 
 /**
- * Troca a senha com o código e já abre a sessão (como no login).
+ * Troca a senha com o código e já abre a sessão (o servidor devolve id + perfil, como no login).
+ * Servidor antigo (sem id na resposta): entra com a senha nova, como antes.
  * @returns {Promise<{token: string, user: object}>}
  * Usado por: POST /auth/password-reset/confirm.
  */
 export async function confirmPasswordReset(email, code, password) {
-  await callServer("/auth/password-reset/confirm", { method: "POST", body: { email, code, password } });
-  return signIn({ email, password });
+  const { id, user } = await callServer("/auth/password-reset/confirm", { method: "POST", body: { email, code, password } });
+  if (!id || !user) return signIn({ email, password });
+  return { token: generateAccessToken(id), user };
 }
 
 /**

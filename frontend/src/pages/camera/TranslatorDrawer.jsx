@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Icon } from "../../components/Icon.jsx";
 import { useExitAnimation } from "../../hooks/useExitAnimation.js";
 import { MOVEMENT_LETTERS, SENSITIVITIES } from "../../features/translator/useSignTranslator.js";
+import { MESSAGES } from "../../config/messages.js";
 
 const MODES = [
   { id: "translate", label: "Traduzir" },
@@ -89,7 +90,7 @@ export function TranslatorDrawer({ mode, onModeChange, sensitivity, onSensitivit
           {translator.wordModel
             ? translator.wordModel.sinais.filter((sign) => !sign.experimental).map((sign) => sign.palavra).join(" · ")
             : translator.wordModelError
-              ? "indisponível no momento"
+              ? MESSAGES.camera.wordModelUnavailable
               : "carregando…"}
         </p>
         {translator.wordModel?.sinais.some((sign) => sign.experimental) && (

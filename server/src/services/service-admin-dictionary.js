@@ -6,6 +6,7 @@ import { badRequest, conflict, notFound } from "../utils/util-http-error.js";
 import { recordAudit } from "./service-audit.js";
 import { publishContentChange } from "./service-admin-publish.js";
 import { describeActiveChange } from "./service-admin-trail.js";
+import { MESSAGES } from "../config/messages.js";
 
 /**
  * Verbete no formato do painel (com status e se a glosa foi revisada).
@@ -63,8 +64,8 @@ export async function listSigns({ search, category, status, page, limit }) {
  */
 export async function createSign(actor, data) {
   const slug = slugify(data.word);
-  if (!slug) throw badRequest("Palavra inválida.");
-  if (await SignModel.exists({ slug })) throw conflict(`Já existe o verbete "${slug}".`);
+  if (!slug) throw badRequest(MESSAGES.admin.invalidWord);
+  if (await SignModel.exists({ slug })) throw conflict(MESSAGES.admin.signExists(slug));
   const sign = await SignModel.create({ ...data, slug, source: VLIBRAS_SOURCE });
   await publishContentChange();
   await recordAudit(actor, { action: "create", entity: "sign", entityId: slug, summary: `Verbete "${data.word}"`, after: sign });
@@ -81,7 +82,7 @@ export async function createSign(actor, data) {
  */
 export async function updateSign(actor, slug, changes) {
   const sign = await SignModel.findOne({ slug });
-  if (!sign) throw notFound("Verbete não encontrado.");
+  if (!sign) throw notFound(MESSAGES.admin.signNotFound);
   const before = sign.toObject();
   for (const field of ["word", "category", "description", "vlibrasGloss", "glossReviewed", "active"]) {
     if (changes[field] !== undefined) sign[field] = changes[field];
@@ -108,10 +109,10 @@ export async function updateSign(actor, slug, changes) {
  */
 export async function deleteSign(actor, slug) {
   const sign = await SignModel.findOne({ slug });
-  if (!sign) throw notFound("Verbete não encontrado.");
-  if (sign.active !== false) throw badRequest("Desative o verbete antes de excluir.");
+  if (!sign) throw notFound(MESSAGES.admin.signNotFound);
+  if (sign.active !== false) throw badRequest(MESSAGES.admin.deactivateSignFirst);
   if (await ActivityModel.exists({ "questions.sign": sign._id })) {
-    throw badRequest("Este sinal é usado em perguntas de atividades. Troque as perguntas antes de excluir.");
+    throw badRequest(MESSAGES.admin.signInUse);
   }
   await sign.deleteOne();
   await publishContentChange();

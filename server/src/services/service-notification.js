@@ -8,6 +8,8 @@ import { NOTIFICATION_TYPES, NOTIFICATION_LIMITS, findNotificationType, fillTemp
 import { badRequest, notFound } from "../utils/util-http-error.js";
 import { recordAudit } from "./service-audit.js";
 import { sendPush, isPushConfigured } from "./service-push.js";
+import { createTimedCache } from "../utils/util-timed-cache.js";
+import { MESSAGES } from "../config/messages.js";
 
 /** Quantas notificações o app recebe por página e quantos aparelhos cada pessoa registra. */
 const LIST_LIMIT = 50;
@@ -35,8 +37,24 @@ export function toPublicNotification(doc) {
   };
 }
 
+/**
+ * Configuração dos tipos em cache: antes, cada notificação (cada conquista, cada lembrete de ofensiva) consultava o
+ * banco. O painel limpa o cache ao mudar um tipo (clearNotificationTypesCache).
+ */
+const TYPES_CACHE_MS = 30 * 1000;
+const typesCache = createTimedCache(TYPES_CACHE_MS);
+
+/** Esquece a configuração dos tipos em cache (depois de mudar um tipo no painel). */
+export function clearNotificationTypesCache() {
+  typesCache.clear();
+}
+
 /** Configuração valendo de cada tipo (padrão + o que o painel mudou). */
-async function readTypeConfigs() {
+function readTypeConfigs() {
+  return typesCache.get("types", loadTypeConfigs);
+}
+
+async function loadTypeConfigs() {
   const saved = new Map((await NotificationTypeModel.find().lean()).map((doc) => [doc.type, doc]));
   return new Map(NOTIFICATION_TYPES.map((item) => {
     const custom = saved.get(item.type);
@@ -107,6 +125,39 @@ export async function notifyUser(userId, type, values = {}) {
     }, { push: config.push });
   } catch (error) {
     console.error(`Notificação "${type}" não foi criada:`, error.message);
+  }
+}
+
+/**
+ * A mesma notificação automática para várias pessoas, cada uma com as suas variáveis do texto. Quem tem o mesmo texto
+ * final é gravado e avisado de uma vez (um insert e um envio ao celular por grupo, em vez de um por pessoa).
+ * Nunca lança: falhas vão para o log.
+ * @param {string} type
+ * @param {{userId: unknown, values?: Record<string, unknown>}[]} recipients
+ * @returns {Promise<number>} quantas foram criadas.
+ * Usado por: service-notification-scheduler.js (lembrete de ofensiva).
+ */
+export async function notifyUsers(type, recipients) {
+  try {
+    const config = (await readTypeConfigs()).get(type);
+    if (!config?.enabled || recipients.length === 0) return 0;
+    const groups = new Map();
+    for (const { userId, values = {} } of recipients) {
+      const title = fillTemplate(config.title, values).slice(0, 120);
+      const body = fillTemplate(config.body, values).slice(0, 400);
+      const key = `${title}
+${body}`;
+      if (!groups.has(key)) groups.set(key, { title, body, userIds: [] });
+      groups.get(key).userIds.push(userId);
+    }
+    let created = 0;
+    for (const { title, body, userIds } of groups.values()) {
+      created += await deliver(userIds, { type, title, body, link: config.link, batch: null }, { push: config.push });
+    }
+    return created;
+  } catch (error) {
+    console.error(`Notificações "${type}" não foram criadas:`, error.message);
+    return 0;
   }
 }
 
@@ -234,9 +285,9 @@ export async function listNotificationTypes() {
  */
 export async function updateNotificationType(actor, type, changes) {
   const definition = findNotificationType(type);
-  if (!definition) throw notFound("Tipo de notificação não encontrado.");
+  if (!definition) throw notFound(MESSAGES.notifications.typeNotFound);
   if (definition.manual && (changes.title !== undefined || changes.body !== undefined)) {
-    throw badRequest("O aviso do painel é escrito na hora do envio: não tem texto padrão.");
+    throw badRequest(MESSAGES.notifications.manualHasNoTemplate);
   }
   const before = (await readTypeConfigs()).get(type);
   await NotificationTypeModel.findOneAndUpdate(
@@ -244,6 +295,7 @@ export async function updateNotificationType(actor, type, changes) {
     { $set: { ...changes, updatedBy: actor.admin.email } },
     { upsert: true, setDefaultsOnInsert: true },
   );
+  clearNotificationTypesCache();
   const after = (await readTypeConfigs()).get(type);
   await recordAudit(actor, {
     action: "update",
@@ -262,8 +314,9 @@ export async function updateNotificationType(actor, type, changes) {
  */
 export async function resetNotificationType(actor, type) {
   const definition = findNotificationType(type);
-  if (!definition) throw notFound("Tipo de notificação não encontrado.");
+  if (!definition) throw notFound(MESSAGES.notifications.typeNotFound);
   await NotificationTypeModel.deleteOne({ type });
+  clearNotificationTypesCache();
   await recordAudit(actor, { action: "update", entity: "notification-type", entityId: type, summary: `notificação "${definition.label}" voltou ao padrão` });
   return (await readTypeConfigs()).get(type);
 }
@@ -278,12 +331,12 @@ export async function resetNotificationType(actor, type) {
  */
 export async function sendManualNotification(actor, { title, body, userId = null }) {
   const config = (await readTypeConfigs()).get("manual");
-  if (!config.enabled) throw badRequest("O tipo \"Aviso do painel\" está desligado. Ligue-o para enviar.");
+  if (!config.enabled) throw badRequest(MESSAGES.notifications.manualTypeDisabled);
   let recipients;
   let target = "todos";
   if (userId) {
     const user = mongoose.isValidObjectId(userId) ? await UserModel.findById(userId).select("nickname").lean() : null;
-    if (!user) throw notFound("Usuário não encontrado.");
+    if (!user) throw notFound(MESSAGES.notifications.userNotFound);
     recipients = [user._id];
     target = user.nickname;
   } else {

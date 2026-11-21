@@ -155,10 +155,12 @@ export function RankingPage() {
   const metric = METRICS.find((item) => item.id === metricId);
   const loadRanking = useCallback(() => ContentApi.fetchRanking(metricId), [metricId]);
   const { data, error, loading, reload } = useAsyncData(loadRanking, [loadRanking], { cacheKey: `ranking:${metricId}` });
+  // Ao trocar de aba, os dados na tela ainda são da aba anterior até a resposta chegar: a unidade segue os dados.
+  const dataMetric = data ? METRICS.find((item) => item.id === data.metric) ?? metric : metric;
 
   return (
     <ScreenWithNav title="Ranking" backTo={-1}>
-      {data && <PositionCard ranking={data} metric={METRICS.find((item) => item.id === data.metric) ?? metric} />}
+      {data && <PositionCard ranking={data} metric={dataMetric} />}
 
       <div className="ranking-tabs" role="tablist" aria-label="Critério do ranking">
         {METRICS.map((item) => (
@@ -180,7 +182,7 @@ export function RankingPage() {
       {error && <ErrorState message={error.message} onRetry={reload} />}
       {data && (
         <div className={`ranking-results${loading ? " ranking-results--loading" : ""}`} aria-busy={loading}>
-          <RankingList ranking={data} metric={METRICS.find((item) => item.id === data.metric) ?? metric} />
+          <RankingList ranking={data} metric={dataMetric} />
         </div>
       )}
     </ScreenWithNav>

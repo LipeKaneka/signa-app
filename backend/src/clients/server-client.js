@@ -1,18 +1,23 @@
 import { getEnvironment } from "../config/env.js";
 import { HttpError } from "../utils/util-http-error.js";
+import { MESSAGES } from "../config/messages.js";
 
 /**
  * Tempo máximo esperando o servidor de gerenciamento antes de responder "indisponível" ao app.
  * Longo de propósito: em hospedagens grátis (Render) o servidor "dorme" sem uso e leva até ~50 s para acordar.
  */
 const REQUEST_TIMEOUT_MS = 55000;
-/** Respostas do proxy da hospedagem enquanto o servidor acorda ou reinicia: vale tentar de novo. */
-const WAKING_STATUSES = new Set([502, 503, 504]);
+/**
+ * Respostas do proxy da hospedagem enquanto o servidor acorda, reinicia ou segura excesso de pedidos: vale tentar de
+ * novo. 429 só conta quando vem do proxy (sem {error} do servidor); o 429 do próprio servidor (ex.: "espere um minuto
+ * para pedir outro código") é mensagem para a pessoa e passa adiante.
+ */
+const WAKING_STATUSES = new Set([429, 502, 503, 504]);
 const WAKING_RETRIES = 3;
 const WAKING_RETRY_DELAY_MS = 3000;
-const UNAVAILABLE_MESSAGE = "Serviço temporariamente indisponível. Tente de novo em instantes.";
+const UNAVAILABLE_MESSAGE = MESSAGES.general.serverUnavailable;
 /** Mensagem do servidor quando a chave de serviço não confere (server/src/middlewares/service-auth-middleware.js). */
-const SERVICE_KEY_REJECTED_MESSAGE = "Chave de serviço inválida.";
+const SERVICE_KEY_REJECTED_MESSAGE = MESSAGES.general.serverServiceKeyRejected;
 
 /**
  * Monta a URL da API interna com os parâmetros de consulta (ignora vazios).
@@ -51,7 +56,7 @@ async function readJsonSafely(response) {
 function toHttpError(status, data) {
   // code + ban: conta banida (o app mostra motivo e prazo). Só estes campos passam adiante.
   const extra = data.code === "account_banned" ? { code: data.code, ban: data.ban ?? null } : undefined;
-  return new HttpError(status, data.error ?? "Não foi possível concluir a operação.", extra);
+  return new HttpError(status, data.error ?? MESSAGES.general.operationFailed, extra);
 }
 
 /**
@@ -85,16 +90,28 @@ export async function callServer(path, { method = "GET", body, query } = {}) {
     }
     // Servidor acordando: só repete leituras (GET), que não mudam nada se chegarem duas vezes.
     if (method !== "GET" || !WAKING_STATUSES.has(response.status) || attempt >= WAKING_RETRIES || signal.aborted) break;
-    await new Promise((resolve) => setTimeout(resolve, WAKING_RETRY_DELAY_MS));
+    // Resposta com {error} veio do próprio servidor (ex.: manutenção, "espere um minuto"): não é ele acordando.
+    if ((await response.clone().json().catch(() => ({}))).error) break;
+    await new Promise((resolve) => setTimeout(resolve, WAKING_RETRY_DELAY_MS * (attempt + 1)));
   }
 
   const data = await readJsonSafely(response);
   if (response.ok) return data;
 
+  // 429 sem {error}: veio do proxy da hospedagem (excesso de pedidos do backend), não é culpa da pessoa.
+  if (response.status === 429 && !data.error) {
+    console.error(`Hospedagem recusou por excesso de pedidos (${method} ${path}): confira se SERVER_URL usa a rede privada.`);
+    throw new HttpError(503, UNAVAILABLE_MESSAGE);
+  }
+
   // Chave recusada é erro de configuração do backend, não do usuário: não pode virar 401 (o app sairia da conta).
   const serviceKeyRejected = response.status === 401 && data.error === SERVICE_KEY_REJECTED_MESSAGE;
   // O e-mail de recuperação não saiu (Mailtrap fora ou recusou): o servidor está de pé, a mensagem é para o usuário.
   if (response.status === 503 && data.code === "mail_failed") throw new HttpError(503, data.error);
+  // Manutenção valendo e a conta não está liberada: o app mostra o pop-up (com os textos do painel) e fecha.
+  if (response.status === 503 && data.code === "maintenance") {
+    throw new HttpError(503, data.error, { code: data.code, maintenance: data.maintenance ?? null });
+  }
   if (response.status >= 500 || serviceKeyRejected) {
     console.error(`Servidor de gerenciamento respondeu ${response.status} (${method} ${path}):`, data.error);
     throw new HttpError(503, UNAVAILABLE_MESSAGE);

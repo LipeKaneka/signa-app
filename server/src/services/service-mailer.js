@@ -1,11 +1,12 @@
 import { getEnvironment, isDevelopment } from "../config/env.js";
 import { HttpError } from "../utils/util-http-error.js";
+import { MESSAGES } from "../config/messages.js";
 
 /** Provedores: Brevo (principal) e Mailtrap (alternativa, exige domínio próprio). Envio pela API do Mailtrap (Email Sending); com MAILTRAP_INBOX_ID, vai para a caixa de testes (Sandbox). */
 const MAILTRAP_SEND_URL = "https://send.api.mailtrap.io/api/send";
 const MAILTRAP_SANDBOX_URL = "https://sandbox.api.mailtrap.io/api/send";
 const SEND_TIMEOUT_MS = 10_000;
-const MAIL_FAILED_MESSAGE = "Não foi possível enviar o e-mail agora. Tente de novo em alguns minutos.";
+const MAIL_FAILED_MESSAGE = MESSAGES.passwordReset.mailFailed;
 
 /**
  * Corpo do e-mail com o código (texto puro + HTML simples, nas cores do app).
@@ -104,6 +105,52 @@ async function sendWithMailtrap({ to, subject, text, html, category }) {
     html,
     category,
   });
+}
+
+/** Escapa texto para entrar no HTML do e-mail. */
+const escapeHtml = (text) => String(text).replace(/[&<>"']/g, (character) => `&#${character.charCodeAt(0)};`);
+
+/**
+ * HTML simples nas cores do app a partir de texto puro (cada linha em branco separa um parágrafo).
+ * @param {string} text
+ * @returns {string}
+ */
+function buildSimpleHtml(text) {
+  const paragraphs = String(text).split(/\n\s*\n/).map((paragraph) =>
+    `<p style="margin:0 0 14px;font-size:15px;line-height:1.5">${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`).join("");
+  return `<!doctype html>
+<html lang="pt-BR"><body style="margin:0;padding:24px;background:#f3f0ff;font-family:Arial,Helvetica,sans-serif;color:#111111">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:16px">
+    <tr><td style="padding:28px 28px 14px">
+      <p style="margin:0 0 16px;font-size:20px;font-weight:bold;color:#4f31bb">Signa Ludus</p>
+      ${paragraphs}
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
+/**
+ * Envia um e-mail de texto (com versão HTML nas cores do app) pelo provedor configurado.
+ * Sem provedor: em desenvolvimento só aparece no log; em produção, aviso no log. Nunca envia sem provedor.
+ * @param {{to: string, subject: string, text: string, category: string}} message
+ * @returns {Promise<boolean>} true se foi entregue a um provedor.
+ * @throws {HttpError} 503 se o provedor recusar ou não responder.
+ * Usado por: service-popups.js (avisos de manutenção).
+ */
+export async function sendEmail({ to, subject, text, category }) {
+  const { mail } = getEnvironment();
+  const message = { to, subject, text, html: buildSimpleHtml(text), category };
+  if (mail.brevoApiKey) {
+    await sendWithBrevo(message);
+    return true;
+  }
+  if (mail.mailtrapToken) {
+    await sendWithMailtrap(message);
+    return true;
+  }
+  if (isDevelopment()) console.log(`[desenvolvimento] E-mail "${subject}" para ${to} (sem provedor configurado: não enviado).`);
+  else console.warn(`E-mail "${subject}" para ${to} não enviado: nenhum provedor (BREVO_API_KEY ou MAILTRAP_API_TOKEN) configurado.`);
+  return false;
 }
 
 /**

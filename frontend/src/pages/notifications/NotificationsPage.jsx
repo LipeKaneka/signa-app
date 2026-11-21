@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ScreenWithNav, LoadingState } from "../../components/layout.jsx";
 import { useNotifications } from "../../features/notifications/NotificationsContext.jsx";
 import "../../features/notifications/notifications.css";
+import { MESSAGES } from "../../config/messages.js";
 
 const formatWhen = (date) =>
   new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(date));
@@ -27,9 +28,9 @@ export function NotificationsPage() {
   return (
     <ScreenWithNav title="Notificações" backTo={-1}>
       {!loaded ? (
-        <LoadingState message="Carregando notificações…" />
+        <LoadingState message={MESSAGES.loading.notifications} />
       ) : notifications.length === 0 ? (
-        <p className="notifications-empty">Nenhuma notificação ainda. Conquistas, eventos e avisos aparecem aqui.</p>
+        <p className="notifications-empty">{MESSAGES.empty.notifications}</p>
       ) : (
         <>
           {unread > 0 && (

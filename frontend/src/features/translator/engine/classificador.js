@@ -14,17 +14,6 @@ const norma = a => Math.sqrt(dot(a, a))
 const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
 
 /**
- * Pontos 3D "do mundo" (metros, do MediaPipe) com origem no punho e mão
- * esquerda espelhada. A profundidade é bem mais estável que a das coordenadas
- * da imagem, o que importa para descrever a mão no sistema da palma.
- */
-export function pontosMundo(mundo, lado) {
-  const s = lado === 'Left' ? -1 : 1
-  const p0 = mundo[0]
-  return mundo.map(p => [+(s * (p.x - p0.x)).toFixed(4), +(p.y - p0.y).toFixed(4), +(s * (p.z - p0.z)).toFixed(4)])
-}
-
-/**
  * Pontos "brutos" normalizados: origem no punho, x corrigido pelo aspecto da
  * imagem e mão esquerda espelhada para parecer direita. É o que guardamos nas
  * amostras (assim as características podem evoluir sem regravar nada).
@@ -147,6 +136,9 @@ export function contagem(amostras = todasAmostras()) {
   for (const a of amostras) c[a.rotulo] = (c[a.rotulo] || 0) + 1
   return c
 }
+
+/** Quantidade das amostras do usuário por rótulo, sem calcular as características (só para listar). */
+export const contagemProprias = () => contagem(lerProprias())
 
 // ---------- Classificação ----------
 

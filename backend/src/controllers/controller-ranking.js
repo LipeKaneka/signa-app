@@ -2,6 +2,7 @@ import * as RankingService from "../services/service-ranking.js";
 import { RANKING_RULES } from "../config/rules.js";
 import { readPositiveInteger } from "../utils/util-validators.js";
 import { badRequest } from "../utils/util-http-error.js";
+import { MESSAGES } from "../config/messages.js";
 
 /**
  * Valida ?metric= (activities | xp | streak; padrão activities).
@@ -10,7 +11,7 @@ import { badRequest } from "../utils/util-http-error.js";
 function readMetric(value) {
   const metric = value ?? "activities";
   if (!Object.hasOwn(RankingService.RANKING_METRICS, metric)) {
-    throw badRequest("Critério de ranking inválido. Use activities, xp ou streak.");
+    throw badRequest(MESSAGES.validation.rankingMetric);
   }
   return metric;
 }

@@ -2,7 +2,9 @@ import { NotificationModel } from "../models/model-notification.js";
 import { UserModel } from "../models/model-user.js";
 import { findActiveEvents } from "./service-event.js";
 import { toDayKey } from "./service-streak.js";
-import { notifyAll, notifyUser } from "./service-notification.js";
+import { notifyAll, notifyUsers } from "./service-notification.js";
+import { syncMaintenance } from "./service-popups.js";
+import { APP_UPDATE_SYNC_INTERVAL_MS, syncAppUpdateFromGithub } from "./service-app-update-sync.js";
 
 /** Confere a cada minuto. */
 const TICK_MS = 60 * 1000;
@@ -12,8 +14,9 @@ const EVENT_START_WINDOW_MS = 6 * 60 * 60 * 1000;
 const STREAK_REMINDER_HOUR = 19;
 
 /** Hora (0–23) em Brasília. */
+const HOUR_FORMAT = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", hour: "numeric", hourCycle: "h23" });
 function hourInBrasilia(now) {
-  return Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", hour: "numeric", hourCycle: "h23" }).format(now));
+  return Number(HOUR_FORMAT.format(now));
 }
 
 /**
@@ -54,16 +57,15 @@ export async function remindStreaks(now = new Date()) {
     createdAt: { $gte: startOfToday },
     user: { $in: users.map((user) => user._id) },
   })).map(String));
-  let count = 0;
-  for (const user of users) {
-    if (reminded.has(String(user._id))) continue;
-    await notifyUser(user._id, "streak_reminder", { streak: user.streak });
-    count += 1;
-  }
-  return count;
+  // Em lote: quem tem a mesma ofensiva recebe o mesmo texto (um insert por grupo, não um por pessoa).
+  const pending = users.filter((user) => !reminded.has(String(user._id)));
+  await notifyUsers("streak_reminder", pending.map((user) => ({ userId: user._id, values: { streak: user.streak } })));
+  return pending.length;
 }
 
 let timer = null;
+/** Última conferência de release nova no GitHub (0 = ainda não conferiu desde que o servidor ligou). */
+let lastAppUpdateSyncAt = 0;
 
 /**
  * Liga a conferência de minuto em minuto (eventos que começaram e lembretes de ofensiva).
@@ -76,6 +78,13 @@ export function startNotificationScheduler() {
       const now = new Date();
       await notifyStartedEvents(now);
       await remindStreaks(now);
+      // Manutenção agendada que começou ou terminou: marca e manda os e-mails configurados.
+      await syncMaintenance(now);
+      // Release nova no GitHub: aplica sozinho a atualização do app (a cada 10 min; logo ao ligar também).
+      if (now - lastAppUpdateSyncAt >= APP_UPDATE_SYNC_INTERVAL_MS) {
+        lastAppUpdateSyncAt = now.getTime();
+        await syncAppUpdateFromGithub();
+      }
     } catch (error) {
       console.error("Conferência de notificações falhou:", error.message);
     }

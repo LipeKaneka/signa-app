@@ -10,6 +10,7 @@ import {
   readUserAchievementMetrics,
   recordUnlockDates,
 } from "./service-achievement.js";
+import { MESSAGES } from "../config/messages.js";
 
 /** Limites de cada envio (o app junta os toques e manda de tempos em tempos). */
 export const APP_EVENT_LIMITS = Object.freeze({ maxEvents: 30, maxCountPerEvent: 50 });
@@ -23,19 +24,19 @@ const SLUG_PATTERN = /^[a-z0-9-]{1,80}$/;
  */
 export function readAppEvents(events) {
   if (!Array.isArray(events) || events.length === 0 || events.length > APP_EVENT_LIMITS.maxEvents) {
-    throw badRequest(`Envie de 1 a ${APP_EVENT_LIMITS.maxEvents} eventos.`);
+    throw badRequest(MESSAGES.appEvents.eventCount(APP_EVENT_LIMITS.maxEvents));
   }
   const counts = new Map();
   const signs = new Set();
   for (const event of events) {
-    if (!event || typeof event.type !== "string") throw badRequest("Evento inválido.");
+    if (!event || typeof event.type !== "string") throw badRequest(MESSAGES.appEvents.invalidEvent);
     if (event.type === SIGN_VIEW_EVENT) {
-      if (typeof event.sign !== "string" || !SLUG_PATTERN.test(event.sign)) throw badRequest("Sinal inválido.");
+      if (typeof event.sign !== "string" || !SLUG_PATTERN.test(event.sign)) throw badRequest(MESSAGES.appEvents.invalidSign);
       signs.add(event.sign);
     } else if (APP_EVENT_METRICS[event.type]) {
       const count = event.count ?? 1;
       if (!Number.isInteger(count) || count < 1 || count > APP_EVENT_LIMITS.maxCountPerEvent) {
-        throw badRequest(`Quantidade inválida (1 a ${APP_EVENT_LIMITS.maxCountPerEvent}).`);
+        throw badRequest(MESSAGES.appEvents.invalidCount(APP_EVENT_LIMITS.maxCountPerEvent));
       }
       counts.set(event.type, Math.min((counts.get(event.type) ?? 0) + count, APP_EVENT_LIMITS.maxCountPerEvent));
     }

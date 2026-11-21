@@ -15,9 +15,10 @@ const OFFLINE_RETRIES = 2;
 const OFFLINE_RETRY_DELAY_MS = 4000;
 /**
  * De quanto em quanto tempo o app confere se a conta continua liberada (só com a tela visível). Assim quem é
- * banido no painel sai da conta mesmo parado numa tela; ao tentar entrar de novo, vê o motivo e o prazo.
+ * banido no painel sai da conta mesmo parado numa tela (em até 1 minuto; qualquer outra chamada que receba o
+ * aviso de banimento tira antes). Ao tentar entrar de novo, vê o motivo e o prazo. Era 20 s.
  */
-const SESSION_CHECK_INTERVAL_MS = 20 * 1000;
+const SESSION_CHECK_INTERVAL_MS = 60 * 1000;
 
 /**
  * Guarda a sessão (token + perfil). status: loading | signedOut | signedIn | offline.

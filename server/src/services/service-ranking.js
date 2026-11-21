@@ -28,6 +28,23 @@ function buildBaseFilter(metric, now = new Date()) {
 }
 
 /**
+ * O usuário passa no filtro do ranking? Conferido com o documento que já está em memória (antes era uma consulta).
+ * @param {object} user
+ * @param {object} filter - de buildBaseFilter.
+ * @returns {boolean}
+ */
+function matchesBaseFilter(user, filter) {
+  if (user.showInRanking !== true || user.status !== "active") return false;
+  return !filter.lastActivityDay || filter.lastActivityDay.$in.includes(user.lastActivityDay);
+}
+
+/**
+ * Campos lidos do banco para cada linha do ranking. Antes vinha o documento inteiro (foto grande, listas de
+ * atividades e sinais vistos...): com 10 usuários, 92 KB por consulta contra 14 KB só com estes campos.
+ */
+const ROW_FIELDS = "publicId nickname city avatarThumb completedActivitiesCount xp streak";
+
+/**
  * Linha pública do ranking (sem dados sensíveis).
  * @returns {{position: number, publicId: string, nickname: string, city: string, value: number, isMe: boolean}}
  */
@@ -62,7 +79,7 @@ async function findPosition(baseFilter, field, user) {
 async function findNeighbors(baseFilter, field, viewer, position) {
   const sort = { [field]: -1, _id: 1 };
   const skip = Math.max(position - 2, 0);
-  const users = await UserModel.find(baseFilter).sort(sort).skip(skip).limit(3).lean();
+  const users = await UserModel.find(baseFilter).select(ROW_FIELDS).sort(sort).skip(skip).limit(3).lean();
   return users.map((user, index) => toRankingRow(user, skip + index + 1, field, viewer._id));
 }
 
@@ -93,18 +110,23 @@ async function trackViewerPosition(viewer, metric, position) {
 export async function getRanking(viewer, metric, limit) {
   const field = RANKING_METRICS[metric];
   const baseFilter = buildBaseFilter(metric);
-  const topUsers = await UserModel.find(baseFilter).sort({ [field]: -1, _id: 1 }).limit(limit).lean();
+  const viewerIsListed = matchesBaseFilter(viewer, baseFilter);
+  // Top e posição em paralelo (antes: top, existe?, posição, gravar, vizinhos — cinco idas ao banco em fila).
+  const [topUsers, position] = await Promise.all([
+    UserModel.find(baseFilter).select(ROW_FIELDS).sort({ [field]: -1, _id: 1 }).limit(limit).lean(),
+    viewerIsListed ? findPosition(baseFilter, field, viewer) : null,
+  ]);
   const top = topUsers.map((user, index) => toRankingRow(user, index + 1, field, viewer._id));
-
-  const viewerIsListed = await UserModel.exists({ _id: viewer._id, ...baseFilter });
   if (!viewerIsListed) return { metric, top, me: null, neighbors: [] };
 
-  const position = await findPosition(baseFilter, field, viewer);
-  const { positionChange, bestPosition } = await trackViewerPosition(viewer, metric, position);
+  const [{ positionChange, bestPosition }, neighbors] = await Promise.all([
+    trackViewerPosition(viewer, metric, position),
+    findNeighbors(baseFilter, field, viewer, position),
+  ]);
   return {
     metric,
     top,
     me: { position, value: viewer[field], positionChange, bestPosition },
-    neighbors: await findNeighbors(baseFilter, field, viewer, position),
+    neighbors,
   };
 }

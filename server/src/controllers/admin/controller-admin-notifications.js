@@ -2,19 +2,20 @@ import * as NotificationService from "../../services/service-notification.js";
 import { readActor } from "../../middlewares/admin-auth-middleware.js";
 import { NOTIFICATION_LIMITS, NOTIFICATION_TYPE_KEYS } from "../../config/notification-types.js";
 import { badRequest } from "../../utils/util-http-error.js";
+import { MESSAGES } from "../../config/messages.js";
 
 /** Texto opcional com limite; undefined = não mudar. */
 function readText(value, label, max) {
   if (value === undefined) return undefined;
-  if (typeof value !== "string") throw badRequest(`${label} deve ser texto.`);
+  if (typeof value !== "string") throw badRequest(MESSAGES.notifications.mustBeText(label));
   const text = value.trim();
-  if (text.length > max) throw badRequest(`${label}: no máximo ${max} caracteres.`);
+  if (text.length > max) throw badRequest(MESSAGES.notifications.textTooLong(label, max));
   return text;
 }
 
 function readFlag(value, label) {
   if (value === undefined) return undefined;
-  if (typeof value !== "boolean") throw badRequest(`${label} deve ser true ou false.`);
+  if (typeof value !== "boolean") throw badRequest(MESSAGES.notifications.mustBeTrueOrFalse(label));
   return value;
 }
 
@@ -32,7 +33,7 @@ export async function updateType(req, res) {
     title: readText(body.title, "Título", NOTIFICATION_LIMITS.title),
     body: readText(body.body, "Texto", NOTIFICATION_LIMITS.body),
   }).filter(([, value]) => value !== undefined));
-  if (Object.keys(changes).length === 0) throw badRequest("Nada para mudar.");
+  if (Object.keys(changes).length === 0) throw badRequest(MESSAGES.notifications.nothingToChange);
   res.json({ type: await NotificationService.updateNotificationType(readActor(req), req.params.type, changes) });
 }
 
@@ -46,7 +47,7 @@ export async function send(req, res) {
   const body = req.body ?? {};
   const title = readText(body.title, "Título", NOTIFICATION_LIMITS.title);
   const text = readText(body.body, "Texto", NOTIFICATION_LIMITS.body) ?? "";
-  if (!title) throw badRequest("Escreva o título do aviso.");
+  if (!title) throw badRequest(MESSAGES.notifications.titleRequired);
   const userId = body.userId === undefined || body.userId === null || body.userId === "" ? null : String(body.userId);
   res.status(201).json(await NotificationService.sendManualNotification(readActor(req), { title, body: text, userId }));
 }

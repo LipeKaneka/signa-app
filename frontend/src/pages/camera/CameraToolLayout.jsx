@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Icon } from "../../components/Icon.jsx";
 import { CameraStatusCover } from "./CameraStatusCover.jsx";
+import { CameraFeed } from "./CameraFeed.jsx";
 import "./camera-tool.css";
 
 /**
@@ -19,8 +20,7 @@ export function CameraToolLayout({ title, camera, overlay, children }) {
       </header>
 
       <div className="camera-tool__view">
-        <video ref={camera.videoRef} playsInline muted aria-label="Imagem da câmera" />
-        <canvas ref={camera.canvasRef} aria-hidden="true" />
+        <CameraFeed camera={camera} />
         {camera.status !== "ready" && <CameraStatusCover camera={camera} />}
         <div className="camera-tool__overlay">
           {overlay}

@@ -5,6 +5,8 @@ import { callServer } from "./server-client.js";
 const MAX_ENTRIES = 500;
 
 const entries = new Map();
+/** Buscas em andamento por chave (quem pede junto espera a mesma busca). */
+const pendingLoads = new Map();
 let knownVersion = null;
 let versionCheckedAt = 0;
 let pendingVersionCheck = null;
@@ -53,16 +55,35 @@ export async function cachedContent(key, load, { maxAgeMs } = {}) {
   const expired = entry && maxAgeMs !== undefined && Date.now() - entry.storedAt >= maxAgeMs;
   if (entry && !expired) return entry.value;
 
-  const value = await load();
-  entries.delete(key);
-  entries.set(key, { value, storedAt: Date.now() });
-  if (entries.size > MAX_ENTRIES) entries.delete(entries.keys().next().value);
-  return value;
+  // Vários apps pedindo a mesma coisa ao mesmo tempo (ex.: eventos logo depois de vencer): uma busca só no servidor.
+  let pending = pendingLoads.get(key);
+  if (!pending) {
+    pending = load()
+      .then((value) => {
+        entries.delete(key);
+        entries.set(key, { value, storedAt: Date.now() });
+        if (entries.size > MAX_ENTRIES) entries.delete(entries.keys().next().value);
+        return value;
+      })
+      .finally(() => pendingLoads.delete(key));
+    pendingLoads.set(key, pending);
+  }
+  try {
+    return await pending;
+  } catch (error) {
+    // Servidor fora do ar ou recusando: o conteúdo vencido ainda serve melhor do que um erro na tela.
+    if (entry) {
+      console.error(`Usando "${key}" vencido do cache: ${error.message}`);
+      return entry.value;
+    }
+    throw error;
+  }
 }
 
 /** Esvazia o cache e esquece a versão (usado pelos testes). */
 export function clearContentCache() {
   entries.clear();
+  pendingLoads.clear();
   knownVersion = null;
   versionCheckedAt = 0;
 }

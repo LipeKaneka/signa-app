@@ -39,6 +39,26 @@ export function buildGestureFrame(hand, points, info, aspect, stillThreshold) {
   };
 }
 
+/** Estado do reconhecimento que muda a cada quadro (fica num ref: mudar não redesenha a tela). */
+function createRecognitionState() {
+  const gestures = prepareGestures();
+  return {
+    gestures,
+    taughtGestureLetters: gestures.filter((gesture) => !gesture.base).map((gesture) => gesture.r),
+    builtInGestureLetters: gestures.filter((gesture) => gesture.base).map((gesture) => gesture.r),
+    sequence: createSequenceState(),
+    window: [],
+    movingFrames: 0,
+    gestureDetector: new GestureDetector(),
+    blockStaticLetter: false,
+    extractor: new BodyFeatureExtractor(),
+    segmenter: new SignSegmenter(),
+    segmentStart: null,
+    stillSince: null,
+    lastLetterKey: "",
+  };
+}
+
 /**
  * Tradução em tempo real: letras paradas (k-NN), letras com movimento ensinadas (DTW) e palavras (LSTM).
  * @param {{samples: object[], profile: object|null, sensitivity: "strict"|"normal"|"tolerant", onWrite?: (label: string) => void}} options
@@ -57,19 +77,10 @@ export function useSignTranslator({ samples, profile, sensitivity, onWrite }) {
   const [wordModel, setWordModel] = useState(null);
   const [wordModelError, setWordModelError] = useState("");
 
-  const refs = useRef({
-    gestures: prepareGestures(),
-    sequence: createSequenceState(),
-    window: [],
-    movingFrames: 0,
-    gestureDetector: new GestureDetector(),
-    blockStaticLetter: false,
-    extractor: new BodyFeatureExtractor(),
-    segmenter: new SignSegmenter(),
-    segmentStart: null,
-    stillSince: null,
-    lastLetterKey: "",
-  });
+  // Criado uma vez só: com useRef(valor), o valor seria recalculado a cada redesenho (prepareGestures custa
+  // ~5 ms no PC com gestos ensinados, e a tela redesenha a cada letra).
+  const refs = useRef(null);
+  refs.current ??= createRecognitionState();
   const onWriteRef = useRef(onWrite);
   onWriteRef.current = onWrite;
 
@@ -227,8 +238,8 @@ export function useSignTranslator({ samples, profile, sensitivity, onWrite }) {
     event,
     wordModel,
     wordModelError,
-    taughtGestureLetters: refs.current.gestures.filter((gesture) => !gesture.base).map((gesture) => gesture.r),
-    builtInGestureLetters: refs.current.gestures.filter((gesture) => gesture.base).map((gesture) => gesture.r),
+    taughtGestureLetters: refs.current.taughtGestureLetters,
+    builtInGestureLetters: refs.current.builtInGestureLetters,
     stillThreshold: settings.still,
   };
 }

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import * as UserController from "../controllers/controller-user.js";
-import { requireAuth } from "../middlewares/auth-middleware.js";
+import { requireAuth, requireToken } from "../middlewares/auth-middleware.js";
 import { authLimiter } from "../middlewares/rateLimit-middleware.js";
 import { asyncHandler } from "../utils/util-async-handler.js";
 
@@ -14,7 +14,7 @@ userRouter.post("/auth/password-reset/verify", authLimiter, asyncHandler(UserCon
 userRouter.post("/auth/password-reset/confirm", authLimiter, asyncHandler(UserController.confirmPasswordReset));
 
 userRouter.get("/auth/session", requireAuth, UserController.getSession);
-userRouter.get("/profile", requireAuth, asyncHandler(UserController.getProfile));
-userRouter.post("/profile/events", requireAuth, asyncHandler(UserController.recordEvents));
-userRouter.patch("/profile", requireAuth, asyncHandler(UserController.updateProfile));
-userRouter.delete("/profile", requireAuth, asyncHandler(UserController.deleteAccount));
+userRouter.get("/profile", requireToken, asyncHandler(UserController.getProfile));
+userRouter.post("/profile/events", requireToken, asyncHandler(UserController.recordEvents));
+userRouter.patch("/profile", requireToken, asyncHandler(UserController.updateProfile));
+userRouter.delete("/profile", requireToken, asyncHandler(UserController.deleteAccount));

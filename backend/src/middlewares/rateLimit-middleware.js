@@ -1,5 +1,6 @@
 import { rateLimit } from "express-rate-limit";
 import { getEnvironment } from "../config/env.js";
+import { MESSAGES } from "../config/messages.js";
 
 /**
  * Cria um limitador de requisições por IP.
@@ -19,10 +20,10 @@ function createLimiter(windowMinutes, limit, message) {
 }
 
 /** Login e cadastro: segura tentativas de adivinhar senha. */
-export const authLimiter = createLimiter(15, 20, "Muitas tentativas. Aguarde alguns minutos.");
+export const authLimiter = createLimiter(15, 20, MESSAGES.rateLimit.auth);
 
 /** Assistente: cada pergunta pode custar uma chamada de IA. */
-export const chatLimiter = createLimiter(1, 10, "Muitas perguntas seguidas. Aguarde um minuto.");
+export const chatLimiter = createLimiter(1, 10, MESSAGES.rateLimit.chat);
 
 /** Geral, por IP: API_RATE_LIMIT_PER_MINUTE (padrão 300). */
-export const apiLimiter = createLimiter(1, () => getEnvironment().apiRateLimitPerMinute, "Muitas requisições. Aguarde um pouco.");
+export const apiLimiter = createLimiter(1, () => getEnvironment().apiRateLimitPerMinute, MESSAGES.rateLimit.api);

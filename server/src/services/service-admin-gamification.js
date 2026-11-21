@@ -16,6 +16,7 @@ import { toPublicAchievementAppearance } from "../config/achievement-appearance.
 import { AchievementTierModel } from "../models/model-achievement-tier.js";
 import { listAchievementTiers } from "./service-achievement.js";
 import { currentOccurrence, isRecurring, nextOccurrence } from "../config/event-schedule.js";
+import { MESSAGES } from "../config/messages.js";
 
 /**
  * Conquista no formato do painel.
@@ -61,7 +62,7 @@ async function ensureTierExists(appearance) {
   const key = appearance?.tier;
   if (!key) return;
   const tiers = await listAchievementTiers(); // cria as padrão num banco novo
-  if (!tiers.some((tier) => tier.key === key)) throw badRequest(`A raridade "${key}" não existe.`);
+  if (!tiers.some((tier) => tier.key === key)) throw badRequest(MESSAGES.admin.tierMissing(key));
 }
 
 /**
@@ -74,7 +75,7 @@ async function ensureTierExists(appearance) {
  */
 export async function createTier(actor, data) {
   await listAchievementTiers(); // garante as padrão antes da primeira criada
-  if (await AchievementTierModel.exists({ key: data.key })) throw conflict(`Já existe a raridade "${data.key}".`);
+  if (await AchievementTierModel.exists({ key: data.key })) throw conflict(MESSAGES.admin.tierExists(data.key));
   const last = await AchievementTierModel.findOne().sort({ order: -1 }).lean();
   const tier = await AchievementTierModel.create({ ...data, order: (last?.order ?? 0) + 1 });
   await publishContentChange();
@@ -92,7 +93,7 @@ export async function createTier(actor, data) {
  */
 export async function updateTier(actor, tierId, changes) {
   const tier = await AchievementTierModel.findById(tierId);
-  if (!tier) throw notFound("Raridade não encontrada.");
+  if (!tier) throw notFound(MESSAGES.admin.tierNotFound);
   const before = tier.toObject();
   for (const field of ["label", "tagBackground", "tagText", "preset"]) {
     if (changes[field] !== undefined) tier[field] = changes[field];
@@ -114,7 +115,7 @@ export async function reorderTiers(actor, ids) {
   const tiers = await AchievementTierModel.find().lean();
   const known = new Set(tiers.map((tier) => String(tier._id)));
   if (!Array.isArray(ids) || ids.length !== known.size || new Set(ids).size !== ids.length || !ids.every((id) => known.has(String(id)))) {
-    throw badRequest("Envie todas as raridades, cada uma uma vez, na nova ordem.");
+    throw badRequest(MESSAGES.admin.sendAllTiers);
   }
   await AchievementTierModel.bulkWrite(ids.map((id, index) => ({ updateOne: { filter: { _id: id }, update: { $set: { order: index + 1 } } } })));
   await publishContentChange();
@@ -133,8 +134,8 @@ export async function reorderTiers(actor, ids) {
  */
 export async function deleteTier(actor, tierId) {
   const tier = await AchievementTierModel.findById(tierId);
-  if (!tier) throw notFound("Raridade não encontrada.");
-  if ((await AchievementTierModel.countDocuments()) <= 1) throw badRequest("Deixe pelo menos uma raridade.");
+  if (!tier) throw notFound(MESSAGES.admin.tierNotFound);
+  if ((await AchievementTierModel.countDocuments()) <= 1) throw badRequest(MESSAGES.admin.keepOneTier);
   const { modifiedCount } = await AchievementModel.updateMany({ "appearance.tier": tier.key }, { $set: { "appearance.tier": "" } });
   await tier.deleteOne();
   await publishContentChange();
@@ -158,7 +159,7 @@ export async function deleteTier(actor, tierId) {
  */
 export async function createAchievement(actor, data) {
   await ensureTierExists(data.appearance);
-  if (await AchievementModel.exists({ key: data.key })) throw conflict(`Já existe a conquista "${data.key}".`);
+  if (await AchievementModel.exists({ key: data.key })) throw conflict(MESSAGES.admin.achievementExists(data.key));
   const achievement = await AchievementModel.create(data);
   await publishContentChange();
   await recordAudit(actor, { action: "create", entity: "achievement", entityId: data.key, summary: `Conquista "${data.title}"`, after: achievement });
@@ -175,7 +176,7 @@ export async function createAchievement(actor, data) {
  */
 export async function updateAchievement(actor, achievementId, changes) {
   const achievement = await AchievementModel.findById(achievementId);
-  if (!achievement) throw notFound("Conquista não encontrada.");
+  if (!achievement) throw notFound(MESSAGES.admin.achievementNotFound);
   if (changes.appearance !== undefined) await ensureTierExists(changes.appearance);
   const before = achievement.toObject();
   for (const field of ["title", "description", "metric", "goal", "icon", "order", "active", "secret", "appearance"]) {
@@ -203,8 +204,8 @@ export async function updateAchievement(actor, achievementId, changes) {
  */
 export async function deleteAchievement(actor, achievementId) {
   const achievement = await AchievementModel.findById(achievementId);
-  if (!achievement) throw notFound("Conquista não encontrada.");
-  if (achievement.active !== false) throw badRequest("Desative a conquista antes de excluir.");
+  if (!achievement) throw notFound(MESSAGES.admin.achievementNotFound);
+  if (achievement.active !== false) throw badRequest(MESSAGES.admin.deactivateAchievementFirst);
   await achievement.deleteOne();
   await publishContentChange();
   await recordAudit(actor, { action: "delete", entity: "achievement", entityId: achievement.key, summary: `Conquista "${achievement.title}"`, before: achievement });
@@ -255,7 +256,7 @@ export async function listEvents() {
  * Usado por: POST /admin/api/v1/events.
  */
 export async function createEvent(actor, data) {
-  if (data.startsAt && data.endsAt && data.endsAt <= data.startsAt) throw badRequest("O fim do evento precisa ser depois do início.");
+  if (data.startsAt && data.endsAt && data.endsAt <= data.startsAt) throw badRequest(MESSAGES.admin.eventEndBeforeStart);
   const event = await EventModel.create(data);
   await publishContentChange();
   await recordAudit(actor, { action: "create", entity: "event", entityId: event._id, summary: `Evento "${data.title}" (${data.multiplier}x)`, after: event });
@@ -272,15 +273,15 @@ export async function createEvent(actor, data) {
  */
 export async function updateEvent(actor, eventId, changes) {
   const event = await EventModel.findById(eventId);
-  if (!event) throw notFound("Evento não encontrado.");
+  if (!event) throw notFound(MESSAGES.admin.eventNotFound);
   const before = event.toObject();
   for (const field of ["title", "description", "multiplier", "startsAt", "endsAt", "active", "schedule"]) {
     if (changes[field] !== undefined) event[field] = changes[field];
   }
-  if (!isRecurring(event) && (!event.startsAt || !event.endsAt)) throw badRequest("Evento de uma vez: informe o início e o fim.");
+  if (!isRecurring(event) && (!event.startsAt || !event.endsAt)) throw badRequest(MESSAGES.admin.eventDatesRequired);
   // Aparência: completa o que veio com a aparência atual do evento (eventos antigos começam do padrão).
   if (changes.appearance !== undefined) event.appearance = readEventAppearance(changes.appearance, event.appearance?.toObject?.() ?? event.appearance);
-  if (event.startsAt && event.endsAt && event.endsAt <= event.startsAt) throw badRequest("O fim do evento precisa ser depois do início.");
+  if (event.startsAt && event.endsAt && event.endsAt <= event.startsAt) throw badRequest(MESSAGES.admin.eventEndBeforeStart);
   await event.save();
   await publishContentChange();
   await recordAudit(actor, {
@@ -303,10 +304,10 @@ export async function updateEvent(actor, eventId, changes) {
  */
 export async function endEventNow(actor, eventId) {
   const event = await EventModel.findById(eventId).lean();
-  if (!event) throw notFound("Evento não encontrado.");
+  if (!event) throw notFound(MESSAGES.admin.eventNotFound);
   const now = new Date();
-  if (isRecurring(event)) throw badRequest("Evento que se repete: use Desativar para parar.");
-  if (event.startsAt > now || event.endsAt <= now) throw badRequest("Só dá para encerrar um evento em andamento.");
+  if (isRecurring(event)) throw badRequest(MESSAGES.admin.recurringEventUseDeactivate);
+  if (event.startsAt > now || event.endsAt <= now) throw badRequest(MESSAGES.admin.eventNotRunning);
   return updateEvent(actor, eventId, { endsAt: now, endNow: true });
 }
 
@@ -319,8 +320,8 @@ export async function endEventNow(actor, eventId) {
  */
 export async function deleteEvent(actor, eventId) {
   const event = await EventModel.findById(eventId);
-  if (!event) throw notFound("Evento não encontrado.");
-  if (event.active !== false && toAdminEvent(event.toObject()).state !== "ended") throw badRequest("Desative ou encerre o evento antes de excluir.");
+  if (!event) throw notFound(MESSAGES.admin.eventNotFound);
+  if (event.active !== false && toAdminEvent(event.toObject()).state !== "ended") throw badRequest(MESSAGES.admin.deactivateEventFirst);
   await event.deleteOne();
   await publishContentChange();
   await recordAudit(actor, { action: "delete", entity: "event", entityId: eventId, summary: `Evento "${event.title}"`, before: event });
@@ -334,20 +335,20 @@ export async function deleteEvent(actor, eventId) {
  * @throws {HttpError} 400 (nome vazio, XP inválido, XP repetido ou nenhum nível em 0 XP).
  */
 export function readLevelTable(levels) {
-  if (!Array.isArray(levels) || levels.length === 0 || levels.length > 100) throw badRequest("Envie de 1 a 100 níveis.");
+  if (!Array.isArray(levels) || levels.length === 0 || levels.length > 100) throw badRequest(MESSAGES.admin.levelCount);
   const entries = levels.map((entry, index) => {
     const title = typeof entry?.title === "string" ? entry.title.trim() : "";
-    if (!title || title.length > 60) throw badRequest(`Linha ${index + 1}: nome de 1 a 60 caracteres.`);
+    if (!title || title.length > 60) throw badRequest(MESSAGES.admin.levelName(index + 1));
     if (!Number.isInteger(entry.minXp) || entry.minXp < 0 || entry.minXp > 10_000_000) {
-      throw badRequest(`Linha ${index + 1} ("${title}"): XP mínimo precisa ser um inteiro de 0 a 10.000.000.`);
+      throw badRequest(MESSAGES.admin.levelMinXp(index + 1, title));
     }
     return { minXp: entry.minXp, title };
   });
   entries.sort((a, b) => a.minXp - b.minXp);
-  if (entries[0].minXp !== 0) throw badRequest("Um dos níveis precisa começar em 0 XP (é o nível 1).");
+  if (entries[0].minXp !== 0) throw badRequest(MESSAGES.admin.levelStartsAtZero);
   entries.forEach((entry, index) => {
     if (index > 0 && entry.minXp === entries[index - 1].minXp) {
-      throw badRequest(`"${entries[index - 1].title}" e "${entry.title}" têm o mesmo XP mínimo (${entry.minXp}).`);
+      throw badRequest(MESSAGES.admin.levelSameXp(entries[index - 1].title, entry.title, entry.minXp));
     }
   });
   return entries.map((entry, index) => ({ level: index + 1, ...entry }));
@@ -417,7 +418,7 @@ export async function updateSetting(actor, key, value) {
  * Usado por: DELETE /admin/api/v1/settings/:key.
  */
 export async function resetSetting(actor, key) {
-  if (!SETTING_DEFINITIONS.some((definition) => definition.key === key)) throw badRequest(`Configuração desconhecida: ${key}.`);
+  if (!SETTING_DEFINITIONS.some((definition) => definition.key === key)) throw badRequest(MESSAGES.admin.unknownSetting(key));
   const before = await SettingModel.findOneAndDelete({ key }).lean();
   await publishContentChange();
   await recordAudit(actor, { action: "reset", entity: "setting", entityId: key, summary: `Configuração ${key} voltou ao padrão`, before: before?.value ?? null });

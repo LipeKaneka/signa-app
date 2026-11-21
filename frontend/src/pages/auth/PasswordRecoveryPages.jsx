@@ -3,10 +3,11 @@ import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import * as UserApi from "../../api/api-user.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { AuthBrand, IconField, PasswordField } from "./AuthForm.jsx";
+import { isValidEmail, validateNewPassword } from "./validation.js";
 import "./auth.css";
+import { MESSAGES } from "../../config/messages.js";
 
 const CODE_LENGTH = 6;
-const MIN_PASSWORD_LENGTH = 8;
 
 /**
  * Passo 1 (protótipo "login alta 3"): e-mail da conta → código enviado → passo 2.
@@ -21,8 +22,8 @@ export function ForgotPasswordPage() {
   async function handleSubmit(event) {
     event.preventDefault();
     const cleanEmail = email.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-      setError("E-mail inválido.");
+    if (!isValidEmail(cleanEmail)) {
+      setError(MESSAGES.auth.invalidEmail);
       return;
     }
     setError("");
@@ -46,7 +47,7 @@ export function ForgotPasswordPage() {
       <form className="auth-form auth-form--recovery" onSubmit={handleSubmit} noValidate>
         <div>
           <IconField icon="mail" label="E-mail" type="email" value={email} onChange={setEmail} autoComplete="email" required />
-          <p className="auth-form__hint">Insira o email utilizado na conta da qual você esqueceu a senha.</p>
+          <p className="auth-form__hint">Digite o e-mail da conta da qual você esqueceu a senha.</p>
         </div>
         {error && <p className="form-error" role="alert">{error}</p>}
         <button type="submit" className="button-primary" disabled={submitting}>
@@ -116,7 +117,7 @@ export function ResetCodePage() {
   async function handleSubmit(event) {
     event.preventDefault();
     if (code.length !== CODE_LENGTH) {
-      setMessage({ error: true, text: "Digite os 6 números do código." });
+      setMessage({ error: true, text: MESSAGES.auth.codeIncomplete });
       return;
     }
     setSubmitting(true);
@@ -135,7 +136,7 @@ export function ResetCodePage() {
     try {
       await UserApi.requestPasswordReset(email);
       setDigits(Array(CODE_LENGTH).fill(""));
-      setMessage({ error: false, text: "Enviamos um novo código." });
+      setMessage({ error: false, text: MESSAGES.auth.codeResent });
     } catch (resendError) {
       setMessage({ error: true, text: resendError.message });
     }
@@ -145,13 +146,13 @@ export function ResetCodePage() {
     <main className="auth-screen">
       <AuthBrand backTo="/esqueci-senha" />
       <div className="auth-screen__heading auth-screen__heading--left">
-        <h1 className="auth-screen__title">Insira o Codigo</h1>
-        <p className="auth-screen__subtitle">Achou que era facil?</p>
+        <h1 className="auth-screen__title">Insira o código</h1>
+        <p className="auth-screen__subtitle">Achou que era fácil?</p>
       </div>
       <form className="auth-form auth-form--recovery" onSubmit={handleSubmit} noValidate>
         <div>
           <CodeBoxes digits={digits} onChange={setDigits} />
-          <p className="auth-form__hint">Um codigo foi enviado para seu email, insira o codigo para redefinir a senha.</p>
+          <p className="auth-form__hint">Enviamos um código para o seu e-mail. Digite-o para redefinir a senha.</p>
         </div>
         {message && <p className={message.error ? "form-error" : "form-success"} role={message.error ? "alert" : "status"}>{message.text}</p>}
         <div className="auth-form__submit">
@@ -159,7 +160,7 @@ export function ResetCodePage() {
             {submitting ? "Verificando…" : "Verificar"}
           </button>
           <p className="auth-screen__switch auth-screen__switch--light">
-            Clique aqui para <button type="button" className="auth-link-button" onClick={resendCode}>Reenviar o codigo</button>
+            Clique aqui para <button type="button" className="auth-link-button" onClick={resendCode}>Reenviar o código</button>
           </p>
         </div>
       </form>
@@ -182,10 +183,9 @@ export function NewPasswordPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    if (password.length < MIN_PASSWORD_LENGTH) return setError(`A senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.`);
-    if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) return setError("A senha precisa ter letras e números.");
-    if (password !== confirmation) return setError("As senhas não são iguais.");
-    setError("");
+    const passwordError = validateNewPassword(password, confirmation);
+    setError(passwordError);
+    if (passwordError) return;
     setSubmitting(true);
     try {
       await resetPassword(email, code, password);

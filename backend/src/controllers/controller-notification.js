@@ -1,6 +1,7 @@
 import * as NotificationService from "../services/service-notification.js";
-import { checkSession } from "../services/service-user.js";
+import { ensureActiveSession } from "../middlewares/auth-middleware.js";
 import { badRequest } from "../utils/util-http-error.js";
+import { MESSAGES } from "../config/messages.js";
 
 /** "Estou vivo" no fluxo e conferência da conta (banida = fecha). */
 const HEARTBEAT_MS = 25 * 1000;
@@ -18,7 +19,7 @@ export async function markRead(req, res) {
     res.json(await NotificationService.markNotificationsRead(req.userId, { all: true }));
     return;
   }
-  if (!Array.isArray(body.ids) || body.ids.length === 0 || body.ids.length > 100) throw badRequest("Envie ids ou all: true.");
+  if (!Array.isArray(body.ids) || body.ids.length === 0 || body.ids.length > 100) throw badRequest(MESSAGES.validation.notificationIds);
   res.json(await NotificationService.markNotificationsRead(req.userId, { ids: body.ids.map(String) }));
 }
 
@@ -41,8 +42,11 @@ export function stream(req, res) {
     res.write(`event: notification\ndata: ${JSON.stringify(notification)}\n\n`);
   });
   const heartbeat = setInterval(() => res.write(": ping\n\n"), HEARTBEAT_MS);
+  // Usa o cache da sessão (o mesmo do requireAuth) e só fecha se a conta foi apagada (401) ou banida (403):
+  // servidor fora do ar por um instante não derruba o tempo real de ninguém.
   const sessionCheck = setInterval(() => {
-    checkSession(req.userId).catch(() => {
+    ensureActiveSession(req.userId).catch((error) => {
+      if (error.status !== 401 && error.status !== 403) return;
       res.write("event: closed\ndata: {}\n\n");
       res.end();
     });

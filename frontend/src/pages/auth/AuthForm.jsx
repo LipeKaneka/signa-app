@@ -6,6 +6,7 @@ import { BanDialog } from "../../components/BanDialog.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useAppConfig } from "../../context/AppConfigContext.jsx";
 import { ACCOUNT_BANNED, ApiError } from "../../api/http-client.js";
+import { MESSAGES } from "../../config/messages.js";
 
 /** Campo com ícone à esquerda (padrão das telas de entrada do protótipo). */
 export function IconField({ icon, label, type = "text", value, onChange, autoComplete, children, ...inputProps }) {
@@ -112,7 +113,7 @@ export function GoogleButton({ onUnavailable }) {
 
   async function handleClick() {
     if (!webClientId) {
-      onUnavailable("Entrar com o Google ainda não está disponível. Use e-mail e senha.");
+      onUnavailable(MESSAGES.auth.googleUnavailable);
       return;
     }
     setBusy(true);
@@ -122,13 +123,13 @@ export function GoogleButton({ onUnavailable }) {
       // Sem "scopes": e-mail e perfil já vêm por padrão, e no Android pedir scopes recusa o login (exige mexer na MainActivity).
       const response = await SocialLogin.login({ provider: "google", options: {} });
       const idToken = response?.result?.idToken;
-      if (!idToken) throw new Error("Sem token do Google.");
+      if (!idToken) throw new Error(MESSAGES.auth.googleNoToken);
       await signInWithGoogle(idToken);
     } catch (error) {
       if (error?.code === ACCOUNT_BANNED) setBan(error.ban);
       else if (!wasCancelled(error)) {
         console.error("Login com o Google falhou:", error);
-        onUnavailable(error instanceof ApiError ? error.message : "Não foi possível entrar com o Google. Tente de novo.");
+        onUnavailable(error instanceof ApiError ? error.message : MESSAGES.auth.googleFailed);
       }
       setBusy(false);
     }

@@ -3,6 +3,7 @@ import { APP_EVENT_METRICS } from "../../config/achievement-metrics.js";
 import { readActor } from "../../middlewares/admin-auth-middleware.js";
 import { badRequest } from "../../utils/util-http-error.js";
 import { readRequiredString, readOptionalString, readPositiveInteger, readInteger, readEmail, readBoolean } from "../../utils/util-validators.js";
+import { MESSAGES } from "../../config/messages.js";
 
 /** Motivo obrigatório das ações sobre usuários (fica na auditoria). */
 const readReason = (body) => readRequiredString(body?.reason, "o motivo", 200);
@@ -34,7 +35,7 @@ function readBanDays(value) {
   if (value === undefined || value === null || value === "" || value === 0) return null;
   const days = Number(value);
   if (!Number.isInteger(days) || days < 1 || days > UsersAdmin.MAX_BAN_DAYS) {
-    throw badRequest(`Prazo do banimento: de 1 a ${UsersAdmin.MAX_BAN_DAYS} dias (ou sem prazo).`);
+    throw badRequest(MESSAGES.admin.banDays(UsersAdmin.MAX_BAN_DAYS));
   }
   return days;
 }
@@ -53,7 +54,7 @@ function readCounter(value, label) {
 /** POST /admin/api/v1/users/:id/xp — {delta, reason} → {user}. Sem limite de quanto dar ou tirar. */
 export async function adjustXp(req, res) {
   const delta = readInteger(req.body?.delta, "Ajuste de XP", { min: -UsersAdmin.MAX_COUNTER, max: UsersAdmin.MAX_COUNTER });
-  if (delta === 0) throw badRequest("Ajuste de XP: use um número diferente de 0.");
+  if (delta === 0) throw badRequest(MESSAGES.admin.xpAdjustment);
   res.json({ user: await UsersAdmin.adjustUserXp(readActor(req), req.params.id, delta, readReason(req.body)) });
 }
 
@@ -89,9 +90,9 @@ export async function updateCounters(req, res) {
   const body = req.body ?? {};
   const actions = {};
   if (body.actions !== undefined) {
-    if (!body.actions || typeof body.actions !== "object" || Array.isArray(body.actions)) throw badRequest("actions deve ser um objeto.");
+    if (!body.actions || typeof body.actions !== "object" || Array.isArray(body.actions)) throw badRequest(MESSAGES.admin.actionsMustBeObject);
     for (const [type, value] of Object.entries(body.actions)) {
-      if (!APP_EVENT_METRICS[type]) throw badRequest(`Contador desconhecido: ${type}.`);
+      if (!APP_EVENT_METRICS[type]) throw badRequest(MESSAGES.admin.unknownCounter(type));
       actions[type] = readInteger(value, type, { min: 0, max: UsersAdmin.MAX_COUNTER });
     }
   }
@@ -103,7 +104,7 @@ export async function updateCounters(req, res) {
 export async function setActivity(req, res) {
   const body = req.body ?? {};
   const completed = readBoolean(body.completed, "Concluída");
-  if (completed === undefined) throw badRequest("Informe completed: true ou false.");
+  if (completed === undefined) throw badRequest(MESSAGES.admin.completedFlag);
   const bestScore = body.bestScore === undefined ? 100 : readInteger(body.bestScore, "Nota", { min: 0, max: 100 });
   res.json({ user: await UsersAdmin.setUserActivity(readActor(req), req.params.id, req.params.activityId, { completed, bestScore }, readReason(body)) });
 }

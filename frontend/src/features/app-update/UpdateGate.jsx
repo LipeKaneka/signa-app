@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { Capacitor } from "@capacitor/core";
+import { listenToApp } from "../../utils/native-app.js";
 import { useAppConfig } from "../../context/AppConfigContext.jsx";
-import { AppIcon } from "../../components/illustrations.jsx";
 import { useAppVersion } from "./useAppVersion.js";
-import "./update-gate.css";
+import { MESSAGES } from "../../config/messages.js";
 
 /**
  * Link do Google Drive "de compartilhar" (abre uma página de visualização) → link que baixa o arquivo direto.
@@ -15,38 +14,30 @@ export function directDownloadUrl(url) {
 }
 
 /**
- * Tela de atualização do APK. Os dados vêm do painel (Configurações → Atualização do app, em /app-config):
- * - versão nova maior que a instalada: mostra a tela, com "Depois" (fecha só até o app ser fechado: toda vez
- *   que o app abrir desatualizado, a tela aparece de novo);
- * - versão instalada menor que a mínima: a tela não fecha até atualizar.
- * "Atualizar agora" abre o link do APK no navegador do celular, que baixa o arquivo; a pessoa instala por cima
- * (os dados da conta ficam no servidor). Só aparece no APK; no navegador não faz nada.
- * Usado por: App.jsx (sobre qualquer tela).
+ * Pop-up de atualização do APK (categoria "Atualizações" do painel: Pop-ups → Atualizações, em /app-config):
+ * - versão nova maior que a instalada: mostra, com "Depois" (fecha só até o app ser fechado: toda vez que o app
+ *   abrir desatualizado, aparece de novo);
+ * - versão instalada menor que a mínima: não fecha até atualizar.
+ * O botão abre o link do APK no navegador do celular, que baixa o arquivo; a pessoa instala por cima (os dados da
+ * conta ficam no servidor). Só no APK; no navegador não aparece.
+ * @returns {object|null} props do AppPopup, ou null quando não há o que mostrar.
+ * Usado por: AppPopups.
  */
-export function UpdateGate() {
+export function useUpdatePopup() {
   const { text, refreshIfStale } = useAppConfig();
   const installed = useAppVersion();
-  // Guardado só na memória: some ao fechar o app, então a tela volta na próxima abertura.
+  // Guardado só na memória: some ao fechar o app, então o pop-up volta na próxima abertura.
   const [dismissed, setDismissed] = useState(0);
 
   // O Android mantém o app na memória: voltar a ele (de outro app ou da tela inicial) também conta como abrir.
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return undefined;
-    let listener = null;
-    let removed = false;
-    import("@capacitor/app").then(async ({ App }) => {
-      const handle = await App.addListener("resume", () => {
+  useEffect(
+    () =>
+      listenToApp("resume", () => {
         setDismissed(0);
         refreshIfStale(); // confere no painel se saiu versão nova enquanto o app estava parado
-      });
-      if (removed) handle.remove();
-      else listener = handle;
-    });
-    return () => {
-      removed = true;
-      listener?.remove();
-    };
-  }, [refreshIfStale]);
+      }),
+    [refreshIfStale],
+  );
 
   const latest = Number(text("app.update.latestVersionCode")) || 0;
   const minimum = Number(text("app.update.minVersionCode")) || 0;
@@ -57,42 +48,21 @@ export function UpdateGate() {
   const available = latest > installed.code;
   if (!required && (!available || dismissed === latest)) return null;
 
-  const versionName = text("app.update.versionName").trim();
-  const notes = text("app.update.notes").trim();
-  const later = () => setDismissed(latest);
-  // Link externo: o Capacitor abre no navegador do celular (o app continua aberto por trás).
-  const update = () => window.location.assign(directDownloadUrl(url));
-
-  return (
-    <div className="update-gate" role="alertdialog" aria-modal="true" aria-labelledby="update-gate-title" aria-describedby="update-gate-text">
-      <div className="update-gate__card">
-        <AppIcon size={72} />
-        <h2 id="update-gate-title" className="update-gate__title">
-          {required ? "Atualize para continuar" : "Nova versão disponível"}
-        </h2>
-        <p id="update-gate-text" className="update-gate__text">
-          {required
-            ? "Esta versão do Signa não é mais suportada. Baixe a nova para continuar estudando."
-            : `A versão ${versionName || "nova"} do Signa chegou.`}
-          {" "}Você tem a {installed.name}.
-        </p>
-        {notes && (
-          <div className="update-gate__notes">
-            <strong>Novidades</strong>
-            <p>{notes}</p>
-          </div>
-        )}
-        <button type="button" className="button-primary update-gate__button" onClick={update} autoFocus>
-          Atualizar agora
-        </button>
-        {!required && (
-          <button type="button" className="update-gate__later" onClick={later}>Depois</button>
-        )}
-        <p className="update-gate__hint">
-          O arquivo é baixado pelo navegador. Abra-o para instalar: se o Android pedir, permita instalar apps desta fonte.
-          Seu progresso continua salvo na sua conta.
-        </p>
-      </div>
-    </div>
-  );
+  const versionName = text("app.update.versionName").trim() || "nova";
+  const message = required
+    ? text("app.update.requiredMessage") || MESSAGES.app.unsupportedVersion
+    : (text("app.update.message") || MESSAGES.popups.updateMessage).replaceAll("{versao}", versionName).replaceAll("{atual}", installed.name);
+  return {
+    key: `update-${latest}-${minimum}`,
+    title: text("app.update.title") || MESSAGES.popups.updateTitle,
+    message,
+    notesTitle: text("app.update.notesTitle") || MESSAGES.popups.updateNotesTitle,
+    notes: text("app.update.notes").trim(),
+    primaryLabel: text("app.update.buttonText") || MESSAGES.popups.updateButton,
+    // Link externo: o Capacitor abre no navegador do celular (o app continua aberto por trás).
+    onPrimary: () => window.location.assign(directDownloadUrl(url)),
+    secondaryLabel: required ? undefined : text("app.update.laterText") || MESSAGES.popups.updateLater,
+    onSecondary: () => setDismissed(latest),
+    footnote: MESSAGES.popups.updateHint,
+  };
 }

@@ -31,6 +31,8 @@ const EXERCISE_PANEL_CSS = `
 const PAGE_CSS =
   "#vlibras-access-wrapper { display: none !important; }" +
   " #vlibras-app-root[data-signa-hidden] { display: none !important; }" +
+  // Vale também para um painel que o widget só cria DEPOIS (o carregamento terminou com a janela já fechada).
+  " html[data-signa-vlibras=\"hidden\"] #vlibras-app-root { display: none !important; }" +
   // #root#root: especificidade maior que a do CSS do widget (que é injetado depois e venceria o empate).
   " html body #root#root .vlibras--hover, html body #root#root .vlibras--active { text-decoration: none !important; cursor: pointer !important; }";
 
@@ -218,6 +220,10 @@ export function placePanelOver(rect) {
  * @param {boolean} visible
  */
 export function setPanelVisible(visible) {
+  // Guarda o pedido na página: se o painel ainda não existe (VLibras carregando), ele já nasce escondido quando
+  // ninguém mais quer o avatar na tela. Antes o pedido de esconder era perdido e o painel aparecia sozinho depois.
+  document.documentElement.dataset.signaVlibras = visible ? "visible" : "hidden";
+  injectPageStyles();
   const panel = findPanelRoot();
   if (!panel) return;
   const player = window.vlibras;

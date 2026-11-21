@@ -4,7 +4,10 @@ import { prefersReducedMotion } from "../../utils/motion.js";
 import { Icon } from "../../components/Icon.jsx";
 import { useAppConfig } from "../../context/AppConfigContext.jsx";
 import { formatMultiplier } from "../../components/EventBanner.jsx";
-import { formatCompact, formatFull } from "../../utils/format-number.js";
+import { formatCompact } from "../../utils/format-number.js";
+
+/** Pergunta antes de sair de uma atividade em andamento (botão X e voltar do celular). */
+export const ACTIVITY_EXIT_QUESTION = "Sair da atividade? O progresso desta tentativa será perdido.";
 
 /**
  * Cor da barra de progresso: vermelho no início -> laranja -> amarelo -> verde no fim (como no protótipo).

@@ -1,16 +1,18 @@
 import { createHash, randomInt } from "node:crypto";
-import bcrypt from "bcryptjs";
+import { hashPassword } from "../utils/util-password.js";
 import { UserModel } from "../models/model-user.js";
-import { PASSWORD_RULES } from "../config/rules.js";
 import { badRequest, HttpError } from "../utils/util-http-error.js";
 import { sendPasswordResetCode } from "./service-mailer.js";
-import { readActiveBan } from "./service-user.js";
+import { readActiveBan, SESSION_PROFILE, toPublicProfile } from "./service-user.js";
+import { describeLevel } from "./service-level.js";
+import { assertAppAccess } from "./service-popups.js";
+import { MESSAGES } from "../config/messages.js";
 
 /** Validade do código, tentativas erradas permitidas e intervalo mínimo entre envios. */
 const CODE_TTL_MS = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
 const RESEND_INTERVAL_MS = 60 * 1000;
-const INVALID_CODE_MESSAGE = "Código inválido ou vencido. Peça um novo código.";
+const INVALID_CODE_MESSAGE = MESSAGES.passwordReset.invalidCode;
 
 /**
  * Hash do código (o banco nunca guarda o código em si). O e-mail entra no hash para o mesmo código
@@ -36,7 +38,7 @@ export async function requestPasswordReset(email) {
   if (!user || readActiveBan(user)) return;
   const now = Date.now();
   if (user.passwordReset?.sentAt && now - user.passwordReset.sentAt.getTime() < RESEND_INTERVAL_MS) {
-    throw new HttpError(429, "Espere um minuto para pedir outro código.");
+    throw new HttpError(429, MESSAGES.passwordReset.waitToResend);
   }
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
   user.passwordReset = { codeHash: hashCode(email, code), expiresAt: new Date(now + CODE_TTL_MS), attempts: 0, sentAt: new Date(now) };
@@ -67,7 +69,7 @@ async function checkCode(email, code) {
   if (reset.codeHash !== hashCode(email, code)) {
     user.passwordReset.attempts = reset.attempts + 1;
     await user.save();
-    throw badRequest(reset.attempts + 1 >= MAX_ATTEMPTS ? INVALID_CODE_MESSAGE : "Código incorreto. Confira o e-mail e tente de novo.");
+    throw badRequest(reset.attempts + 1 >= MAX_ATTEMPTS ? INVALID_CODE_MESSAGE : MESSAGES.passwordReset.wrongCode);
   }
   return user;
 }
@@ -84,16 +86,21 @@ export async function verifyPasswordResetCode(email, code) {
 }
 
 /**
- * Troca a senha com o código (que é gasto). A pessoa entra em seguida com a senha nova.
+ * Troca a senha com o código (que é gasto) e já devolve a sessão, como no login: o backend não precisa fazer um
+ * segundo login (que conferiria a senha de novo, ~0,2 s de bcrypt, e faria mais uma ida ao servidor).
  * @param {string} email
  * @param {string} code
  * @param {string} password - nova senha já validada.
- * @returns {Promise<void>}
+ * @returns {Promise<{id: string, user: object}>} id interno + perfil público (com o nível).
  * Usado por: POST /internal/v1/auth/password-reset/confirm.
  */
 export async function confirmPasswordReset(email, code, password) {
   const user = await checkCode(email, code);
-  user.passwordHash = await bcrypt.hash(password, PASSWORD_RULES.BCRYPT_ROUNDS);
+  user.passwordHash = await hashPassword(password);
   user.passwordReset = null;
+  user.lastLogin = new Date();
   await user.save();
+  // A senha já foi trocada; durante a manutenção, quem não está liberado só não entra ainda.
+  await assertAppAccess(user);
+  return { id: String(user._id), user: { ...toPublicProfile(user, SESSION_PROFILE), level: await describeLevel(user.xp) } };
 }

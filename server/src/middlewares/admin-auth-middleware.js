@@ -2,6 +2,7 @@ import { findAdminSession } from "../services/service-admin-auth.js";
 import { hasRole } from "../config/admin-permissions.js";
 import { parseCookies } from "../utils/util-cookies.js";
 import { unauthorized, forbidden } from "../utils/util-http-error.js";
+import { MESSAGES } from "../config/messages.js";
 
 /** Nome do cookie de sessão do painel (httpOnly, SameSite=Strict, Path=/admin). */
 export const ADMIN_COOKIE = "signa_admin";
@@ -19,12 +20,12 @@ const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
  */
 export function requireAdminRequest(req, _res, next) {
   if (req.get(ADMIN_REQUEST_HEADER) !== "1") {
-    next(forbidden("Requisição recusada."));
+    next(forbidden(MESSAGES.admin.requestRefused));
     return;
   }
   const origin = req.get("Origin");
   if (!SAFE_METHODS.has(req.method) && origin && origin !== `${req.protocol}://${req.get("Host")}`) {
-    next(forbidden("Origem não permitida."));
+    next(forbidden(MESSAGES.admin.originNotAllowed));
     return;
   }
   next();
@@ -39,7 +40,7 @@ export function requireAdminRequest(req, _res, next) {
 export async function requireAdmin(req, _res, next) {
   try {
     const found = await findAdminSession(parseCookies(req.get("Cookie"))[ADMIN_COOKIE]);
-    if (!found) throw unauthorized("Sessão do painel expirada. Entre novamente.");
+    if (!found) throw unauthorized(MESSAGES.admin.sessionExpired);
     req.admin = found.admin;
     req.adminSession = found.session;
     next();
@@ -56,7 +57,7 @@ export async function requireAdmin(req, _res, next) {
 export function requireRole(minimumRole) {
   return (req, _res, next) => {
     if (!hasRole(req.admin.role, minimumRole)) {
-      next(forbidden("Seu papel no painel não permite esta ação."));
+      next(forbidden(MESSAGES.admin.roleNotAllowed));
       return;
     }
     next();

@@ -10,12 +10,15 @@ import { AwardIllustration, BookIllustration, Flame, GearsIllustration, LogoHand
 import { AchievementCard, sortByUnlockDate } from "../../components/AchievementCard.jsx";
 import "./profile.css";
 import { formatCompact, formatFull } from "../../utils/format-number.js";
+import { MESSAGES } from "../../config/messages.js";
 
 /** Quantas conquistas recentes aparecem no perfil (as outras ficam na tela Conquistas). */
 const RECENT_ACHIEVEMENTS = 3;
 
+/** Iniciais do nome ("Ana Maria Souza" → "AS"); nome vazio vira "?" (antes aparecia "UNDEFINED"). */
 function readInitials(nickname) {
-  const words = nickname.trim().split(/\s+/);
+  const words = (nickname ?? "").trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "?";
   return (words[0][0] + (words.length > 1 ? words.at(-1)[0] : "")).toUpperCase();
 }
 
@@ -181,15 +184,15 @@ export function ProfilePage() {
   // No perfil, só as conquistas desbloqueadas mais recentes; a lista completa fica na tela Conquistas.
   const recentAchievements = data ? sortByUnlockDate(data.achievements).slice(0, RECENT_ACHIEVEMENTS) : [];
 
-  function handleSaved(updatedUser) {
+  /** Perfil salvo no servidor: vale para a sessão e para a tela (e para os dados guardados no aparelho). */
+  function applySavedUser(updatedUser) {
     setUser(updatedUser);
     setData((current) => ({ ...current, user: updatedUser }));
-    setEditing(false);
   }
 
-  function handleAvatarSaved(updatedUser) {
-    setUser(updatedUser);
-    setData((current) => ({ ...current, user: updatedUser }));
+  function handleSaved(updatedUser) {
+    applySavedUser(updatedUser);
+    setEditing(false);
   }
 
   return (
@@ -207,7 +210,7 @@ export function ProfilePage() {
           {editing ? (
             <EditProfileForm user={data.user} onSaved={handleSaved} onCancel={() => setEditing(false)} />
           ) : (
-            <ProfileIdentity user={data.user} onEdit={() => setEditing(true)} onSaved={handleAvatarSaved} />
+            <ProfileIdentity user={data.user} onEdit={() => setEditing(true)} onSaved={applySavedUser} />
           )}
 
           <div className="profile-stats">
@@ -243,7 +246,7 @@ export function ProfilePage() {
               ))}
             </ul>
           ) : (
-            <p className="achievement-empty">Nenhuma conquista ainda. Conclua atividades na trilha para ganhar a primeira!</p>
+            <p className="achievement-empty">{MESSAGES.empty.achievements}</p>
           )}
         </>
       )}

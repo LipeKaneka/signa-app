@@ -6,6 +6,7 @@ import { badRequest, notFound } from "../utils/util-http-error.js";
 import { recordAudit } from "./service-audit.js";
 import { publishContentChange } from "./service-admin-publish.js";
 import { CAMERA_CORRECT_OPTION, CAMERA_OPTIONS, findCameraTarget } from "../config/camera-targets.js";
+import { MESSAGES } from "../config/messages.js";
 
 const MAX_QUESTIONS = 30;
 const MIN_OPTIONS = 2;
@@ -70,7 +71,7 @@ async function generateModuleSlug(title) {
     const slug = suffix === 1 ? base : `${base}-${suffix}`;
     if (!(await ModuleModel.exists({ slug }))) return slug;
   }
-  throw badRequest("Não foi possível gerar um identificador para este título.");
+  throw badRequest(MESSAGES.admin.slugFailed);
 }
 
 /**
@@ -85,10 +86,10 @@ async function checkPrerequisite(prerequisiteId, moduleId) {
   const visited = new Set(moduleId ? [String(moduleId)] : []);
   let currentId = prerequisiteId;
   while (currentId) {
-    if (visited.has(String(currentId))) throw badRequest("Esse pré-requisito criaria um ciclo entre módulos.");
+    if (visited.has(String(currentId))) throw badRequest(MESSAGES.admin.prerequisiteCycle);
     visited.add(String(currentId));
     const current = await ModuleModel.findById(currentId).select("prerequisite").lean();
-    if (!current) throw badRequest("Módulo de pré-requisito não encontrado.");
+    if (!current) throw badRequest(MESSAGES.admin.prerequisiteNotFound);
     currentId = current.prerequisite;
   }
   return prerequisiteId;
@@ -128,7 +129,7 @@ export async function createModule(actor, { title, description, icon, level, pre
  */
 export async function updateModule(actor, moduleId, changes) {
   const module = await ModuleModel.findById(moduleId);
-  if (!module) throw notFound("Módulo não encontrado.");
+  if (!module) throw notFound(MESSAGES.admin.moduleNotFound);
   const before = module.toObject();
   if (changes.title !== undefined) module.title = changes.title;
   if (changes.description !== undefined) module.description = changes.description;
@@ -161,7 +162,7 @@ export async function updateModule(actor, moduleId, changes) {
 export async function reorderModules(actor, moduleIds) {
   const existing = await ModuleModel.find().select("_id order").lean();
   const sameSet = existing.length === moduleIds.length && existing.every((module) => moduleIds.includes(String(module._id)));
-  if (!sameSet || new Set(moduleIds).size !== moduleIds.length) throw badRequest("Envie todos os módulos, cada um uma vez.");
+  if (!sameSet || new Set(moduleIds).size !== moduleIds.length) throw badRequest(MESSAGES.admin.sendAllModules);
   await ModuleModel.bulkWrite(moduleIds.map((id, index) => ({ updateOne: { filter: { _id: id }, update: { order: index + 1 } } })));
   await publishContentChange();
   await recordAudit(actor, { action: "reorder", entity: "module", summary: "Nova ordem dos módulos", before: existing, after: moduleIds });
@@ -178,9 +179,9 @@ export async function reorderModules(actor, moduleIds) {
  */
 export async function deleteModule(actor, moduleId) {
   const module = await ModuleModel.findById(moduleId);
-  if (!module) throw notFound("Módulo não encontrado.");
-  if (module.active !== false) throw badRequest("Desative o módulo antes de excluir.");
-  if (await ActivityModel.exists({ module: module._id })) throw badRequest("Exclua as atividades deste módulo antes.");
+  if (!module) throw notFound(MESSAGES.admin.moduleNotFound);
+  if (module.active !== false) throw badRequest(MESSAGES.admin.deactivateModuleFirst);
+  if (await ActivityModel.exists({ module: module._id })) throw badRequest(MESSAGES.admin.deleteModuleActivitiesFirst);
   await ModuleModel.updateMany({ prerequisite: module._id }, { prerequisite: module.prerequisite ?? null });
   await module.deleteOne();
   await publishContentChange();
@@ -227,7 +228,7 @@ function toAdminActivity(activity, withQuestions = true) {
  * Usado por: GET /admin/api/v1/modules/:id/activities.
  */
 export async function listActivities(moduleId) {
-  if (!(await ModuleModel.exists({ _id: moduleId }))) throw notFound("Módulo não encontrado.");
+  if (!(await ModuleModel.exists({ _id: moduleId }))) throw notFound(MESSAGES.admin.moduleNotFound);
   const activities = await ActivityModel.find({ module: moduleId }).select("module title description order active questionsPerAttempt questions.key").sort({ order: 1 }).lean();
   return activities.map((activity) => toAdminActivity(activity, false));
 }
@@ -241,7 +242,7 @@ export async function listActivities(moduleId) {
  */
 export async function getActivity(activityId) {
   const activity = await ActivityModel.findById(activityId).populate("questions.sign", "slug word vlibrasGloss").lean();
-  if (!activity) throw notFound("Atividade não encontrada.");
+  if (!activity) throw notFound(MESSAGES.admin.activityNotFound);
   return toAdminActivity(activity);
 }
 
@@ -256,25 +257,25 @@ export async function getActivity(activityId) {
  */
 export async function readQuestions(questions) {
   if (!Array.isArray(questions) || questions.length === 0 || questions.length > MAX_QUESTIONS) {
-    throw badRequest(`A atividade precisa ter de 1 a ${MAX_QUESTIONS} perguntas.`);
+    throw badRequest(MESSAGES.admin.questionCount(MAX_QUESTIONS));
   }
   const keys = new Set();
   const result = [];
   for (const [index, question] of questions.entries()) {
     const label = `Pergunta ${index + 1}`;
-    if (!question || typeof question !== "object") throw badRequest(`${label}: formato inválido.`);
+    if (!question || typeof question !== "object") throw badRequest(MESSAGES.admin.question.invalidFormat(label));
     const key = typeof question.key === "string" && /^[a-z0-9_-]{1,30}$/i.test(question.key) ? question.key : `q${index + 1}`;
-    if (keys.has(key)) throw badRequest(`${label}: identificador "${key}" repetido.`);
+    if (keys.has(key)) throw badRequest(MESSAGES.admin.question.duplicateKey(label, key));
     keys.add(key);
-    if (!QUESTION_TYPES.includes(question.type)) throw badRequest(`${label}: tipo inválido.`);
+    if (!QUESTION_TYPES.includes(question.type)) throw badRequest(MESSAGES.admin.question.invalidType(label));
     const prompt = typeof question.prompt === "string" ? question.prompt.trim() : "";
-    if (!prompt || prompt.length > 500) throw badRequest(`${label}: enunciado de 1 a 500 caracteres.`);
+    if (!prompt || prompt.length > 500) throw badRequest(MESSAGES.admin.question.promptLength(label));
 
     const explanationText = typeof question.explanation === "string" ? question.explanation.trim() : "";
-    if (explanationText.length > 1000) throw badRequest(`${label}: explicação de até 1000 caracteres.`);
+    if (explanationText.length > 1000) throw badRequest(MESSAGES.admin.question.explanationLength(label));
     if (question.type === "camera_sign") {
       const target = findCameraTarget(question.target);
-      if (!target) throw badRequest(`${label}: escolha um sinal que a câmera reconhece.`);
+      if (!target) throw badRequest(MESSAGES.admin.question.cameraTarget(label));
       // Avatar opcional: o sinal escolhido no painel ou, se não vier, o verbete do dicionário com o mesmo nome.
       const slug = question.signSlug ? String(question.signSlug) : slugify(target.label);
       const found = await SignModel.findOne({ slug }).select("_id").lean();
@@ -294,26 +295,26 @@ export async function readQuestions(questions) {
     let sign = null;
     if (question.type === "sign_choice") {
       const found = await SignModel.findOne({ slug: String(question.signSlug ?? "") }).select("_id").lean();
-      if (!found) throw badRequest(`${label}: escolha um sinal do dicionário.`);
+      if (!found) throw badRequest(MESSAGES.admin.question.dictionarySign(label));
       sign = found._id;
     }
 
     const options = Array.isArray(question.options) ? question.options : [];
     if (options.length < MIN_OPTIONS || options.length > MAX_OPTIONS) {
-      throw badRequest(`${label}: de ${MIN_OPTIONS} a ${MAX_OPTIONS} alternativas.`);
+      throw badRequest(MESSAGES.admin.question.optionCount(label, MIN_OPTIONS, MAX_OPTIONS));
     }
     const optionIds = new Set();
     const cleanOptions = options.map((option, optionIndex) => {
       const id = typeof option?.id === "string" && /^[a-z0-9]{1,10}$/i.test(option.id) ? option.id : String.fromCharCode(97 + optionIndex);
       const text = typeof option?.text === "string" ? option.text.trim() : "";
-      if (!text || text.length > 200) throw badRequest(`${label}: alternativa ${optionIndex + 1} precisa de 1 a 200 caracteres.`);
-      if (optionIds.has(id)) throw badRequest(`${label}: alternativas com o mesmo identificador.`);
+      if (!text || text.length > 200) throw badRequest(MESSAGES.admin.question.optionLength(label, optionIndex + 1));
+      if (optionIds.has(id)) throw badRequest(MESSAGES.admin.question.duplicateOption(label));
       optionIds.add(id);
       return { id, text };
     });
-    if (!optionIds.has(question.correctOptionId)) throw badRequest(`${label}: marque a alternativa correta.`);
+    if (!optionIds.has(question.correctOptionId)) throw badRequest(MESSAGES.admin.question.correctOption(label));
     const explanation = typeof question.explanation === "string" ? question.explanation.trim() : "";
-    if (explanation.length > 1000) throw badRequest(`${label}: explicação de até 1000 caracteres.`);
+    if (explanation.length > 1000) throw badRequest(MESSAGES.admin.question.explanationLength(label));
 
     result.push({ key, type: question.type, prompt, sign, options: cleanOptions, correctOptionId: question.correctOptionId, explanation });
   }
@@ -328,7 +329,7 @@ export async function readQuestions(questions) {
  * Usado por: POST /admin/api/v1/activities.
  */
 export async function createActivity(actor, { moduleId, title, description, questionsPerAttempt = null, questions }) {
-  if (!(await ModuleModel.exists({ _id: moduleId }))) throw badRequest("Módulo não encontrado.");
+  if (!(await ModuleModel.exists({ _id: moduleId }))) throw badRequest(MESSAGES.admin.moduleNotFound);
   const cleanQuestions = await readQuestions(questions);
   const last = await ActivityModel.findOne({ module: moduleId }).sort({ order: -1 }).select("order").lean();
   const activity = await ActivityModel.create({ module: moduleId, title, description, questionsPerAttempt, order: (last?.order ?? 0) + 1, questions: cleanQuestions });
@@ -347,7 +348,7 @@ export async function createActivity(actor, { moduleId, title, description, ques
  */
 export async function updateActivity(actor, activityId, changes) {
   const activity = await ActivityModel.findById(activityId);
-  if (!activity) throw notFound("Atividade não encontrada.");
+  if (!activity) throw notFound(MESSAGES.admin.activityNotFound);
   const before = activity.toObject();
   if (changes.title !== undefined) activity.title = changes.title;
   if (changes.description !== undefined) activity.description = changes.description;
@@ -378,7 +379,7 @@ export async function updateActivity(actor, activityId, changes) {
 export async function reorderActivities(actor, moduleId, activityIds) {
   const existing = await ActivityModel.find({ module: moduleId }).select("_id order").lean();
   const sameSet = existing.length === activityIds.length && existing.every((activity) => activityIds.includes(String(activity._id)));
-  if (!sameSet || new Set(activityIds).size !== activityIds.length) throw badRequest("Envie todas as atividades do módulo, cada uma uma vez.");
+  if (!sameSet || new Set(activityIds).size !== activityIds.length) throw badRequest(MESSAGES.admin.sendAllActivities);
   await ActivityModel.bulkWrite(activityIds.map((id, index) => ({ updateOne: { filter: { _id: id }, update: { order: -(index + 1) } } })));
   await ActivityModel.bulkWrite(activityIds.map((id, index) => ({ updateOne: { filter: { _id: id }, update: { order: index + 1 } } })));
   await publishContentChange();
@@ -395,8 +396,8 @@ export async function reorderActivities(actor, moduleId, activityIds) {
  */
 export async function deleteActivity(actor, activityId) {
   const activity = await ActivityModel.findById(activityId);
-  if (!activity) throw notFound("Atividade não encontrada.");
-  if (activity.active !== false) throw badRequest("Desative a atividade antes de excluir.");
+  if (!activity) throw notFound(MESSAGES.admin.activityNotFound);
+  if (activity.active !== false) throw badRequest(MESSAGES.admin.deactivateActivityFirst);
   await activity.deleteOne();
   await publishContentChange();
   await recordAudit(actor, { action: "delete", entity: "activity", entityId: activityId, summary: `Atividade "${activity.title}"`, before: activity });

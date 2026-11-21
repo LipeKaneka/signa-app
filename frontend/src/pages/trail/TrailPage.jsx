@@ -8,6 +8,7 @@ import { EventBanner } from "../../components/EventBanner.jsx";
 import { TrailIcon } from "../../components/trail-icons.jsx";
 import { DashedConnector, TrailDoodle, StatusPill, TimelineNode, TrailHeader, percentOf, useOpenWithAnimation } from "./trail-parts.jsx";
 import "./trail.css";
+import { MESSAGES } from "../../config/messages.js";
 
 /**
  * Desenho do espaço antes de cada módulo, escolhido pelo título (módulos novos do painel caem na estrela).
@@ -83,7 +84,7 @@ export function TrailPage() {
       <EventBanner />
       <main className="trail-content">
         <h2 className="trail-section-title">Módulos</h2>
-        {loading && <LoadingState message="Carregando a trilha…" />}
+        {loading && <LoadingState message={MESSAGES.loading.trail} />}
         {error && <ErrorState message={error.message} onRetry={reload} />}
         <ol className="trail-list trail-list--modules">
           {modules.map((module, index) => (

@@ -6,7 +6,9 @@ import { amostrasBase as readBaseSamples, todasAmostras as readAllSamples } from
 import { lerPerfil as readHandProfile } from "../../features/translator/engine/perfil.js";
 import { useHandCamera } from "../../features/translator/useHandCamera.js";
 import { SENSITIVITIES, useSignTranslator } from "../../features/translator/useSignTranslator.js";
+import { CameraFeed } from "../camera/CameraFeed.jsx";
 import "../camera/camera.css";
+import { MESSAGES } from "../../config/messages.js";
 
 /** Compara rótulos sem diferenciar maiúsculas nem acentos ("maçã" = "Maçã"). */
 const sameLabel = (a, b) =>
@@ -92,8 +94,7 @@ export default function CameraSignQuestion({ question, answered, onAnswer }) {
 
       <div className="camera-question__frame">
         <div className="camera-view camera-view--mirrored">
-          <video ref={camera.videoRef} playsInline muted aria-label="Imagem da câmera" />
-          <canvas ref={camera.canvasRef} aria-hidden="true" />
+          <CameraFeed camera={camera} />
         </div>
         {camera.status !== "ready" && (
           <div className={`camera-question__cover${failed ? " camera-question__cover--error" : ""}`} role={failed ? "alert" : "status"}>
@@ -107,7 +108,7 @@ export default function CameraSignQuestion({ question, answered, onAnswer }) {
       {!answered && (
         <>
           <p className="camera-question__status" role="status" aria-live="polite">
-            {failed ? "Sem câmera, esta pergunta pode ser pulada sem perder ponto." : camera.status === "ready" ? describeProgress(translator, targetKind) : "Preparando…"}
+            {failed ? MESSAGES.camera.questionWithoutCamera : camera.status === "ready" ? describeProgress(translator, targetKind) : "Preparando…"}
           </p>
           <div className="camera-question__actions">
             {failed ? (

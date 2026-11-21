@@ -4,12 +4,13 @@ import { AppIcon, BrandName } from "./illustrations.jsx";
 /** Depois de quanto tempo carregando aparece a explicação de demora. */
 const SLOW_HINT_AFTER_MS = 4000;
 import "./splash-screen.css";
+import { MESSAGES } from "../config/messages.js";
 
 /**
  * Abertura do app (enquanto confere a sessão salva ou carrega uma tela pesada, como a câmera).
  * onRetry = mostra o botão "Tentar de novo" (ex.: servidor fora do ar).
  */
-export function SplashScreen({ message = "Abrindo o Signa Ludus…", onRetry, slowHint }) {
+export function SplashScreen({ message = MESSAGES.app.opening, onRetry, slowHint }) {
   // Se demorar, explica o motivo (servidor grátis acordando) para a pessoa não achar que travou.
   const [slow, setSlow] = useState(false);
   useEffect(() => {

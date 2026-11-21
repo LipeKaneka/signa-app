@@ -1,29 +1,33 @@
-import bcrypt from "bcryptjs";
+import { hashPassword, verifyPassword } from "../utils/util-password.js";
 import { NotificationModel } from "../models/model-notification.js";
 import { randomBytes } from "node:crypto";
 import { UserModel } from "../models/model-user.js";
 import { AttemptModel } from "../models/model-attempt.js";
-import { PASSWORD_RULES } from "../config/rules.js";
 import { generatePublicId } from "../utils/util-generators.js";
 import { conflict, unauthorized, badRequest, HttpError } from "../utils/util-http-error.js";
 import { readCurrentStreak } from "./service-streak.js";
 import { readUserAchievementMetrics, readAchievementOverrides, listAchievementsWithProgress, recordUnlockDates, withUnlockDates } from "./service-achievement.js";
 import { describeLevel } from "./service-level.js";
 import { verifyGoogleIdToken } from "./service-google-auth.js";
+import { assertAppAccess } from "./service-popups.js";
+import { MESSAGES } from "../config/messages.js";
 
 /**
  * Dados do usuário que podem sair na API (nunca hash de senha nem _id).
  * @param {object} user
+ * @param {{withAvatar?: boolean}} [options] - withAvatar: false = sem a foto (respostas que o app não usa para mostrá-la).
  * @returns {{publicId, nickname, email, city, showInRanking, xp, streak, maxStreak, totalCorrectAnswers, completedActivities, createdAt}}
  * Usado por: cadastro, login, perfil, fim da atividade.
  */
-export function toPublicProfile(user) {
+export function toPublicProfile(user, { withAvatar = true } = {}) {
   return {
     publicId: user.publicId,
     nickname: user.nickname,
     email: user.email,
     city: user.city,
-    avatar: user.avatar ?? "",
+    // A foto (até 60 KB) só vai onde o app mostra: perfil e edição do perfil. Login, cadastro e fim de atividade
+    // mandam sem ela (o app guarda a foto do perfil e mescla o resto por cima).
+    ...(withAvatar ? { avatar: user.avatar ?? "" } : {}),
     showInRanking: user.showInRanking,
     xp: user.xp,
     streak: readCurrentStreak(user),
@@ -33,6 +37,9 @@ export function toPublicProfile(user) {
     createdAt: user.createdAt,
   };
 }
+
+/** Perfil das respostas de sessão (login, cadastro, Google, recuperação de senha, fim de atividade): sem a foto. */
+export const SESSION_PROFILE = Object.freeze({ withAvatar: false });
 
 /**
  * publicId que ainda não existe no banco (até 5 tentativas).
@@ -53,9 +60,10 @@ async function generateUniquePublicId(nickname) {
  * @throws {HttpError} 409 se o e-mail já existir.
  */
 export async function createAccount({ nickname, email, password, acceptedTerms = false }) {
-  if (await UserModel.exists({ email })) throw conflict("Este e-mail já está cadastrado.");
+  await assertAppAccess({ email });
+  if (await UserModel.exists({ email })) throw conflict(MESSAGES.account.emailTaken);
 
-  const passwordHash = await bcrypt.hash(password, PASSWORD_RULES.BCRYPT_ROUNDS);
+  const passwordHash = await hashPassword(password);
   const user = await UserModel.create({
     publicId: await generateUniquePublicId(nickname),
     nickname,
@@ -64,7 +72,7 @@ export async function createAccount({ nickname, email, password, acceptedTerms =
     termsAcceptedAt: acceptedTerms ? new Date() : null,
     lastLogin: new Date(),
   });
-  return { id: String(user._id), user: { ...toPublicProfile(user), level: await describeLevel(user.xp) } };
+  return { id: String(user._id), user: { ...toPublicProfile(user, SESSION_PROFILE), level: await describeLevel(user.xp) } };
 }
 
 /**
@@ -91,7 +99,7 @@ export function readActiveBan(user, now = Date.now()) {
 async function ensureNotBanned(user) {
   if (user.status !== "blocked") return;
   const ban = readActiveBan(user);
-  if (ban) throw new HttpError(403, "Conta banida.", { code: "account_banned", ban });
+  if (ban) throw new HttpError(403, MESSAGES.account.banned, { code: "account_banned", ban });
   user.status = "active";
   user.ban = null;
   await user.save();
@@ -104,13 +112,14 @@ async function ensureNotBanned(user) {
  */
 export async function signIn({ email, password }) {
   const user = await UserModel.findOne({ email }).select("+passwordHash");
-  const passwordMatches = user ? await bcrypt.compare(password, user.passwordHash) : false;
-  if (!passwordMatches) throw unauthorized("E-mail ou senha incorretos.");
+  const passwordMatches = user ? await verifyPassword(password, user.passwordHash) : false;
+  if (!passwordMatches) throw unauthorized(MESSAGES.account.wrongCredentials);
   await ensureNotBanned(user);
+  await assertAppAccess(user);
 
   user.lastLogin = new Date();
   await user.save();
-  return { id: String(user._id), user: { ...toPublicProfile(user), level: await describeLevel(user.xp) } };
+  return { id: String(user._id), user: { ...toPublicProfile(user, SESSION_PROFILE), level: await describeLevel(user.xp) } };
 }
 
 /**
@@ -131,23 +140,25 @@ export async function signInWithGoogle({ idToken, acceptedTerms }) {
 
   if (user) {
     await ensureNotBanned(user);
+    await assertAppAccess(user);
     if (!user.googleId) user.googleId = google.googleId;
     user.lastLogin = new Date();
     await user.save();
   } else {
-    if (!acceptedTerms) throw badRequest("Para criar a conta, aceite o Termo de Uso.");
+    if (!acceptedTerms) throw badRequest(MESSAGES.account.acceptTerms);
+    await assertAppAccess({ email: google.email });
     const nickname = google.name.trim().slice(0, 60) || "Pessoa";
     user = await UserModel.create({
       publicId: await generateUniquePublicId(nickname),
       nickname,
       email: google.email,
-      passwordHash: await bcrypt.hash(randomBytes(32).toString("hex"), PASSWORD_RULES.BCRYPT_ROUNDS),
+      passwordHash: await hashPassword(randomBytes(32).toString("hex")),
       googleId: google.googleId,
       termsAcceptedAt: new Date(),
       lastLogin: new Date(),
     });
   }
-  return { id: String(user._id), user: { ...toPublicProfile(user), level: await describeLevel(user.xp) }, created };
+  return { id: String(user._id), user: { ...toPublicProfile(user, SESSION_PROFILE), level: await describeLevel(user.xp) }, created };
 }
 
 /**
@@ -159,9 +170,24 @@ export async function signInWithGoogle({ idToken, acceptedTerms }) {
  */
 export async function findActiveUserById(userId) {
   const user = await UserModel.findById(userId);
-  if (!user) throw unauthorized("Sessão inválida. Entre novamente.");
+  if (!user) throw unauthorized(MESSAGES.account.sessionInvalid);
   await ensureNotBanned(user);
   return user;
+}
+
+/**
+ * Confere se a conta existe e está ativa lendo só status e banimento (sem a foto, as listas de progresso etc.):
+ * é a consulta mais frequente do servidor (o backend confere a sessão a cada poucos segundos por pessoa).
+ * @param {string} userId
+ * @returns {Promise<void>}
+ * @throws {HttpError} 401 se não existir; 403 se estiver banido (com motivo e prazo).
+ * Usado por: GET /internal/v1/users/:userId/session.
+ */
+export async function ensureActiveSession(userId) {
+  const user = await UserModel.findById(userId).select("status ban email");
+  if (!user) throw unauthorized(MESSAGES.account.sessionInvalid);
+  await ensureNotBanned(user);
+  await assertAppAccess(user);
 }
 
 /**
@@ -187,11 +213,12 @@ export async function getProfileWithAchievements(user) {
  */
 async function verifyCurrentPassword(userId, currentPassword) {
   if (typeof currentPassword !== "string" || currentPassword === "") {
-    throw badRequest("Informe a senha atual para trocar e-mail ou senha.");
+    throw badRequest(MESSAGES.account.currentPasswordRequired);
   }
   const user = await UserModel.findById(userId).select("+passwordHash");
-  if (!(await bcrypt.compare(currentPassword, user.passwordHash))) {
-    throw unauthorized("Senha atual incorreta.");
+  if (!(await verifyPassword(currentPassword, user.passwordHash))) {
+    // 400, não 401: o app e o painel entendem 401 como sessão vencida e tirariam a pessoa da conta.
+    throw badRequest(MESSAGES.account.currentPasswordWrong);
   }
 }
 
@@ -208,11 +235,11 @@ export async function updateProfile(user, changes, currentPassword) {
   if (changesCredentials) await verifyCurrentPassword(user._id, currentPassword);
 
   if (changes.email !== undefined && changes.email !== user.email) {
-    if (await UserModel.exists({ email: changes.email })) throw conflict("Este e-mail já está cadastrado.");
+    if (await UserModel.exists({ email: changes.email })) throw conflict(MESSAGES.account.emailTaken);
     user.email = changes.email;
   }
   if (changes.password !== undefined) {
-    user.passwordHash = await bcrypt.hash(changes.password, PASSWORD_RULES.BCRYPT_ROUNDS);
+    user.passwordHash = await hashPassword(changes.password);
   }
   if (changes.nickname !== undefined) user.nickname = changes.nickname;
   if (changes.city !== undefined) user.city = changes.city;

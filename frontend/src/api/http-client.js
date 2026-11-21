@@ -1,9 +1,12 @@
 import { readStoredToken } from "../utils/session-storage.js";
+import { MESSAGES } from "../config/messages.js";
 
 const API_URL = (import.meta.env.VITE_API_URL ?? "http://localhost:8080/api/v1").replace(/\/$/, "");
 
 /** Código que o backend manda quando a conta foi banida (vem com {ban: {reason, until}}). */
 export const ACCOUNT_BANNED = "account_banned";
+/** Código que o backend manda durante a manutenção, para contas não liberadas (vem com {maintenance: pop-up}). */
+export const MAINTENANCE = "maintenance";
 
 /**
  * Erro de API com a mensagem do backend ({error}) e o status HTTP (0 = sem conexão).
@@ -24,6 +27,18 @@ export class ApiError extends Error {
 
 const unauthorizedListeners = new Set();
 const bannedListeners = new Set();
+const maintenanceListeners = new Set();
+
+/**
+ * Inscreve uma função chamada quando uma requisição responde "em manutenção" (conta não liberada).
+ * @param {(popup: object|null) => void} listener - recebe os textos do pop-up de manutenção.
+ * @returns {() => void} cancela a inscrição.
+ * Usado por: useMaintenancePopup (mostra o pop-up e fecha o app).
+ */
+export function onMaintenance(listener) {
+  maintenanceListeners.add(listener);
+  return () => maintenanceListeners.delete(listener);
+}
 
 /**
  * Inscreve uma função chamada quando qualquer requisição responde "conta banida".
@@ -79,12 +94,12 @@ export async function openApiStream(path, onEvent, signal) {
   }
   if (!response.ok || !response.body) {
     if (response.status === 401) unauthorizedListeners.forEach((listener) => listener());
-    throw new ApiError(response.status, "Fluxo indisponível.");
+    throw new ApiError(response.status, MESSAGES.network.streamUnavailable);
   }
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
-  for (;;) {
+  for (; ;) {
     const { value, done } = await reader.read();
     if (done) return;
     buffer += decoder.decode(value, { stream: true });
@@ -120,15 +135,6 @@ async function readJsonSafely(response) {
   }
 }
 
-/**
- * ÚNICO ponto de saída do app para a rede: chama a API em VITE_API_URL (backend em outro servidor).
- * @param {string} path - caminho a partir de /api/v1 (ex.: "/trail").
- * @param {{method?: string, body?: object, query?: Record<string, unknown>}} [options]
- * @returns {Promise<object>} JSON de sucesso.
- * @throws {ApiError} com a mensagem do backend; status 0 quando não há conexão.
- * Usado por: todos os módulos api-*.js. Ao trocar a arquitetura (servidor de gerenciamento), as telas
- * continuam iguais: só o backend muda de onde busca os dados.
- */
 /** Intervalo mínimo entre dois "despertadores" (abrir e voltar ao app em sequência não repete o pedido). */
 const WAKE_UP_MIN_INTERVAL_MS = 60 * 1000;
 let lastWakeUpAt = 0;
@@ -144,34 +150,78 @@ export function wakeUpApi() {
   const now = Date.now();
   if (now - lastWakeUpAt < WAKE_UP_MIN_INTERVAL_MS) return;
   lastWakeUpAt = now;
-  fetch(new URL(`${API_URL}/health`, window.location.href), { cache: "no-store" }).catch(() => {});
+  fetch(new URL(`${API_URL}/health`, window.location.href), { cache: "no-store" }).catch(() => { });
 }
 
-export async function requestApi(path, { method = "GET", body, query } = {}) {
+/**
+ * Tempo máximo esperando uma resposta. Longo de propósito: no Render grátis o backend e o servidor podem estar
+ * acordando (~50 s cada). Sem limite, uma rede móvel travada deixava a tela "Conectando…" parada para sempre.
+ */
+const REQUEST_TIMEOUT_MS = 90 * 1000;
+const TIMEOUT_MESSAGE = MESSAGES.network.timeout;
+const OFFLINE_MESSAGE = MESSAGES.network.offline;
+
+/**
+ * Requisições em andamento, pela chave método + endereço + corpo + sessão. Se a mesma requisição for pedida de novo
+ * antes de a primeira terminar (duas telas pedindo /profile, toque duplo em "Enviar"), a nova não sai: ela recebe a
+ * resposta da antiga. A entrada sai do mapa assim que a antiga termina (com sucesso ou erro).
+ */
+const inFlightRequests = new Map();
+
+/**
+ * ÚNICO ponto de saída do app para a rede: chama a API em VITE_API_URL (backend em outro servidor).
+ * Requisições iguais ao mesmo tempo viram uma só (vale a mais antiga; ver inFlightRequests).
+ * @param {string} path - caminho a partir de /api/v1 (ex.: "/trail").
+ * @param {{method?: string, body?: object, query?: Record<string, unknown>}} [options]
+ * @returns {Promise<object>} JSON de sucesso.
+ * @throws {ApiError} com a mensagem do backend; status 0 quando não há conexão ou passou do tempo.
+ * Usado por: todos os módulos api-*.js. Ao trocar a arquitetura (servidor de gerenciamento), as telas
+ * continuam iguais: só o backend muda de onde busca os dados.
+ */
+export function requestApi(path, { method = "GET", body, query } = {}) {
   const url = new URL(`${API_URL}${path}`, window.location.href);
   Object.entries(query ?? {})
     .filter(([, value]) => value !== undefined && value !== null && value !== "")
     .forEach(([key, value]) => url.searchParams.set(key, value));
+  const payload = body === undefined ? undefined : JSON.stringify(body);
+  const key = `${method} ${url.href} ${payload ?? ""} ${readStoredToken() ?? ""}`;
 
+  const pending = inFlightRequests.get(key);
+  if (pending) return pending;
+  const request = sendRequest(url, method, payload).finally(() => inFlightRequests.delete(key));
+  inFlightRequests.set(key, request);
+  return request;
+}
+
+async function sendRequest(url, method, payload) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   let response;
+  let data;
   try {
     response = await fetch(url, {
       method,
       // Sem cache do WebView: o painel pode mudar eventos e textos a qualquer momento (o backend já tem cache próprio).
       cache: "no-store",
-      headers: buildHeaders(body !== undefined),
-      body: body === undefined ? undefined : JSON.stringify(body),
+      headers: buildHeaders(payload !== undefined),
+      body: payload,
+      signal: controller.signal,
     });
+    console.log(`log da url:`, url)
+    data = await readJsonSafely(response);
+    if (controller.signal.aborted) throw new Error("tempo esgotado lendo a resposta");
   } catch {
-    throw new ApiError(0, "Sem conexão com o servidor. Verifique sua internet.");
+    throw new ApiError(0, controller.signal.aborted ? TIMEOUT_MESSAGE : OFFLINE_MESSAGE);
+  } finally {
+    clearTimeout(timer);
   }
 
-  const data = await readJsonSafely(response);
   if (!response.ok) {
     if (response.status === 401) unauthorizedListeners.forEach((listener) => listener());
     const banned = response.status === 403 && data.code === ACCOUNT_BANNED;
     if (banned) bannedListeners.forEach((listener) => listener(data.ban ?? null));
-    throw new ApiError(response.status, data.error ?? "Algo deu errado. Tente novamente.", banned ? { code: ACCOUNT_BANNED, ban: data.ban ?? { reason: "", until: null } } : {});
+    if (response.status === 503 && data.code === MAINTENANCE) maintenanceListeners.forEach((listener) => listener(data.maintenance ?? null));
+    throw new ApiError(response.status, data.error ?? MESSAGES.network.generic, banned ? { code: ACCOUNT_BANNED, ban: data.ban ?? { reason: "", until: null } } : {});
   }
   return data;
 }

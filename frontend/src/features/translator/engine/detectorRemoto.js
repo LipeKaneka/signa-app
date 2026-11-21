@@ -34,17 +34,39 @@ class Remoto {
     })
   }
 
-  /** fonte: <video> ou canvas. Devolve {rm, pose, ms}. */
-  async detectar(fonte) {
-    const bitmap = await createImageBitmap(fonte)
+  /** Manda uma mensagem e espera a resposta com o mesmo id. */
+  pedir(mensagem, transferir = []) {
+    if (this.fechado) {
+      transferir.forEach(b => b.close?.())
+      return Promise.reject(new Error('detector fechado'))
+    }
     const id = this.n++
     return new Promise((resolver, rejeitar) => {
       this.pend.set(id, {resolver, rejeitar})
-      this.w.postMessage({tipo: 'quadro', id, bitmap, ts: performance.now()}, [bitmap])
+      this.w.postMessage({...mensagem, id}, transferir)
     })
   }
 
-  fechar() { this.w.terminate() }
+  /** fonte: <video> ou canvas. Devolve {rm, pose, ms}. */
+  async detectar(fonte) {
+    const bitmap = await createImageBitmap(fonte)
+    return this.pedir({tipo: 'quadro', bitmap, ts: performance.now()}, [bitmap])
+  }
+
+  /** Liga/desliga a pose (sinais com movimento) sem recriar o worker. */
+  async definirCorpo(corpo) {
+    if (corpo === this.corpo) return
+    await this.pedir({tipo: 'corpo', corpo})
+    this.corpo = corpo
+  }
+
+  /** Fecha o worker; quadros ainda esperando resposta terminam com erro (não ficam pendurados). */
+  fechar() {
+    this.fechado = true
+    this.w.terminate()
+    for (const p of this.pend.values()) p.rejeitar(new Error('detector fechado'))
+    this.pend.clear()
+  }
 }
 
 /** Fallback na thread principal, com a mesma interface. */
@@ -52,8 +74,18 @@ class Local {
   constructor(corpo) { this.corpo = corpo; this.delegado = 'CPU (sem worker)' }
   async iniciar() {
     this.m = await import('./maos-local.js')
-    this.det = this.corpo ? await this.m.detectorCorpo() : await this.m.detector('VIDEO')
+    this.det = await this.carregar(this.corpo)
     return this
+  }
+  carregar(corpo) {
+    return corpo ? this.m.detectorCorpo() : this.m.detector('VIDEO')
+  }
+  /** Troca o detector só depois de o novo estar pronto (os quadros do meio usam o anterior). */
+  async definirCorpo(corpo) {
+    if (corpo === this.corpo) return
+    const det = await this.carregar(corpo)
+    this.det = det
+    this.corpo = corpo
   }
   async detectar(fonte) {
     const t0 = performance.now()

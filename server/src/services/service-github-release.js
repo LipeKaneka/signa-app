@@ -1,4 +1,5 @@
 import { badRequest, HttpError } from "../utils/util-http-error.js";
+import { MESSAGES } from "../config/messages.js";
 
 const GITHUB_API = "https://api.github.com";
 const GITHUB_RAW = "https://raw.githubusercontent.com";
@@ -16,7 +17,7 @@ async function getFromGitHub(url, accept = "application/vnd.github+json") {
     return await fetch(url, { headers, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
   } catch (error) {
     console.error("GitHub inacessível:", error.message);
-    throw new HttpError(503, "Não foi possível falar com o GitHub agora. Tente de novo.");
+    throw new HttpError(503, MESSAGES.admin.githubUnavailable);
   }
 }
 
@@ -71,11 +72,11 @@ export function versionCodeFromHistory(markdown, label) {
  */
 export async function readLatestRelease(repo) {
   const name = String(repo ?? "").trim();
-  if (!REPO_PATTERN.test(name)) throw badRequest("Repositório inválido. Use o formato dono/nome (ex.: LipeKaneka/signa-app).");
+  if (!REPO_PATTERN.test(name)) throw badRequest(MESSAGES.admin.invalidRepository);
 
   const response = await getFromGitHub(`${GITHUB_API}/repos/${name}/releases/latest`);
   if (response.status === 404) {
-    throw new HttpError(404, `Nenhuma release publicada em ${name} (ou o repositório é privado).`);
+    throw new HttpError(404, MESSAGES.admin.noRelease(name));
   }
   if (!response.ok) {
     console.error(`GitHub respondeu ${response.status} para ${name}.`);

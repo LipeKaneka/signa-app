@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import * as UserApi from "../../api/api-user.js";
-import { AchievementToast } from "../../components/AchievementToast.jsx";
+import { AchievementToast, toAchievementToast } from "../../components/AchievementToast.jsx";
 
 /** Espera antes de enviar (junta vários toques num envio só) e espera máxima com toques seguidos. */
 const FLUSH_DELAY_MS = 1500;
@@ -47,13 +47,7 @@ export function AppEventsProvider({ children }) {
     UserApi.sendAppEvents(events)
       .then(({ newAchievements }) => {
         if (!newAchievements?.length) return;
-        setToasts((current) => [...current, ...newAchievements.map((achievement) => ({
-          id: `achievement-${achievement.id}`,
-          kind: "achievement",
-          title: achievement.title,
-          appearance: achievement.appearance,
-          rarity: achievement.rarity,
-        }))]);
+        setToasts((current) => [...current, ...newAchievements.map(toAchievementToast)]);
       })
       .catch(() => {});
   }, []);

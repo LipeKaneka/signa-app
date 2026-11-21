@@ -10,6 +10,7 @@ import {
 } from "../utils/util-validators.js";
 import { badRequest } from "../utils/util-http-error.js";
 import { forgetSession } from "../middlewares/auth-middleware.js";
+import { MESSAGES } from "../config/messages.js";
 
 /**
  * POST /auth/register — valida {nickname, email, password, acceptedTerms: true} e responde 201 {message, token, user}.
@@ -20,11 +21,11 @@ export async function createAccount(req, res) {
   const email = readEmail(req.body?.email);
   const password = readNewPassword(req.body?.password);
   if (readBoolean(req.body?.acceptedTerms, "O aceite do Termo de Uso") !== true) {
-    throw badRequest("Para criar a conta, aceite o Termo de Uso.");
+    throw badRequest(MESSAGES.validation.acceptTerms);
   }
 
   const session = await UserService.createAccount({ nickname, email, password, acceptedTerms: true });
-  res.status(201).json({ message: "Conta criada.", ...session });
+  res.status(201).json({ message: MESSAGES.success.accountCreated, ...session });
 }
 
 /**
@@ -35,7 +36,7 @@ export async function signIn(req, res) {
   const password = readRequiredString(req.body?.password, "a senha", 128);
 
   const session = await UserService.signIn({ email, password });
-  res.json({ message: "Bem-vindo de volta!", ...session });
+  res.json({ message: MESSAGES.success.welcomeBack, ...session });
 }
 
 /**
@@ -46,7 +47,7 @@ export async function googleSignIn(req, res) {
   const idToken = readRequiredString(req.body?.idToken, "o token do Google", 4096);
   const acceptedTerms = readBoolean(req.body?.acceptedTerms, "O aceite do Termo de Uso") === true;
   const session = await UserService.signInWithGoogle({ idToken, acceptedTerms });
-  res.json({ message: session.created ? "Conta criada." : "Bem-vindo de volta!", ...session });
+  res.json({ message: session.created ? MESSAGES.success.accountCreated : MESSAGES.success.welcomeBack, ...session });
 }
 
 /**
@@ -71,7 +72,7 @@ export async function getProfile(req, res) {
  * Só confere que é uma lista; tipos e limites são validados no servidor.
  */
 export async function recordEvents(req, res) {
-  if (!Array.isArray(req.body?.events)) throw badRequest("Envie {events: [...]}.");
+  if (!Array.isArray(req.body?.events)) throw badRequest(MESSAGES.validation.eventsRequired);
   res.json(await UserService.recordAppEvents(req.userId, req.body.events));
 }
 
@@ -84,7 +85,7 @@ const EDITABLE_FIELDS = ["nickname", "email", "password", "city", "showInRanking
  */
 function readProfileChanges(body) {
   const unknownField = Object.keys(body ?? {}).find((field) => !EDITABLE_FIELDS.includes(field));
-  if (unknownField) throw badRequest(`Campo não pode ser alterado: ${unknownField}.`);
+  if (unknownField) throw badRequest(MESSAGES.validation.fieldNotEditable(unknownField));
 
   return {
     nickname: body.nickname === undefined ? undefined : readRequiredString(body.nickname, "o apelido", 60),
@@ -103,7 +104,7 @@ function readProfileChanges(body) {
 export async function updateProfile(req, res) {
   const changes = readProfileChanges(req.body);
   const user = await UserService.updateProfile(req.userId, changes, req.body?.currentPassword);
-  res.json({ message: "Perfil atualizado.", user });
+  res.json({ message: MESSAGES.success.profileUpdated, user });
 }
 
 /**
@@ -112,12 +113,12 @@ export async function updateProfile(req, res) {
 export async function deleteAccount(req, res) {
   await UserService.deleteAccount(req.userId, req.body?.currentPassword);
   forgetSession(req.userId);
-  res.json({ message: "Conta excluída." });
+  res.json({ message: MESSAGES.success.accountDeleted });
 }
 
 /** Lê o código de 6 dígitos. @throws {HttpError} 400. */
 function readResetCode(value) {
-  if (typeof value !== "string" || !/^\d{6}$/.test(value)) throw badRequest("Informe o código de 6 dígitos.");
+  if (typeof value !== "string" || !/^\d{6}$/.test(value)) throw badRequest(MESSAGES.validation.codeRequired);
   return value;
 }
 
@@ -126,7 +127,7 @@ function readResetCode(value) {
  */
 export async function requestPasswordReset(req, res) {
   await UserService.requestPasswordReset(readEmail(req.body?.email));
-  res.json({ message: "Se o e-mail tiver conta, enviamos um código de 6 dígitos." });
+  res.json({ message: MESSAGES.success.resetCodeSent });
 }
 
 /**
@@ -146,5 +147,5 @@ export async function confirmPasswordReset(req, res) {
     readResetCode(req.body?.code),
     readNewPassword(req.body?.password),
   );
-  res.json({ message: "Senha alterada.", ...session });
+  res.json({ message: MESSAGES.success.passwordChanged, ...session });
 }

@@ -1,10 +1,11 @@
 import { isDevelopment } from "../config/env.js";
+import { MESSAGES } from "../config/messages.js";
 
 /**
  * Responde 404 {error} para rotas que não existem. Registrado depois das rotas em app.js.
  */
 export function notFoundHandler(_req, res) {
-  res.status(404).json({ error: "Rota não encontrada." });
+  res.status(404).json({ error: MESSAGES.general.routeNotFound });
 }
 
 /**
@@ -26,9 +27,9 @@ function readStatus(error) {
  * @returns {string}
  */
 function readPublicMessage(error, status) {
-  if (error.type === "entity.parse.failed") return "JSON inválido.";
+  if (error.type === "entity.parse.failed") return MESSAGES.general.invalidJson;
   // 503 explícito (servidor de gerenciamento fora do ar) já traz uma mensagem amigável.
-  if (status >= 500 && !error.status) return "Erro interno. Tente novamente mais tarde.";
+  if (status >= 500 && !error.status) return MESSAGES.general.internalError;
   return error.message;
 }
 
@@ -39,7 +40,8 @@ function readPublicMessage(error, status) {
 // eslint-disable-next-line no-unused-vars
 export function errorHandler(error, _req, res, _next) {
   const status = readStatus(error);
-  if (status >= 500) console.error(error);
+  // Manutenção é um 503 esperado (o app mostra o pop-up): não é erro do servidor para o log.
+  if (status >= 500 && error.extra?.code !== "maintenance") console.error(error);
 
   const body = { error: readPublicMessage(error, status) };
   // extra só existe em HttpError lançado de propósito (ex.: conta banida, e-mail que não saiu).

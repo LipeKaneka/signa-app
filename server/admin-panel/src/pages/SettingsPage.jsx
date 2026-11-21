@@ -16,7 +16,7 @@ const textToPhrases = (text) =>
 const toFieldValue = (setting) => (setting.type === "phrases" ? phrasesToText(setting.value) : String(setting.value));
 
 /** Uma configuração com campo, salvar e voltar ao padrão. */
-function SettingRow({ setting, editable, onSaved }) {
+export function SettingRow({ setting, editable, onSaved }) {
   const [value, setValue] = useState(toFieldValue(setting));
   const { run, busy, message } = useAction();
   useEffect(() => setValue(toFieldValue(setting)), [setting]);
@@ -77,7 +77,7 @@ const GITHUB_FIELDS = [
  * "Buscar no GitHub": lê a release mais recente do repositório (app.update.githubRepo) e mostra os dados que vão
  * para a tela de atualização do app; "Aplicar" salva os campos encontrados (os vazios ficam como estão).
  */
-function GithubReleaseImporter({ onApplied }) {
+export function GithubReleaseImporter({ onApplied }) {
   const [release, setRelease] = useState(null);
   const search = useAction();
   const apply = useAction();
@@ -131,23 +131,13 @@ function GithubReleaseImporter({ onApplied }) {
   );
 }
 
-/** Temas das configurações, cada um numa aba (a aba fica no endereço: #/configuracoes?aba=atualizacao). */
+/** Temas das configurações, cada um numa aba (a aba fica no endereço: #/configuracoes?aba=textos). */
 const SETTING_TABS = [
   { id: "pontuacao", title: "Pontuação e regras", prefix: "progress." },
   { id: "textos", title: "Textos do app", prefix: "app.feedback." },
-  {
-    id: "atualizacao",
-    title: "Atualização do app",
-    prefix: "app.update.",
-    intro:
-      "Para avisar uma versão nova: publique uma release no GitHub (tag v1.4.0, com o APK anexado e \"versionCode: N\" na "
-      + "descrição) e use \"Buscar no GitHub\", ou preencha à mão o link público do APK e o número da versão nova. Quem tiver "
-      + "uma versão menor vê a tela de atualização. Com o número mínimo, versões abaixo dele ficam bloqueadas até atualizar.",
-    importer: true,
-  },
 ];
 
-/** Configurações em abas por tema: pontuação e regras, textos do app e atualização do app (valor ausente = padrão do código). */
+/** Configurações em abas por tema: pontuação e regras e textos do app (valor ausente = padrão do código). A atualização do app fica em Pop-ups → Atualizações. */
 export function SettingsPage() {
   const { can } = useAuth();
   const { data, error, loading, reload } = useLoad(() => api("/settings"), []);

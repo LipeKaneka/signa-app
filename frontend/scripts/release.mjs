@@ -104,7 +104,7 @@ ou à mão:
        ${summary}
 
        versionCode: ${versionCode}
-  3. No painel: Configurações → Atualização do app → "Buscar no GitHub" → "Aplicar estes dados".
+  3. No painel: Pop-ups → Atualizações → "Buscar no GitHub" → "Aplicar estes dados".
 `);
   process.exit(0);
 }
@@ -161,5 +161,5 @@ console.log(`
 Release publicada: ${release.html_url}
 APK: ${asset.browser_download_url}
 
-Para avisar os usuários: no painel, Configurações → Atualização do app → "Buscar no GitHub" → "Aplicar estes dados".
+Para avisar os usuários: no painel, Pop-ups → Atualizações → "Buscar no GitHub" → "Aplicar estes dados".
 `);

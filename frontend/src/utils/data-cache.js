@@ -5,10 +5,22 @@
  * É apagado ao entrar ou sair da conta (os dados são da pessoa logada).
  */
 const PREFIX = "signa-ludus:cache:";
-/** Limite de entradas guardadas (buscas do dicionário geram chaves novas; as mais antigas saem). */
+/** Limite de entradas guardadas no aparelho e na memória (as mais antigas saem). */
 const MAX_ENTRIES = 40;
+/**
+ * Chaves que ficam só na memória: cada busca do dicionário gera uma chave nova com até 100 sinais, o que enchia o
+ * localStorage (limite ~5 MB) sem ajudar a abrir o app mais rápido.
+ */
+const MEMORY_ONLY_PREFIXES = ["dictionary:search:"];
 
 const memory = new Map();
+/**
+ * Quando cada chave do localStorage foi salva (chave sem o prefixo → savedAt). Montado uma vez, na primeira gravação:
+ * antes, toda gravação acima do limite lia e interpretava todas as entradas guardadas para achar as mais antigas.
+ */
+let storedIndex = null;
+
+const isMemoryOnly = (key) => MEMORY_ONLY_PREFIXES.some((prefix) => key.startsWith(prefix));
 
 function storageKeys() {
   try {
@@ -18,17 +30,40 @@ function storageKeys() {
   }
 }
 
+function readStoredIndex() {
+  if (storedIndex) return storedIndex;
+  storedIndex = new Map();
+  for (const stored of storageKeys()) {
+    const key = stored.slice(PREFIX.length);
+    try {
+      // Buscas guardadas por versões anteriores do app: saem do aparelho.
+      if (isMemoryOnly(key)) localStorage.removeItem(stored);
+      else storedIndex.set(key, JSON.parse(localStorage.getItem(stored) ?? "{}").savedAt ?? 0);
+    } catch {
+      storedIndex.set(key, 0);
+    }
+  }
+  return storedIndex;
+}
+
+/** Tira do mapa as entradas mais antigas até caber no limite (o Map guarda a ordem de inserção). */
+function trimMemory() {
+  while (memory.size > MAX_ENTRIES) memory.delete(memory.keys().next().value);
+}
+
 /**
  * @param {string} key - ex.: "trail", "profile", "ranking:xp".
  * @returns {unknown|undefined} os dados guardados, ou undefined.
  */
 export function readCache(key) {
   if (memory.has(key)) return memory.get(key).value;
+  if (isMemoryOnly(key)) return undefined;
   try {
     const raw = localStorage.getItem(PREFIX + key);
     if (!raw) return undefined;
     const entry = JSON.parse(raw);
     memory.set(key, entry);
+    trimMemory();
     return entry.value;
   } catch {
     return undefined;
@@ -42,16 +77,19 @@ export function readCache(key) {
  */
 export function writeCache(key, value) {
   const entry = { value, savedAt: Date.now() };
+  memory.delete(key); // volta para o fim da fila (é a mais recente)
   memory.set(key, entry);
+  trimMemory();
+  if (isMemoryOnly(key)) return;
   try {
+    const index = readStoredIndex();
     localStorage.setItem(PREFIX + key, JSON.stringify(entry));
-    const keys = storageKeys();
-    if (keys.length > MAX_ENTRIES) {
-      const oldest = keys
-        .map((stored) => ({ stored, savedAt: JSON.parse(localStorage.getItem(stored) ?? "{}").savedAt ?? 0 }))
-        .sort((a, b) => a.savedAt - b.savedAt)
-        .slice(0, keys.length - MAX_ENTRIES);
-      oldest.forEach(({ stored }) => localStorage.removeItem(stored));
+    index.set(key, entry.savedAt);
+    if (index.size <= MAX_ENTRIES) return;
+    const oldest = [...index].sort((a, b) => a[1] - b[1]).slice(0, index.size - MAX_ENTRIES);
+    for (const [stored] of oldest) {
+      localStorage.removeItem(PREFIX + stored);
+      index.delete(stored);
     }
   } catch {
     // Sem espaço ou sem localStorage (modo privado): fica só na memória.
@@ -61,6 +99,7 @@ export function writeCache(key, value) {
 /** Apaga tudo (ao entrar/sair da conta). Usado por: AuthContext. */
 export function clearCache() {
   memory.clear();
+  storedIndex = new Map();
   storageKeys().forEach((key) => {
     try {
       localStorage.removeItem(key);

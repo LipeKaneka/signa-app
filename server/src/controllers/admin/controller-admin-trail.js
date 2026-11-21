@@ -2,6 +2,7 @@ import * as TrailAdmin from "../../services/service-admin-trail.js";
 import { readActor } from "../../middlewares/admin-auth-middleware.js";
 import { readRequiredString, readOptionalString, readBoolean, readInteger } from "../../utils/util-validators.js";
 import { badRequest } from "../../utils/util-http-error.js";
+import { MESSAGES } from "../../config/messages.js";
 
 const OBJECT_ID = /^[0-9a-f]{24}$/;
 
@@ -11,7 +12,7 @@ const OBJECT_ID = /^[0-9a-f]{24}$/;
  */
 function readId(value, fieldLabel, { nullable = false } = {}) {
   if (nullable && (value === null || value === "")) return null;
-  if (typeof value !== "string" || !OBJECT_ID.test(value)) throw badRequest(`${fieldLabel} inválido.`);
+  if (typeof value !== "string" || !OBJECT_ID.test(value)) throw badRequest(MESSAGES.admin.invalidObjectId(fieldLabel));
   return value;
 }
 
@@ -30,7 +31,7 @@ function readQuestionsPerAttempt(value) {
  * @throws {HttpError} 400.
  */
 function readIdList(value) {
-  if (!Array.isArray(value) || value.length === 0 || value.length > 500) throw badRequest("Envie a lista de ids na ordem nova.");
+  if (!Array.isArray(value) || value.length === 0 || value.length > 500) throw badRequest(MESSAGES.admin.sendIdsInOrder);
   return value.map((id) => readId(id, "Id"));
 }
 

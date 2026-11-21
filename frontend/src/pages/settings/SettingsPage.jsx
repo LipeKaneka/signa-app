@@ -61,14 +61,19 @@ function DeleteAccountForm({ onCancel }) {
   const { signOut } = useAuth();
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (deleting) return;
+    setDeleting(true);
+    setError("");
     try {
       await UserApi.deleteAccount(password);
       signOut();
     } catch (deleteError) {
       setError(deleteError.message);
+      setDeleting(false);
     }
   }
 
@@ -83,7 +88,9 @@ function DeleteAccountForm({ onCancel }) {
       {error && <p className="form-error" role="alert">{error}</p>}
       <div className="danger-form__actions">
         <button type="button" className="button-link" onClick={onCancel}>Cancelar</button>
-        <button type="submit" className="button-primary danger-form__confirm">Excluir conta</button>
+        <button type="submit" className="button-primary danger-form__confirm" disabled={deleting}>
+          {deleting ? "Excluindo…" : "Excluir conta"}
+        </button>
       </div>
     </form>
   );

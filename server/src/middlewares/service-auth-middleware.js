@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { getEnvironment } from "../config/env.js";
 import { unauthorized } from "../utils/util-http-error.js";
+import { MESSAGES } from "../config/messages.js";
 
 /**
  * Compara dois textos em tempo constante (não revela, pelo tempo de resposta, quanto da chave acertou).
@@ -24,7 +25,7 @@ function keysMatch(received, expected) {
 export function requireServiceKey(req, _res, next) {
   const received = req.get("X-Service-Key") ?? "";
   if (!keysMatch(received, getEnvironment().serviceKey)) {
-    next(unauthorized("Chave de serviço inválida."));
+    next(unauthorized(MESSAGES.general.invalidServiceKey));
     return;
   }
   next();

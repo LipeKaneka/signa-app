@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEscapeKey } from "../hooks/useEscapeKey.js";
 import { Icon } from "./Icon.jsx";
 import { SignAvatar } from "../features/vlibras/SignAvatar.jsx";
 import "./sign-dialog.css";
+import { MESSAGES } from "../config/messages.js";
 
 /**
  * Janela com o avatar fazendo o sinal de uma palavra (fecha com Esc).
@@ -9,11 +10,7 @@ import "./sign-dialog.css";
  * Usado por: Dicionário, Assistente e tela de resultado da atividade.
  */
 export function SignDialog({ word, avatar, description, onClose }) {
-  useEffect(() => {
-    const closeOnEscape = (event) => event.key === "Escape" && onClose();
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [onClose]);
+  useEscapeKey(onClose);
 
   return (
     <div className="sign-dialog" role="dialog" aria-modal="true" aria-label={`Sinal de ${word}`}>
@@ -23,7 +20,7 @@ export function SignDialog({ word, avatar, description, onClose }) {
         </button>
         <h2 className="sign-dialog__title">{word}</h2>
         {description && <p className="sign-dialog__description">{description}</p>}
-        {avatar ? <SignAvatar avatar={avatar} /> : !description && <p className="muted">Ainda não temos o avatar deste sinal.</p>}
+        {avatar ? <SignAvatar avatar={avatar} /> : !description && <p className="muted">{MESSAGES.empty.signAvatar}</p>}
       </div>
     </div>
   );

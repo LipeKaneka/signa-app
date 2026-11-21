@@ -4,6 +4,7 @@ import { Icon } from "../../components/Icon.jsx";
 import { LogoHand } from "../../components/illustrations.jsx";
 import { glossExists, loadVLibras, placePanelOver, playGloss, replayLastSign, setPanelVisible } from "./vlibras-player.js";
 import "./sign-avatar.css";
+import { MESSAGES } from "../../config/messages.js";
 
 const SLOW_LOAD_HINT_MS = 15000;
 const PANEL_WAIT_INTERVAL_MS = 250;
@@ -74,11 +75,11 @@ const LoadingCover = ({ coverRef, visible, slow, onSkip }) =>
       <span className="sign-loading__hand" aria-hidden="true">
         <LogoHand size={44} color="#fff" />
       </span>
-      <p className="sign-loading__title">Preparando o sinal…</p>
+      <p className="sign-loading__title">{MESSAGES.signAvatar.preparing}</p>
       <span className="sign-loading__dots" aria-hidden="true"><i /><i /><i /></span>
       {slow && visible && (
         <>
-          <p className="sign-loading__hint">Na primeira vez pode levar até um minuto.</p>
+          <p className="sign-loading__hint">{MESSAGES.signAvatar.slowFirstTime}</p>
           <button type="button" className="sign-loading__skip" onClick={onSkip}>
             Continuar sem o avatar
           </button>
@@ -98,7 +99,7 @@ function UnavailableFrame({ skipped, onRetry }) {
         <Icon name="hand" size={40} strokeWidth={1.5} />
       </span>
       <p className="sign-frame__message">
-        {skipped ? "Você seguiu sem o avatar." : "Não foi possível mostrar o sinal agora."}
+        {skipped ? MESSAGES.signAvatar.skipped : MESSAGES.signAvatar.unavailable}
       </p>
       <button type="button" className="sign-frame__retry" onClick={onRetry}>
         <Icon name="replay" size={16} /> {skipped ? "Mostrar o avatar" : "Tentar de novo"}

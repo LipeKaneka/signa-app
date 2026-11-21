@@ -12,6 +12,7 @@ import {
   AVATAR_THUMB_MAX_LENGTH,
 } from "../utils/util-validators.js";
 import { badRequest } from "../utils/util-http-error.js";
+import { MESSAGES } from "../config/messages.js";
 
 /**
  * POST /internal/v1/auth/register — {nickname, email, password, acceptedTerms?} -> 201 {id, user}.
@@ -50,10 +51,11 @@ export async function googleSignIn(req, res) {
 }
 
 /**
- * GET /internal/v1/users/:userId/session — {active: true} se a conta existe e está ativa
- * (o loadUser já respondeu 401/403 caso contrário). Usado pelo backend para validar sessões.
+ * GET /internal/v1/users/:userId/session — {active: true} se a conta existe e está ativa (401/403 caso contrário).
+ * Fica fora do loadUser: lê só status e banimento, não o usuário inteiro. Usado pelo backend para validar sessões.
  */
-export function getSession(_req, res) {
+export async function getSession(req, res) {
+  await UserService.ensureActiveSession(req.params.userId);
   res.json({ active: true });
 }
 
@@ -82,7 +84,7 @@ const EDITABLE_FIELDS = ["nickname", "email", "password", "city", "showInRanking
 function readProfileChanges(changes) {
   const body = changes ?? {};
   const unknownField = Object.keys(body).find((field) => !EDITABLE_FIELDS.includes(field));
-  if (unknownField) throw badRequest(`Campo não pode ser alterado: ${unknownField}.`);
+  if (unknownField) throw badRequest(MESSAGES.account.fieldNotEditable(unknownField));
 
   return {
     nickname: body.nickname === undefined ? undefined : readRequiredString(body.nickname, "o apelido", 60),
@@ -110,7 +112,7 @@ export async function deleteUser(req, res) {
 
 /** Lê o código de 6 dígitos. @throws {HttpError} 400. */
 function readResetCode(value) {
-  if (typeof value !== "string" || !/^\d{6}$/.test(value)) throw badRequest("Informe o código de 6 dígitos.");
+  if (typeof value !== "string" || !/^\d{6}$/.test(value)) throw badRequest(MESSAGES.passwordReset.codeRequired);
   return value;
 }
 
@@ -126,8 +128,8 @@ export async function verifyPasswordReset(req, res) {
   res.json({ valid: true });
 }
 
-/** POST /internal/v1/auth/password-reset/confirm — {email, code, password} → {changed: true}. */
+/** POST /internal/v1/auth/password-reset/confirm — {email, code, password} → {changed: true, id, user} (já é a sessão). */
 export async function confirmPasswordReset(req, res) {
-  await PasswordResetService.confirmPasswordReset(readEmail(req.body?.email), readResetCode(req.body?.code), readNewPassword(req.body?.password));
-  res.json({ changed: true });
+  const session = await PasswordResetService.confirmPasswordReset(readEmail(req.body?.email), readResetCode(req.body?.code), readNewPassword(req.body?.password));
+  res.json({ changed: true, ...session });
 }

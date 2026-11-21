@@ -1,4 +1,5 @@
 import { findActiveUserById } from "../services/service-user.js";
+import { assertAppAccess } from "../services/service-popups.js";
 
 /**
  * Middleware das rotas /internal/v1/users/:userId/...: carrega o usuário ativo em req.user.
@@ -11,6 +12,8 @@ import { findActiveUserById } from "../services/service-user.js";
 export async function loadUser(req, _res, next) {
   try {
     req.user = await findActiveUserById(req.params.userId);
+    // Manutenção valendo: só contas liberadas no painel passam (as outras recebem 503 "maintenance").
+    await assertAppAccess(req.user);
     next();
   } catch (error) {
     next(error);

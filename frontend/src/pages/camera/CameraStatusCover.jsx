@@ -1,5 +1,6 @@
 import { Icon } from "../../components/Icon.jsx";
 import { LogoHand } from "../../components/illustrations.jsx";
+import { MESSAGES } from "../../config/messages.js";
 
 /**
  * Capa por cima da câmera enquanto ela abre (ou quando não abre). Mostra só textos amigáveis;
@@ -12,7 +13,7 @@ export function CameraStatusCover({ camera }) {
       <span className="camera-cover__badge" aria-hidden="true">
         {failed ? <Icon name="camera" size={40} strokeWidth={1.4} /> : <LogoHand size={44} color="#fff" />}
       </span>
-      <p className="camera-cover__title">{failed ? "A câmera não abriu" : "Preparando a câmera…"}</p>
+      <p className="camera-cover__title">{failed ? MESSAGES.camera.failedTitle : MESSAGES.camera.preparing}</p>
       <p className="camera-cover__text">{failed ? camera.error : camera.step}</p>
       {failed ? (
         <button type="button" className="camera-cover__retry" onClick={() => window.location.reload()}>

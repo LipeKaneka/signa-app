@@ -8,6 +8,7 @@ import { badRequest } from "../../utils/util-http-error.js";
 import { readEventAppearance } from "../../config/event-appearance.js";
 import { readAchievementAppearance, readTierFields } from "../../config/achievement-appearance.js";
 import { readEventSchedule } from "../../config/event-schedule.js";
+import { MESSAGES } from "../../config/messages.js";
 
 /**
  * Campos de conquista. A chave só é lida ao criar (minúsculas, números e _).
@@ -37,7 +38,7 @@ function readAchievementFields(body, creating) {
   }
   if (creating) {
     const key = readRequiredString(body?.key, "a chave", 60);
-    if (!/^[a-z0-9_]+$/.test(key)) throw badRequest("Chave: use só letras minúsculas, números e _.");
+    if (!/^[a-z0-9_]+$/.test(key)) throw badRequest(MESSAGES.admin.invalidKey);
     fields.key = key;
   } else {
     fields.active = readBoolean(body?.active, "Ativa");
@@ -104,7 +105,7 @@ export async function deleteTier(req, res) {
 function readEventFields(body, creating) {
   const multiplier = body?.multiplier;
   if ((creating || multiplier !== undefined) && (typeof multiplier !== "number" || !Number.isFinite(multiplier) || multiplier < 1)) {
-    throw badRequest("Multiplicador: um número a partir de 1 (ex.: 2, 1.5 ou 50).");
+    throw badRequest(MESSAGES.admin.invalidMultiplier);
   }
   let appearance;
   if (creating || body?.appearance !== undefined) {
@@ -129,7 +130,7 @@ function readEventFields(body, creating) {
   const readLimit = (value, label) => {
     if (value === undefined) return creating && !recurring ? readDate(value, label) : undefined;
     if (value === null || value === "") {
-      if (!recurring) throw badRequest(`${label}: obrigatório em evento de uma vez.`);
+      if (!recurring) throw badRequest(MESSAGES.admin.eventFieldRequired(label));
       return null;
     }
     return readDate(value, label);

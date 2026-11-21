@@ -1,6 +1,7 @@
 import { OAuth2Client } from "google-auth-library";
 import { getEnvironment } from "../config/env.js";
 import { badRequest, unauthorized } from "../utils/util-http-error.js";
+import { MESSAGES } from "../config/messages.js";
 
 let client = null;
 let verifyOverride = null;
@@ -15,7 +16,7 @@ let verifyOverride = null;
  */
 export async function verifyGoogleIdToken(idToken) {
   const { googleClientIds } = getEnvironment();
-  if (googleClientIds.length === 0) throw badRequest("Entrar com o Google ainda não está disponível. Use e-mail e senha.");
+  if (googleClientIds.length === 0) throw badRequest(MESSAGES.account.googleUnavailable);
 
   let payload;
   try {
@@ -27,10 +28,10 @@ export async function verifyGoogleIdToken(idToken) {
       payload = ticket.getPayload();
     }
   } catch {
-    throw unauthorized("Não foi possível confirmar sua conta Google. Tente de novo.");
+    throw unauthorized(MESSAGES.account.googleNotConfirmed);
   }
-  if (!payload?.sub || !payload.email) throw unauthorized("Não foi possível confirmar sua conta Google. Tente de novo.");
-  if (payload.email_verified !== true) throw unauthorized("O e-mail desta conta Google não está confirmado.");
+  if (!payload?.sub || !payload.email) throw unauthorized(MESSAGES.account.googleNotConfirmed);
+  if (payload.email_verified !== true) throw unauthorized(MESSAGES.account.googleEmailNotVerified);
 
   const email = payload.email.toLowerCase();
   return { googleId: String(payload.sub), email, name: String(payload.name || payload.given_name || email.split("@")[0]) };

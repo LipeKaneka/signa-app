@@ -12,6 +12,7 @@ import { listActiveAchievements, readUserAchievementMetrics, countActiveSigns } 
 import { ACHIEVEMENT_METRICS, APP_EVENT_METRICS } from "../config/achievement-metrics.js";
 import { SignModel } from "../models/model-sign.js";
 import { toDayKey } from "./service-streak.js";
+import { MESSAGES } from "../config/messages.js";
 
 /** Maior número aceito em XP, ofensiva e acertos (sem teto prático; é o maior inteiro exato do JavaScript). */
 export const MAX_COUNTER = Number.MAX_SAFE_INTEGER;
@@ -30,6 +31,8 @@ function toAdminBan(user) {
 }
 
 const RECENT_ATTEMPTS = 20;
+/** Campos que a lista de usuários do painel não usa (crescem com o uso do app). */
+const ADMIN_LIST_EXCLUDED_FIELDS = "-completedActivities -viewedSigns -achievementUnlocks -achievementOverrides -actionCounts -rankingPositions";
 
 /**
  * Usuário do app no formato da lista do painel.
@@ -65,7 +68,8 @@ export async function listUsers({ search, status, page, limit }) {
   }
   const filter = conditions.length ? { $and: conditions } : {};
   const [users, total] = await Promise.all([
-    UserModel.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+    // Sem as listas que só a tela de detalhe usa (atividades concluídas, sinais vistos, conquistas...).
+    UserModel.find(filter).select(ADMIN_LIST_EXCLUDED_FIELDS).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
     UserModel.countDocuments(filter),
   ]);
   return { users: users.map(toAdminUserRow), total, page, pages: Math.max(Math.ceil(total / limit), 1) };
@@ -100,7 +104,7 @@ async function describeAchievementMetrics(user) {
 
 export async function getUserDetail(userId) {
   const user = await UserModel.findById(userId);
-  if (!user) throw notFound("Usuário não encontrado.");
+  if (!user) throw notFound(MESSAGES.admin.userNotFound);
   const { user: profile, achievements } = await getProfileWithAchievements(user);
   const trail = await buildTrail(user);
   const attempts = await AttemptModel.find({ user: user._id }).sort({ createdAt: -1 }).limit(RECENT_ATTEMPTS).lean();
@@ -150,7 +154,7 @@ export async function getUserDetail(userId) {
  */
 async function findUser(userId) {
   const user = await UserModel.findById(userId);
-  if (!user) throw notFound("Usuário não encontrado.");
+  if (!user) throw notFound(MESSAGES.admin.userNotFound);
   return user;
 }
 
@@ -180,7 +184,7 @@ function snapshotProgress(user) {
  * Usado por: PATCH /admin/api/v1/users/:id/status.
  */
 export async function setUserStatus(actor, userId, status, reason, durationDays = null) {
-  if (!["active", "blocked"].includes(status)) throw badRequest("Status inválido.");
+  if (!["active", "blocked"].includes(status)) throw badRequest(MESSAGES.admin.invalidStatus);
   const user = await findUser(userId);
   const before = snapshotProgress(user);
   const wasBlocked = user.status === "blocked";
@@ -297,10 +301,10 @@ export async function updateUserProfile(actor, userId, changes, reason) {
   const user = await findUser(userId);
   const before = { ...snapshotProgress(user), nickname: user.nickname, email: user.email, city: user.city, showInRanking: user.showInRanking };
   if (changes.email !== undefined && changes.email !== user.email && (await UserModel.exists({ email: changes.email, _id: { $ne: user._id } }))) {
-    throw conflict("Este e-mail já é de outra conta.");
+    throw conflict(MESSAGES.admin.userEmailTaken);
   }
   const changed = Object.entries(changes).filter(([field, value]) => value !== undefined && user[field] !== value);
-  if (changed.length === 0) throw badRequest("Nada mudou.");
+  if (changed.length === 0) throw badRequest(MESSAGES.admin.nothingChanged);
   changed.forEach(([field, value]) => {
     user[field] = value;
   });
@@ -344,7 +348,7 @@ export async function updateUserStats(actor, userId, values, reason) {
     .filter(([, value]) => value !== undefined)
     .map(([field, value]) => `${labels[field]} ${before[field] ?? "?"} → ${value}`)
     .join(", ");
-  if (!described) throw badRequest("Nada mudou.");
+  if (!described) throw badRequest(MESSAGES.admin.nothingChanged);
   return saveWithAudit(actor, user, before, "update", `${user.nickname}: ${described} (${reason})`);
 }
 
@@ -377,7 +381,7 @@ export async function updateUserCounters(actor, userId, { actions = {}, dictiona
     described.push(`dicionário ${user.viewedSigns.length} → ${slugs.length} sinais vistos (todos)`);
     user.viewedSigns = slugs;
   }
-  if (described.length === 0) throw badRequest("Nada mudou.");
+  if (described.length === 0) throw badRequest(MESSAGES.admin.nothingChanged);
   return saveWithAudit(actor, user, before, "update", `${user.nickname}: ${described.join(", ")} (${reason})`);
 }
 
@@ -394,14 +398,14 @@ export async function updateUserCounters(actor, userId, { actions = {}, dictiona
  */
 export async function setUserActivity(actor, userId, activityId, { completed, bestScore = 100 }, reason) {
   const [user, activity] = await Promise.all([findUser(userId), ActivityModel.findById(activityId).select("title").lean()]);
-  if (!activity) throw notFound("Atividade não encontrada.");
+  if (!activity) throw notFound(MESSAGES.admin.activityNotFound);
   const before = snapshotProgress(user);
   const index = user.completedActivities.findIndex((entry) => String(entry.activity) === String(activity._id));
   if (completed) {
     if (index === -1) user.completedActivities.push({ activity: activity._id, bestScore, completedAt: new Date() });
     else user.completedActivities[index].bestScore = bestScore;
   } else {
-    if (index === -1) throw badRequest("Esta atividade já não está concluída.");
+    if (index === -1) throw badRequest(MESSAGES.admin.activityNotCompleted);
     user.completedActivities.splice(index, 1);
   }
   user.completedActivitiesCount = user.completedActivities.length;
@@ -424,10 +428,10 @@ export async function setUserActivity(actor, userId, activityId, { completed, be
  * Usado por: PUT /admin/api/v1/users/:id/achievements/:key.
  */
 export async function setUserAchievement(actor, userId, key, mode, reason) {
-  if (!["granted", "revoked", "auto"].includes(mode)) throw badRequest("Use granted, revoked ou auto.");
+  if (!["granted", "revoked", "auto"].includes(mode)) throw badRequest(MESSAGES.admin.achievementOverride);
   const [user, catalog] = await Promise.all([findUser(userId), listActiveAchievements()]);
   const achievement = catalog.find((entry) => entry.key === key);
-  if (!achievement) throw notFound("Conquista não encontrada (ou desativada).");
+  if (!achievement) throw notFound(MESSAGES.admin.achievementNotFoundOrInactive);
   const before = snapshotProgress(user);
   user.achievementOverrides = user.achievementOverrides.filter((entry) => entry.key !== key);
   if (mode !== "auto") user.achievementOverrides.push({ key, unlocked: mode === "granted" });

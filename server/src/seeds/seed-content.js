@@ -12,6 +12,7 @@ import { clearAchievementsCache } from "../services/service-achievement.js";
 import { clearLevelsCache } from "../services/service-level.js";
 import { clearSettingsCache } from "../services/service-settings.js";
 import { clearEventsCache } from "../services/service-event.js";
+import { clearTrailCache } from "../services/service-trail.js";
 import { slugify } from "../utils/util-text.js";
 import { splitAlphabetActivity } from "./migrate-split-alphabet.js";
 import { moveToTeacherTrail, linkTeacherTrail } from "./migrate-teacher-trail.js";
@@ -318,6 +319,7 @@ export async function seedContent() {
   clearLevelsCache();
   clearSettingsCache();
   clearEventsCache();
+  clearTrailCache();
   const contentVersion = await bumpContentVersion();
   return { signs: signsBySlug.size, modules: moduleCount, achievements, levels, contentVersion };
 }
