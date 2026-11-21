@@ -116,3 +116,38 @@ export async function readLatestRelease(repo) {
     warnings,
   };
 }
+
+/**
+ * Versão mais nova do releases/HISTORICO.md (a primeira linha da tabela, que o script de release acrescenta).
+ * @param {string} markdown
+ * @returns {{label: string, versionCode: number, tag: string, summary: string}|null}
+ */
+export function latestFromHistory(markdown) {
+  const row = /^\|\s*\**(\d+\.\d+\.\d+)\**\s*\|[^|]*\|\s*(\d+)\s*\|\s*`?(v[\w.-]+)`?[^|]*\|\s*([^|\n]*?)\s*\|\s*$/m.exec(String(markdown ?? ""));
+  return row ? { label: row[1], versionCode: Number(row[2]), tag: row[3], summary: row[4] } : null;
+}
+
+/**
+ * Reserva de readLatestRelease que não usa a API do GitHub (limite de 60 consultas/hora por IP sem GITHUB_TOKEN, e os
+ * IPs das hospedagens são compartilhados): lê o releases/HISTORICO.md do repositório (raw.githubusercontent.com) e
+ * monta o link do APK da release pela tag (Signa-<versão>.apk, como o script de release publica). Só devolve se o APK
+ * existir de verdade.
+ * @param {string} repo - "dono/nome".
+ * @returns {Promise<{tag: string, fields: {versionName: string, latestVersionCode: number, downloadUrl: string, notes: string}}|null>}
+ * Usado por: service-app-update-sync.js (quando a API do GitHub falha).
+ */
+export async function readLatestFromHistory(repo) {
+  const name = String(repo ?? "").trim();
+  if (!REPO_PATTERN.test(name)) return null;
+  const history = await getFromGitHub(`${GITHUB_RAW}/${name}/HEAD/releases/HISTORICO.md`, "text/plain");
+  if (!history.ok) return null;
+  const latest = latestFromHistory(await history.text());
+  if (!latest) return null;
+  const downloadUrl = `https://github.com/${name}/releases/download/${latest.tag}/Signa-${latest.label}.apk`;
+  const apk = await fetch(downloadUrl, { method: "HEAD", redirect: "follow", signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) }).catch(() => null);
+  if (!apk?.ok) return null;
+  return {
+    tag: latest.tag,
+    fields: { versionName: versionNameFromTag(latest.tag), latestVersionCode: latest.versionCode, downloadUrl, notes: latest.summary.slice(0, NOTES_MAX_LENGTH) },
+  };
+}

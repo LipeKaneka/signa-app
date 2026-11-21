@@ -1,5 +1,5 @@
 import { getSetting } from "./service-settings.js";
-import { readLatestRelease } from "./service-github-release.js";
+import { readLatestFromHistory, readLatestRelease } from "./service-github-release.js";
 import { updateSetting } from "./service-admin-gamification.js";
 
 /** De quanto em quanto tempo o servidor confere se saiu release nova (a API do GitHub aceita 60 consultas/hora). */
@@ -21,7 +21,16 @@ export async function syncAppUpdateFromGithub() {
     if (Number(await getSetting("app.update.autoFromGithub")) !== 1) return null;
     const repo = String(await getSetting("app.update.githubRepo") ?? "").trim();
     if (!repo) return null;
-    const { fields, tag } = await readLatestRelease(repo);
+    let release;
+    try {
+      release = await readLatestRelease(repo);
+    } catch (error) {
+      // API do GitHub recusou (limite de consultas por IP) ou caiu: tenta pelo HISTORICO.md, que não tem esse limite.
+      console.warn(`API do GitHub indisponível (${error.message}); conferindo pelo releases/HISTORICO.md.`);
+      release = await readLatestFromHistory(repo);
+      if (!release) return null;
+    }
+    const { fields, tag } = release;
     const current = Number(await getSetting("app.update.latestVersionCode")) || 0;
     // Só aplica release completa (com número e APK) e mais nova que a configurada.
     if (!fields.latestVersionCode || !fields.downloadUrl || fields.latestVersionCode <= current) return null;
