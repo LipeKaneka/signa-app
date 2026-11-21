@@ -8,6 +8,7 @@ recriar qualquer um, faça checkout da tag e gere o APK, ou rode `npm run releas
 
 | Versão | Data | versionCode | Tag | O que mudou |
 |---|---|---|---|---|
+| **1.8.0** | 21/11/2026 | 19 | `v1.8.0` | Pop-ups novos (avisos, manutenção e atualizações), app mais leve e mais rápido, VLibras corrigido |
 | **1.7.2** | 20/11/2026 | 18 | `v1.7.2` | App abre mais rápido: acorda o servidor ao abrir e câmera mais leve |
 | **1.7.1** | 15/11/2026 | 17 | `v1.7.1` | Animação de ofensiva cobre a tela inteira em qualquer celular |
 | **1.7.0** | 15/11/2026 | 16 | `v1.7.0` | Animação de ofensiva aumentada ao voltar para a trilha |
