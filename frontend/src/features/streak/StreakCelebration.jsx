@@ -11,21 +11,13 @@ import { prefersReducedMotion } from "../../utils/motion.js";
 import "./streak-celebration.css";
 
 /**
- * Tempos da animação (ms), tirados do projeto do Alight Motion ("Novo projeto 2"):
- * número antigo cai até 690; troca para o novo e treme em 775; "Aumentada" em 783; a faixa roxa sobe de 1766 a 3366,
- * cobre a tela inteira (o fundo some por trás dela) e sai por cima revelando a trilha.
+ * Tempos da entrada (ms), tirados do projeto do Alight Motion ("Novo projeto 2"): número antigo cai até 690; troca
+ * para o novo e treme em 775; "Aumentada" em 783. A saída (faixa roxa subindo) só começa quando a pessoa toca.
  */
 const SWAP_AT = 770;
 const SHAKE_AT = 775;
 const SHAKE_END = 2015;
 const SHAKE_FREQ_END = 1125;
-const WIPE_AT = 1766;
-/**
- * A faixa cobre a tela inteira de ~300 a ~700 ms depois de começar: o fundo da animação sai no meio desse intervalo,
- * escondido atrás dela (medido em telas de 320×568 a 1024×1366).
- */
-const BACKDROP_END = WIPE_AT + 550;
-const TOTAL = 3366;
 /** Tremor: 175 px no vídeo de 1080 px de largura → proporcional à tela (limitado em telas largas, como tablet). */
 const SHAKE_MAGNITUDE = 175 / 1080;
 const SHAKE_MAX_WIDTH = 480;
@@ -89,12 +81,11 @@ function useDiagonalShake(ref, enabled) {
         if (last !== null) phase += ((now - last) / 1000) * frequency;
         const offset = magnitude * Math.sin(phase * 2 * Math.PI) * (frequency > 0 ? 1 : 0);
         const shift = offset / Math.SQRT2;
-        element.style.transform = `translate(${shift}px, ${-shift}px)`;
-        // "Desfoque de movimento" do projeto: mais forte quanto maior o tremor.
-        element.style.filter = Math.abs(offset) > 2 ? `blur(${Math.min(Math.abs(offset) / 18, 3)}px)` : "none";
+        // translate3d: a GPU só move a camada. O "desfoque de movimento" (filter: blur a cada quadro) foi tirado:
+        // redesenhar o desfoque do grupo inteiro a cada quadro era o que travava a animação no celular.
+        element.style.transform = `translate3d(${shift}px, ${-shift}px, 0)`;
       } else if (elapsed > SHAKE_END) {
         element.style.transform = "none";
-        element.style.filter = "none";
       }
       last = elapsed >= SHAKE_AT ? now : null;
       if (elapsed < SHAKE_END + 50) frame = requestAnimationFrame(tick);
@@ -104,10 +95,18 @@ function useDiagonalShake(ref, enabled) {
   }, [ref, enabled]);
 }
 
+/** Depois de quanto tempo aparece o "Toque para continuar" (a animação de entrada já terminou). */
+const HINT_AT = SHAKE_END - 400;
+/** Saída (depois do toque): a faixa cobre a tela em ~550 ms, o fundo some por trás dela, e acaba em 1,6 s. */
+const LEAVE_BACKDROP_MS = 550;
+const LEAVE_TOTAL_MS = 1600;
+const REDUCED_LEAVE_MS = 300;
+
 /**
  * Animação de "Ofensiva aumentada" por cima da tela (depois de concluir a atividade, ao voltar para a trilha):
- * fogo aparece, o número antigo cai, vira o novo com um tremor, "Aumentada" cresce com brilho e uma faixa roxa sobe
- * revelando a trilha. Tocar pula. Com "menos movimento" no sistema, mostra só o número novo e some.
+ * fogo aparece, o número antigo cai, vira o novo com um tremor e "Aumentada" cresce com brilho. Aí ela PARA e espera:
+ * só sai quando a pessoa toca (aparece "Toque para continuar"); então a faixa roxa sobe revelando a trilha.
+ * Tocar durante a entrada pula direto para o número novo. Com "menos movimento", mostra só o número novo e some no toque.
  * @param {{from: number, to: number, onDone: () => void}} props
  * Usado por: StreakCelebrationHost (App.jsx).
  */
@@ -116,8 +115,11 @@ export function StreakCelebration({ from, to, onDone }) {
   const reduced = prefersReducedMotion();
   const groupRef = useRef(null);
   const [swapped, setSwapped] = useState(reduced);
+  const [hint, setHint] = useState(reduced);
+  const [leaving, setLeaving] = useState(false);
   const [backdropGone, setBackdropGone] = useState(false);
-  const total = reduced ? 1800 : TOTAL;
+  const leaveTimers = useRef([]);
+  const containerRef = useRef(null);
 
   useDiagonalShake(groupRef, !reduced);
 
@@ -127,20 +129,43 @@ export function StreakCelebration({ from, to, onDone }) {
         setSwapped(true);
         playCelebrationFeedback(settings.soundsAndVibration);
       }, reduced ? 0 : SWAP_AT),
-      setTimeout(() => setBackdropGone(true), reduced ? 1500 : BACKDROP_END),
-      setTimeout(onDone, total),
+      setTimeout(() => setHint(true), reduced ? 0 : HINT_AT),
     ];
-    return () => timers.forEach(clearTimeout);
+    return () => {
+      timers.forEach(clearTimeout);
+      leaveTimers.current.forEach(clearTimeout);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // Foco na animação: Enter/espaço também continuam (teclado e leitor de tela).
+  useEffect(() => containerRef.current?.focus({ preventScroll: true }), []);
 
+  /** Toque: durante a entrada, pula para o número novo; depois, sai (faixa roxa) e só então avisa que acabou. */
+  function handleTap() {
+    if (leaving) return;
+    if (!swapped) {
+      setSwapped(true);
+      setHint(true);
+      playCelebrationFeedback(settings.soundsAndVibration);
+      return;
+    }
+    setLeaving(true);
+    leaveTimers.current = reduced
+      ? [setTimeout(onDone, REDUCED_LEAVE_MS)]
+      : [setTimeout(() => setBackdropGone(true), LEAVE_BACKDROP_MS), setTimeout(onDone, LEAVE_TOTAL_MS)];
+  }
+
+  const classes = ["streak-celebration", reduced && "streak-celebration--reduced", leaving && "streak-celebration--leaving"].filter(Boolean).join(" ");
   return (
     <div
-      className={`streak-celebration${reduced ? " streak-celebration--reduced" : ""}`}
-      role="status"
+      className={classes}
+      role="button"
+      tabIndex={0}
       aria-live="assertive"
       aria-label={`Ofensiva aumentada: ${to} ${to === 1 ? "dia" : "dias"} seguidos. Toque para continuar.`}
-      onClick={onDone}
+      onClick={handleTap}
+      onKeyDown={(event) => (event.key === "Enter" || event.key === " ") && handleTap()}
+      ref={containerRef}
     >
       {!backdropGone && (
         <div className="streak-celebration__backdrop">
@@ -159,9 +184,12 @@ export function StreakCelebration({ from, to, onDone }) {
               </span>
             )}
           </div>
+          <span className={`streak-celebration__hint${hint && !leaving ? " streak-celebration__hint--visible" : ""}`} aria-hidden="true">
+            Toque para continuar
+          </span>
         </div>
       )}
-      {!reduced && <span className="streak-celebration__wipe" style={{ animationDelay: `${WIPE_AT}ms` }} aria-hidden="true" />}
+      {!reduced && leaving && <span className="streak-celebration__wipe" aria-hidden="true" />}
     </div>
   );
 }

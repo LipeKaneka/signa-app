@@ -1,20 +1,18 @@
-/* Medidas das configurações do protótipo (28 claro, 29 escuro). */
+/* Configurações no modelo do Figma ("Configurações alta"): ícone, seções com título roxo e linhas finas. */
 .settings-content {
   flex: 1;
+  padding-bottom: 24px;
 }
 
+/* Tema claro: fundo do branco para um lilás bem claro, como no Figma. */
 :root:not([data-theme="dark"]) .settings-content {
-  background: #fff;
+  background: linear-gradient(180deg, #ffffff 0%, #f6f3ff 55%, #e9e2ff 100%);
 }
 
 .settings-icon {
   display: flex;
   justify-content: center;
-  padding: 46px 0 58px;
-}
-
-:root[data-theme="dark"] .settings-icon {
-  padding-top: 8px;
+  padding: 22px 0 8px;
 }
 
 .app-icon {
@@ -24,18 +22,32 @@
   background: var(--color-primary);
 }
 
+.settings-section {
+  margin-top: 6px;
+}
+
+.settings-section__title {
+  margin: 0;
+  padding: 14px 30px 6px;
+  font-size: calc(1.06rem * var(--font-scale, 1));
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+:root[data-theme="dark"] .settings-section__title {
+  color: #b9a8ff;
+}
+
 .settings-list {
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid #999;
 }
 
 .settings-list > li {
-  border-bottom: 1px solid #999;
+  border-bottom: 1px solid #cbc6d8;
 }
 
-:root[data-theme="dark"] .settings-list,
 :root[data-theme="dark"] .settings-list > li {
   border-color: #4b3a9a;
 }
@@ -45,10 +57,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 39px;
-  padding: 0 32px 0 36px;
-  font-size: 1rem;
+  min-height: 42px;
+  padding: 0 26px 0 30px;
+  font-size: calc(0.95rem * var(--font-scale, 1));
   font-weight: 400;
+  color: var(--color-text);
 }
 
 .settings-row--button {
@@ -56,11 +69,16 @@
   border: 0;
   background: transparent;
   color: var(--color-text);
+  font: inherit;
+  font-size: calc(0.95rem * var(--font-scale, 1));
   text-align: left;
+  text-decoration: none;
+  cursor: pointer;
 }
 
-.settings-row--danger {
-  color: var(--color-wrong-border);
+.settings-row--danger,
+.settings-row--danger svg {
+  color: #ff2b2b;
 }
 
 .settings-row .toggle {
@@ -148,7 +166,7 @@
 
 .settings-help {
   margin: 0;
-  padding: 0 32px 12px 36px;
+  padding: 0 26px 12px 30px;
   font-size: 0.875rem;
   color: var(--color-text-muted);
 }
@@ -157,7 +175,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px 32px 12px 36px;
+  padding: 12px 26px 12px 30px;
   font-size: 0.9375rem;
 }
 
@@ -177,7 +195,7 @@
 }
 
 .settings-version {
-  margin: -6px 0 12px;
+  margin: 22px 0 0;
   text-align: center;
   font-size: 0.85rem;
   color: var(--color-text-muted);

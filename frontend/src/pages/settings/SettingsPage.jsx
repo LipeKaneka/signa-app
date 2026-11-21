@@ -10,14 +10,24 @@ import "./settings.css";
 import { useAppVersion } from "../../features/app-update/useAppVersion.js";
 import { useAppEvents } from "../../features/achievements/AppEventsContext.jsx";
 
-/** Linhas na ordem do protótipo. type: toggle | theme | fontSize. */
-const SETTING_ROWS = [
-  { type: "toggle", key: "notifications", label: "Notificações" },
-  { type: "theme", key: "theme", label: "Tema de tela" },
-  { type: "toggle", key: "tipsDuringLessons", label: "Dicas durante lições" },
-  { type: "fontSize", key: "fontScale", label: "Mudar tamanho da fonte" },
-  { type: "toggle", key: "highContrast", label: "Contraste alto na fonte" },
-  { type: "toggle", key: "soundsAndVibration", label: "Efeitos sonoros e vibrações" },
+/** Preferências agrupadas como no Figma ("Configurações alta"). type: toggle | theme | fontSize. */
+const SETTING_SECTIONS = [
+  {
+    title: "Lições e Avisos",
+    rows: [
+      { type: "toggle", key: "notifications", label: "Notificações" },
+      { type: "toggle", key: "tipsDuringLessons", label: "Dicas durante lições" },
+      { type: "toggle", key: "soundsAndVibration", label: "Efeitos sonoros e vibrações" },
+    ],
+  },
+  {
+    title: "Aparência e Acessibilidade",
+    rows: [
+      { type: "theme", key: "theme", label: "Tema de tela" },
+      { type: "fontSize", key: "fontScale", label: "Mudar tamanho da fonte" },
+      { type: "toggle", key: "highContrast", label: "Contraste alto na fonte" },
+    ],
+  },
 ];
 
 function ThemeSwitch({ theme, onChange }) {
@@ -104,56 +114,72 @@ export function SettingsPage() {
   const [showHelp, setShowHelp] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  return (
-    <ScreenWithNav title="Configurações" backTo={-1} contentClassName="settings-content">
-      <div className="settings-icon"><AppIcon size={100} /></div>
-      {version && <p className="settings-version">Versão {version.name} ({version.code})</p>}
-      <p className="settings-version">© 2026 Equipe Signa Ludus. Todos os direitos reservados.</p>
+  const changeSetting = (key, value) => {
+    if (key === "theme" && value !== settings.theme) track("theme_change");
+    updateSetting(key, value);
+  };
 
-      <ul className="settings-list">
-        {SETTING_ROWS.map((row) => (
-          <li key={row.key} className="settings-row">
-            {row.label}
-            <SettingControl
-              row={row}
-              value={settings[row.key]}
-              onChange={(value) => {
-                if (row.key === "theme" && value !== settings.theme) track("theme_change");
-                updateSetting(row.key, value);
-              }}
-            />
-          </li>
-        ))}
-        <li>
-          <button type="button" className="settings-row settings-row--button" onClick={() => setShowHelp((value) => !value)} aria-expanded={showHelp}>
-            Ajuda e feedback
-            <Icon name="chevronRight" size={16} />
-          </button>
-          {showHelp && (
-            <p className="settings-help">
-              O avatar dos exercícios é do VLibras (governo federal, LGPL-3.0). O nome do sinal é enviado aos servidores
-              do VLibras para o avatar funcionar. Dúvidas e sugestões: fale com a equipe do Signa Ludus.{" "}
-              <Link to="/termos">Ler o Termo de Uso</Link>.
-            </p>
-          )}
-        </li>
-        <li>
-          <button type="button" className="settings-row settings-row--button" onClick={signOut}>
-            Sair da conta
-            <Icon name="logout" size={16} />
-          </button>
-        </li>
-        <li>
-          {confirmingDelete ? (
-            <DeleteAccountForm onCancel={() => setConfirmingDelete(false)} />
-          ) : (
-            <button type="button" className="settings-row settings-row--button settings-row--danger" onClick={() => setConfirmingDelete(true)}>
-              Excluir conta
-              <Icon name="chevronRight" size={16} />
+  return (
+    <ScreenWithNav title="Configurações" backTo={-1} headerRounded contentClassName="settings-content">
+      <div className="settings-icon"><AppIcon size={88} /></div>
+
+      {SETTING_SECTIONS.map((section) => (
+        <section key={section.title} className="settings-section" aria-labelledby={`settings-${section.title}`}>
+          <h2 id={`settings-${section.title}`} className="settings-section__title">{section.title}</h2>
+          <ul className="settings-list">
+            {section.rows.map((row) => (
+              <li key={row.key} className="settings-row">
+                {row.label}
+                <SettingControl row={row} value={settings[row.key]} onChange={(value) => changeSetting(row.key, value)} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+
+      <section className="settings-section" aria-labelledby="settings-conta">
+        <h2 id="settings-conta" className="settings-section__title">Conta e Ajuda</h2>
+        <ul className="settings-list">
+          <li>
+            <button type="button" className="settings-row settings-row--button" onClick={() => setShowHelp((value) => !value)} aria-expanded={showHelp}>
+              Ajuda e feedback
+              <Icon name={showHelp ? "chevronDown" : "chevronRight"} size={18} strokeWidth={2.2} />
             </button>
-          )}
-        </li>
-      </ul>
+            {showHelp && (
+              <p className="settings-help">
+                O avatar dos exercícios é do VLibras (governo federal, LGPL-3.0). O nome do sinal é enviado aos servidores
+                do VLibras para o avatar funcionar. Dúvidas e sugestões: fale com a equipe do Signa Ludus.
+              </p>
+            )}
+          </li>
+          <li>
+            <Link to="/termos" className="settings-row settings-row--button">
+              Termos de Uso
+              <Icon name="chevronRight" size={18} strokeWidth={2.2} />
+            </Link>
+          </li>
+          <li>
+            <button type="button" className="settings-row settings-row--button" onClick={signOut}>
+              Sair da conta
+              <Icon name="logout" size={18} strokeWidth={2} />
+            </button>
+          </li>
+          <li>
+            {confirmingDelete ? (
+              <DeleteAccountForm onCancel={() => setConfirmingDelete(false)} />
+            ) : (
+              <button type="button" className="settings-row settings-row--button settings-row--danger" onClick={() => setConfirmingDelete(true)}>
+                Excluir conta
+                <Icon name="chevronRight" size={18} strokeWidth={2.2} />
+              </button>
+            )}
+          </li>
+        </ul>
+      </section>
+
+      <p className="settings-version">
+        {version ? `Versão ${version.name} (${version.code}) · ` : ""}© 2026 Equipe Signa Ludus
+      </p>
     </ScreenWithNav>
   );
 }

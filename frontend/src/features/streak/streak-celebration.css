@@ -9,6 +9,7 @@
   overflow: hidden;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 
 /* Fundo: branco → lilás (tema claro) ou roxo escuro (tema escuro), como as duas versões do projeto. */
@@ -106,19 +107,45 @@
   animation: streak-raised-glow 1232ms linear both;
 }
 
+/* "Toque para continuar": aparece quando a entrada termina, pulsando de leve. */
+.streak-celebration__hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(40px + env(safe-area-inset-bottom));
+  text-align: center;
+  font-size: min(1rem, 4.4vw);
+  font-weight: 600;
+  color: #6b56c9;
+  opacity: 0;
+  transition: opacity 0.4s ease-out;
+}
+
+:root[data-theme="dark"] .streak-celebration__hint {
+  color: #cfc6f5;
+}
+
+.streak-celebration__hint--visible {
+  opacity: 1;
+  animation: streak-hint-pulse 1.6s ease-in-out 0.4s infinite;
+}
+
 /*
- * Faixa roxa que sobe: nasce embaixo, estica até cobrir a tela inteira (692 ms; o fundo da animação some por trás
- * dela) e continua subindo até sair por cima, revelando a trilha (1,6 s no total). Medidas em % da própria tela,
- * então cobre tudo em qualquer celular.
+ * Faixa roxa que sobe (só depois do toque): nasce embaixo, estica até cobrir a tela inteira (~690 ms; o fundo da
+ * animação some por trás dela) e continua subindo até sair por cima, revelando a trilha (1,6 s no total).
+ * Só transform (translate + scaleY): a GPU move a camada, sem recalcular o layout a cada quadro como top/height.
+ * O elemento tem 124% da tela; os % do translate são da própria faixa (100% da tela = 80,6% dela).
  */
 .streak-celebration__wipe {
   position: absolute;
   left: -2px;
   right: -2px;
-  top: 100%;
-  height: 9%;
+  top: 0;
+  height: 124%;
   border-radius: 28px;
   background: var(--color-primary, #4f31bb);
+  transform-origin: top center;
+  will-change: transform;
   animation: streak-wipe 1600ms both;
 }
 
@@ -145,14 +172,23 @@
 }
 
 @keyframes streak-wipe {
-  0% { top: 100%; height: 9%; animation-timing-function: cubic-bezier(0, 0.77, 0.15, 1); }
-  43.25% { top: -12%; height: 124%; animation-timing-function: cubic-bezier(0, 0.69, 0.31, 1); }
-  100% { top: -140%; height: 124%; }
+  0% { transform: translate3d(0, 80.6%, 0) scaleY(0.0726); animation-timing-function: cubic-bezier(0, 0.77, 0.15, 1); }
+  43.25% { transform: translate3d(0, -9.7%, 0) scaleY(1); animation-timing-function: cubic-bezier(0, 0.69, 0.31, 1); }
+  100% { transform: translate3d(0, -112.9%, 0) scaleY(1); }
 }
 
-/* Menos movimento: sem tremor nem faixa; só o número novo, que some suavemente. */
-.streak-celebration--reduced .streak-celebration__backdrop {
-  animation: streak-fade-out 1800ms ease-in both;
+@keyframes streak-hint-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+/* Menos movimento: sem tremor nem faixa; só o número novo, que some suavemente no toque. */
+.streak-celebration--reduced.streak-celebration--leaving .streak-celebration__backdrop {
+  animation: streak-fade-out 300ms ease-in both;
+}
+
+.streak-celebration--reduced .streak-celebration__hint--visible {
+  animation: none;
 }
 
 .streak-celebration--reduced .streak-celebration__group * {
@@ -160,6 +196,6 @@
 }
 
 @keyframes streak-fade-out {
-  0%, 70% { opacity: 1; }
-  100% { opacity: 0; }
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
