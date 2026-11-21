@@ -129,6 +129,24 @@ async function readJsonSafely(response) {
  * Usado por: todos os módulos api-*.js. Ao trocar a arquitetura (servidor de gerenciamento), as telas
  * continuam iguais: só o backend muda de onde busca os dados.
  */
+/** Intervalo mínimo entre dois "despertadores" (abrir e voltar ao app em sequência não repete o pedido). */
+const WAKE_UP_MIN_INTERVAL_MS = 60 * 1000;
+let lastWakeUpAt = 0;
+
+/**
+ * Pede GET /health ao backend sem esperar a resposta. Na hospedagem grátis (Render) o backend dorme sem uso e leva
+ * até ~50 s para acordar; chamando isto assim que o app abre, ele já vai acordando enquanto a pessoa vê a tela de
+ * entrada ou digita a senha. Ao subir, o backend acorda também o servidor de gerenciamento (backend/index.js).
+ * Erros são ignorados: é só um aviso, as chamadas normais continuam com o próprio tratamento.
+ * Usado por: main.jsx (ao abrir e ao voltar do segundo plano).
+ */
+export function wakeUpApi() {
+  const now = Date.now();
+  if (now - lastWakeUpAt < WAKE_UP_MIN_INTERVAL_MS) return;
+  lastWakeUpAt = now;
+  fetch(new URL(`${API_URL}/health`, window.location.href), { cache: "no-store" }).catch(() => {});
+}
+
 export async function requestApi(path, { method = "GET", body, query } = {}) {
   const url = new URL(`${API_URL}${path}`, window.location.href);
   Object.entries(query ?? {})
