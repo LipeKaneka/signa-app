@@ -213,6 +213,8 @@ export function ProfilePage() {
             <ProfileIdentity user={data.user} onEdit={() => setEditing(true)} onSaved={applySavedUser} />
           )}
 
+          {data.user.level && <LevelCard level={data.user.level} xp={data.user.xp} />}
+
           <div className="profile-stats">
             <div className="stat-card">
               <strong title={formatFull(data.user.streak)}><Flame size={42} /> {formatCompact(data.user.streak)}</strong>
@@ -223,8 +225,6 @@ export function ProfilePage() {
               <span>Pontos de XP Totais</span>
             </div>
           </div>
-
-          {data.user.level && <LevelCard level={data.user.level} xp={data.user.xp} />}
 
           <nav className="profile-shortcuts" aria-label="Atalhos">
             {SHORTCUTS.map((shortcut) => (
@@ -241,9 +241,10 @@ export function ProfilePage() {
           </div>
           {recentAchievements.length > 0 ? (
             <ul className="achievement-list achievement-list--recent">
-              {recentAchievements.map((achievement) => (
-                <AchievementCard key={achievement.id} achievement={achievement} showDate />
-              ))}
+              {
+                recentAchievements.map((achievement, index) => (
+                  <AchievementCard key={achievement.id} achievement={achievement} showDate />
+                ))}
             </ul>
           ) : (
             <p className="achievement-empty">{MESSAGES.empty.achievements}</p>

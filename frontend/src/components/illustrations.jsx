@@ -1,5 +1,6 @@
 // Ilustrações do protótipo (logo, ícones coloridos) em SVG: nítidas em qualquer tela e offline no APK.
 import { LOGO_HAND_PATHS, LOGO_HAND_VIEWBOX } from "./logo-hand-paths.js";
+import sinalMao from "../assets/brand/sinal-de-libras 1.svg";
 import logoColorida from "../assets/brand/logo-colorida.svg";
 import tipografiaColorida from "../assets/brand/tipografia-colorida.svg";
 import tipografiaBranca from "../assets/brand/tipografia-branca.svg";
@@ -53,16 +54,13 @@ export function SignLanguageHands({ size = 116 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 120 120" aria-hidden="true">
       <rect x="1" y="1" width="118" height="118" rx="14" fill="#d9d9d9" stroke="var(--color-primary)" strokeWidth="1.5" />
-      <g fill="var(--color-primary)">
-        {/* mão de trás (aberta, de cima) */}
-        <path d="M46 84 C34 82 25 73 22 61 L13 34 C11.5 29 17.5 26.5 20 31 L30 52 L25 20 C24.3 14.5 31.5 13.2 32.8 18.8 L39.5 46 L41 12 C41.3 6 48.8 6.3 48.8 12.3 L48.5 46 L56.5 18 C58.3 12.6 65 15 63.5 20.5 L56 50 C55 56 58 60 63 58 L72 56 C64 62 60 70 64 78 C58 83 52 85 46 84 Z" />
-        {/* mão da frente (de baixo, inclinada) */}
-        <path d="M62 58 C67 52 75 49 83 49.5 L96 50 C101 50.3 104 54 104 59 L103 74 C102.5 82 98 89 92 94 L99 112 C100.8 117 94 119.5 92 114.6 L84 97 L86 113 C86.5 118.8 79 119.6 78.5 113.8 L76 96 L71 110 C69 115.5 62 113.5 64 108 L69 93 L60 103 C56.5 107 51 102.5 54.5 98.5 L68 82 C64 77 61 70 66 64 L62 58 Z" />
-      </g>
-      <g fill="none" stroke="var(--color-primary)" strokeWidth="2.6" strokeLinecap="round">
-        <path d="M105 46 Q110 54 106 62" /><path d="M110 42 Q117 54 111 66" />
-        <path d="M14 84 Q18 92 26 93" /><path d="M10 90 Q15 100 26 100" />
-      </g>
+      <image
+        href={sinalMao}
+        x="12"
+        y="12"
+        width="100"
+        height="100"
+      />
     </svg>
   )
 }
