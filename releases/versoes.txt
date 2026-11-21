@@ -30,3 +30,4 @@
 1.6.7|4c30fb8|14/11/2026|Alfabeto: 26 de 27 letras sem precisar ensinar (H, J, K, X e Z do Dicionário do INES)
 1.7.0|dc03345|15/11/2026|Animação de ofensiva aumentada ao voltar para a trilha
 1.7.1|d61cb79|15/11/2026|Animação de ofensiva cobre a tela inteira em qualquer celular
+1.7.2|6aef670|20/11/2026|App abre mais rápido: acorda o servidor ao abrir e câmera mais leve

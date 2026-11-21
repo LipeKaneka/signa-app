@@ -8,6 +8,7 @@ recriar qualquer um, faça checkout da tag e gere o APK, ou rode `npm run releas
 
 | Versão | Data | versionCode | Tag | O que mudou |
 |---|---|---|---|---|
+| **1.7.2** | 20/11/2026 | 18 | `v1.7.2` | App abre mais rápido: acorda o servidor ao abrir e câmera mais leve |
 | **1.7.1** | 15/11/2026 | 17 | `v1.7.1` | Animação de ofensiva cobre a tela inteira em qualquer celular |
 | **1.7.0** | 15/11/2026 | 16 | `v1.7.0` | Animação de ofensiva aumentada ao voltar para a trilha |
 | **1.6.7** | 14/11/2026 | 15 | `v1.6.7` | Alfabeto: 26 de 27 letras sem precisar ensinar (H, J, K, X e Z do Dicionário do INES) |
