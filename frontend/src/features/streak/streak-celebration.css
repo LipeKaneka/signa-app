@@ -34,7 +34,6 @@
   font-family: var(--font-body);
   font-weight: 900;
   line-height: 1;
-  will-change: transform;
 }
 
 /* Fogo: surge do zero, passa um pouco do tamanho e assenta (0 → 1,12 em 260 ms → 1 em 420 ms). */
@@ -84,7 +83,11 @@
   color: #ff4444;
 }
 
-/* "Aumentada" cresce; a cópia por trás cresce mais e vai sumindo (brilho). */
+/*
+ * "Aumentada": o espaço já existe desde o começo (invisível), então aparecer não empurra o grupo. Ao trocar o
+ * número, cresce suave e as cópias por trás saem dele sem parar, crescendo e sumindo (duas defasadas: um fluxo
+ * contínuo, sem "respiro" entre um brilho e outro). Só transform e opacity: a GPU anima sem redesenhar.
+ */
 .streak-celebration__raised {
   position: relative;
   display: grid;
@@ -92,6 +95,12 @@
   font-size: min(2rem, 8.5vw, 5.5vh);
   white-space: nowrap;
   color: #e0ac54;
+  visibility: hidden;
+}
+
+.streak-celebration__raised--visible {
+  visibility: visible;
+  animation: streak-raised-grow 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .streak-celebration__raised > span {
@@ -99,12 +108,14 @@
   text-align: center;
 }
 
-.streak-celebration__raised-text {
-  animation: streak-raised-grow 490ms cubic-bezier(0, 0.76, 0.15, 1) both;
+.streak-celebration__raised-glow {
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: streak-raised-glow 2400ms cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
 }
 
-.streak-celebration__raised-glow {
-  animation: streak-raised-glow 1232ms linear both;
+.streak-celebration__raised-glow--late {
+  animation-delay: 1200ms;
 }
 
 /* "Toque para continuar": aparece quando a entrada termina, pulsando de leve. */
@@ -161,14 +172,14 @@
 }
 
 @keyframes streak-raised-grow {
-  from { transform: scale(1); }
-  to { transform: scale(1.27); }
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1.2); opacity: 1; }
 }
 
+/* Brilho contínuo: nasce do tamanho do texto e vai para a frente (cresce) até sumir, em loop. */
 @keyframes streak-raised-glow {
-  0% { transform: scale(1); opacity: 0.66; animation-timing-function: cubic-bezier(0, 0.76, 0.15, 1); }
-  40% { transform: scale(1.62); opacity: 0.5; }
-  100% { transform: scale(1.81); opacity: 0.3; }
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(1.75); opacity: 0; }
 }
 
 @keyframes streak-wipe {
@@ -182,7 +193,7 @@
   50% { opacity: 0.45; }
 }
 
-/* Menos movimento: sem tremor nem faixa; só o número novo, que some suavemente no toque. */
+/* Menos movimento: sem brilho nem faixa; só o número novo, que some suavemente no toque. */
 .streak-celebration--reduced.streak-celebration--leaving .streak-celebration__backdrop {
   animation: streak-fade-out 300ms ease-in both;
 }

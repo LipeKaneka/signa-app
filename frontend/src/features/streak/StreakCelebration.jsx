@@ -12,19 +12,10 @@ import "./streak-celebration.css";
 
 /**
  * Tempos da entrada (ms), tirados do projeto do Alight Motion ("Novo projeto 2"): número antigo cai até 690; troca
- * para o novo e treme em 775; "Aumentada" em 783. A saída (faixa roxa subindo) só começa quando a pessoa toca.
+ * para o novo em 770 e "Aumentada" aparece, brilhando sem parar. O tremor do projeto original foi tirado (dava um
+ * tranco na tela). A saída (faixa roxa subindo) só começa quando a pessoa toca.
  */
 const SWAP_AT = 770;
-const SHAKE_AT = 775;
-const SHAKE_END = 2015;
-const SHAKE_FREQ_END = 1125;
-/** Tremor: 175 px no vídeo de 1080 px de largura → proporcional à tela (limitado em telas largas, como tablet). */
-const SHAKE_MAGNITUDE = 175 / 1080;
-const SHAKE_MAX_WIDTH = 480;
-const SHAKE_FREQUENCY = 16;
-
-/** Curva "ease-out" do Alight (cubicBezier 0 0.34 0.1 1) aproximada: rápida no começo, assenta no fim. */
-const easeOut = (t) => 1 - Math.pow(1 - Math.min(Math.max(t, 0), 1), 3);
 
 /** Quadros do fogo (arte do projeto) e a ordem em que passam: vai e volta, 70 ms cada (como no Alight). */
 const FIRE_FRAMES = [fireFrame1, fireFrame2, fireFrame3, fireFrame4, fireFrame5, fireFrame6];
@@ -59,44 +50,8 @@ function AnimatedFire({ still }) {
   );
 }
 
-/**
- * Tremor diagonal (45°) que diminui até parar, igual ao efeito "shake" do projeto: a força cai de 175 a 0 entre
- * 775 e 2015 ms e a frequência de 16 a 0 entre 775 e 1125 ms. Mexe direto no elemento (sem re-render a cada quadro).
- */
-function useDiagonalShake(ref, enabled) {
-  useEffect(() => {
-    if (!enabled) return undefined;
-    let frame = 0;
-    let phase = 0;
-    let last = null;
-    const start = performance.now();
-    const tick = (now) => {
-      const elapsed = now - start;
-      const element = ref.current;
-      if (!element) return;
-      if (elapsed >= SHAKE_AT && elapsed <= SHAKE_END) {
-        const progress = (elapsed - SHAKE_AT) / (SHAKE_END - SHAKE_AT);
-        const magnitude = SHAKE_MAGNITUDE * Math.min(window.innerWidth, SHAKE_MAX_WIDTH) * (1 - easeOut(progress));
-        const frequency = SHAKE_FREQUENCY * Math.max(0, 1 - (elapsed - SHAKE_AT) / (SHAKE_FREQ_END - SHAKE_AT));
-        if (last !== null) phase += ((now - last) / 1000) * frequency;
-        const offset = magnitude * Math.sin(phase * 2 * Math.PI) * (frequency > 0 ? 1 : 0);
-        const shift = offset / Math.SQRT2;
-        // translate3d: a GPU só move a camada. O "desfoque de movimento" (filter: blur a cada quadro) foi tirado:
-        // redesenhar o desfoque do grupo inteiro a cada quadro era o que travava a animação no celular.
-        element.style.transform = `translate3d(${shift}px, ${-shift}px, 0)`;
-      } else if (elapsed > SHAKE_END) {
-        element.style.transform = "none";
-      }
-      last = elapsed >= SHAKE_AT ? now : null;
-      if (elapsed < SHAKE_END + 50) frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [ref, enabled]);
-}
-
 /** Depois de quanto tempo aparece o "Toque para continuar" (a animação de entrada já terminou). */
-const HINT_AT = SHAKE_END - 400;
+const HINT_AT = 1600;
 /** Saída (depois do toque): a faixa cobre a tela em ~550 ms, o fundo some por trás dela, e acaba em 1,6 s. */
 const LEAVE_BACKDROP_MS = 550;
 const LEAVE_TOTAL_MS = 1600;
@@ -104,7 +59,7 @@ const REDUCED_LEAVE_MS = 300;
 
 /**
  * Animação de "Ofensiva aumentada" por cima da tela (depois de concluir a atividade, ao voltar para a trilha):
- * fogo aparece, o número antigo cai, vira o novo com um tremor e "Aumentada" cresce com brilho. Aí ela PARA e espera:
+ * fogo aparece, o número antigo cai, vira o novo e "Aumentada" cresce com brilho contínuo. Aí ela espera:
  * só sai quando a pessoa toca (aparece "Toque para continuar"); então a faixa roxa sobe revelando a trilha.
  * Tocar durante a entrada pula direto para o número novo. Com "menos movimento", mostra só o número novo e some no toque.
  * @param {{from: number, to: number, onDone: () => void}} props
@@ -113,15 +68,12 @@ const REDUCED_LEAVE_MS = 300;
 export function StreakCelebration({ from, to, onDone }) {
   const { settings } = useSettings();
   const reduced = prefersReducedMotion();
-  const groupRef = useRef(null);
   const [swapped, setSwapped] = useState(reduced);
   const [hint, setHint] = useState(reduced);
   const [leaving, setLeaving] = useState(false);
   const [backdropGone, setBackdropGone] = useState(false);
   const leaveTimers = useRef([]);
   const containerRef = useRef(null);
-
-  useDiagonalShake(groupRef, !reduced);
 
   useEffect(() => {
     const timers = [
@@ -169,7 +121,7 @@ export function StreakCelebration({ from, to, onDone }) {
     >
       {!backdropGone && (
         <div className="streak-celebration__backdrop">
-          <div className="streak-celebration__group" ref={groupRef}>
+          <div className="streak-celebration__group">
             <span className="streak-celebration__fire"><AnimatedFire still={reduced} /></span>
             <span className="streak-celebration__number-slot">
               {swapped
@@ -177,12 +129,16 @@ export function StreakCelebration({ from, to, onDone }) {
                 : <strong key="old" className="streak-celebration__number streak-celebration__number--drop">{from}</strong>}
             </span>
             <span className="streak-celebration__label">Ofensiva</span>
-            {swapped && (
-              <span className="streak-celebration__raised">
-                <span className="streak-celebration__raised-glow" aria-hidden="true">Aumentada</span>
-                <span className="streak-celebration__raised-text">Aumentada</span>
-              </span>
-            )}
+            {/* O espaço do "Aumentada" existe desde o começo: aparecer depois empurrava o grupo (um tranco). */}
+            <span className={`streak-celebration__raised${swapped ? " streak-celebration__raised--visible" : ""}`}>
+              {swapped && (
+                <>
+                  <span className="streak-celebration__raised-glow" aria-hidden="true">Aumentada</span>
+                  <span className="streak-celebration__raised-glow streak-celebration__raised-glow--late" aria-hidden="true">Aumentada</span>
+                </>
+              )}
+              <span className="streak-celebration__raised-text">Aumentada</span>
+            </span>
           </div>
           <span className={`streak-celebration__hint${hint && !leaving ? " streak-celebration__hint--visible" : ""}`} aria-hidden="true">
             Toque para continuar
