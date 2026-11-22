@@ -34,7 +34,9 @@ test("só cutuca dentro da janela e quando não teve uso de verdade há pouco", 
   const noon = new Date("2026-11-22T15:00:00Z").getTime(); // 12h em Brasília
   const hours = { start: 8, end: 20 };
   assert.equal(shouldPing({ now: noon, hours, lastActivity: 0 }), true);
-  assert.equal(shouldPing({ now: noon, hours, lastActivity: noon - 60 * 1000 }), false);
+  assert.equal(shouldPing({ now: noon, hours, lastActivity: noon - 30 * 1000 }), false);
+  // Uso há 2 min: cutuca (pular aqui deixaria até 15 min sem pedido e o Render dormiria).
+  assert.equal(shouldPing({ now: noon, hours, lastActivity: noon - 2 * 60 * 1000 }), true);
   assert.equal(shouldPing({ now: new Date("2026-11-22T05:00:00Z").getTime(), hours, lastActivity: 0 }), false); // 2h
 });
 

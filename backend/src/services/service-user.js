@@ -9,8 +9,8 @@ import { generateAccessToken } from "../utils/util-tokens.js";
  * Usado por: POST /auth/register.
  */
 export async function createAccount({ nickname, email, password, acceptedTerms }) {
-  const { id, user } = await callServer("/auth/register", { method: "POST", body: { nickname, email, password, acceptedTerms } });
-  return { token: generateAccessToken(id), user };
+  const { id, sessionVersion, user } = await callServer("/auth/register", { method: "POST", body: { nickname, email, password, acceptedTerms } });
+  return { token: generateAccessToken(id, sessionVersion), user };
 }
 
 /**
@@ -21,8 +21,8 @@ export async function createAccount({ nickname, email, password, acceptedTerms }
  * Usado por: POST /auth/login.
  */
 export async function signIn({ email, password }) {
-  const { id, user } = await callServer("/auth/verify-credentials", { method: "POST", body: { email, password } });
-  return { token: generateAccessToken(id), user };
+  const { id, sessionVersion, user } = await callServer("/auth/verify-credentials", { method: "POST", body: { email, password } });
+  return { token: generateAccessToken(id, sessionVersion), user };
 }
 
 /**
@@ -33,8 +33,8 @@ export async function signIn({ email, password }) {
  * Usado por: POST /auth/google.
  */
 export async function signInWithGoogle({ idToken, acceptedTerms }) {
-  const { id, user, created } = await callServer("/auth/google", { method: "POST", body: { idToken, acceptedTerms } });
-  return { token: generateAccessToken(id), user, created };
+  const { id, sessionVersion, user, created } = await callServer("/auth/google", { method: "POST", body: { idToken, acceptedTerms } });
+  return { token: generateAccessToken(id, sessionVersion), user, created };
 }
 
 /**
@@ -57,8 +57,9 @@ export function getProfileWithAchievements(userId) {
  */
 export async function updateProfile(userId, changes, currentPassword) {
   const definedChanges = Object.fromEntries(Object.entries(changes).filter(([, value]) => value !== undefined));
-  const { user } = await callServer(userPath(userId), { method: "PATCH", body: { changes: definedChanges, currentPassword } });
-  return user;
+  const { user, sessionVersion } = await callServer(userPath(userId), { method: "PATCH", body: { changes: definedChanges, currentPassword } });
+  // Trocou a senha: os tokens antigos (inclusive o deste pedido) deixaram de valer; este aparelho recebe um novo.
+  return changes.password !== undefined ? { user, token: generateAccessToken(userId, sessionVersion) } : { user };
 }
 
 /**
@@ -110,9 +111,9 @@ export async function verifyPasswordReset(email, code) {
  * Usado por: POST /auth/password-reset/confirm.
  */
 export async function confirmPasswordReset(email, code, password) {
-  const { id, user } = await callServer("/auth/password-reset/confirm", { method: "POST", body: { email, code, password } });
+  const { id, sessionVersion, user } = await callServer("/auth/password-reset/confirm", { method: "POST", body: { email, code, password } });
   if (!id || !user) return signIn({ email, password });
-  return { token: generateAccessToken(id), user };
+  return { token: generateAccessToken(id, sessionVersion), user };
 }
 
 /**

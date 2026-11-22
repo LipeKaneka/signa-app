@@ -10,6 +10,18 @@ const pendingLoads = new Map();
 let knownVersion = null;
 let versionCheckedAt = 0;
 let pendingVersionCheck = null;
+/**
+ * Sobe a cada limpeza. Uma busca que começou antes de o conteúdo mudar no painel não pode gravar o dado velho
+ * depois da limpeza (ficaria preso no cache até a próxima publicação), nem ser reaproveitada por quem pediu depois.
+ */
+let generation = 0;
+
+/** Esquece tudo o que está guardado e as buscas em andamento (o que elas trouxerem não é gravado). */
+function invalidate() {
+  entries.clear();
+  pendingLoads.clear();
+  generation += 1;
+}
 
 /**
  * Confere a versão do conteúdo no servidor (no máximo uma vez a cada CONTENT_VERSION_TTL_MS).
@@ -24,7 +36,7 @@ async function refreshVersion() {
 
   pendingVersionCheck ??= callServer("/content/version")
     .then(({ version }) => {
-      if (version !== knownVersion) entries.clear();
+      if (version !== knownVersion) invalidate();
       knownVersion = version;
       versionCheckedAt = Date.now();
     })
@@ -58,14 +70,18 @@ export async function cachedContent(key, load, { maxAgeMs } = {}) {
   // Vários apps pedindo a mesma coisa ao mesmo tempo (ex.: eventos logo depois de vencer): uma busca só no servidor.
   let pending = pendingLoads.get(key);
   if (!pending) {
+    const startedIn = generation;
     pending = load()
       .then((value) => {
+        if (startedIn !== generation) return value; // o conteúdo mudou durante a busca: entrega, mas não guarda
         entries.delete(key);
         entries.set(key, { value, storedAt: Date.now() });
         if (entries.size > MAX_ENTRIES) entries.delete(entries.keys().next().value);
         return value;
       })
-      .finally(() => pendingLoads.delete(key));
+      .finally(() => {
+        if (pendingLoads.get(key) === pending) pendingLoads.delete(key);
+      });
     pendingLoads.set(key, pending);
   }
   try {
@@ -82,8 +98,7 @@ export async function cachedContent(key, load, { maxAgeMs } = {}) {
 
 /** Esvazia o cache e esquece a versão (usado pelos testes). */
 export function clearContentCache() {
-  entries.clear();
-  pendingLoads.clear();
+  invalidate();
   knownVersion = null;
   versionCheckedAt = 0;
 }

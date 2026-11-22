@@ -1,5 +1,6 @@
 import { getEnvironment } from "../config/env.js";
 import { HttpError } from "../utils/util-http-error.js";
+import { readRequestContext } from "../utils/util-request-context.js";
 import { MESSAGES } from "../config/messages.js";
 
 /**
@@ -72,6 +73,9 @@ export async function callServer(path, { method = "GET", body, query } = {}) {
   const { serverServiceKey } = getEnvironment();
   const headers = { "X-Service-Key": serverServiceKey };
   if (body !== undefined) headers["Content-Type"] = "application/json";
+  // Pedido do app com token: o servidor confere se a senha não foi trocada depois que o token saiu.
+  const context = readRequestContext();
+  if (context) headers["X-Session-Version"] = String(context.sessionVersion);
 
   // Um só prazo para a chamada inteira (com as novas tentativas dentro dele).
   const signal = AbortSignal.timeout(REQUEST_TIMEOUT_MS);

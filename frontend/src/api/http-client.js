@@ -207,7 +207,8 @@ async function sendRequest(url, method, payload) {
       body: payload,
       signal: controller.signal,
     });
-    console.log(`log da url:`, url)
+    // Só no npm run dev: no APK e no site publicado, logar cada pedido só enchia o console.
+    if (import.meta.env.DEV) console.log(`log da url:`, url)
     data = await readJsonSafely(response);
     if (controller.signal.aborted) throw new Error("tempo esgotado lendo a resposta");
   } catch {

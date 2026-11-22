@@ -72,7 +72,8 @@ export function ActivityPage() {
   const goToTrail = () => navigate(moduleId ? `/trilha/modulo/${moduleId}` : "/trilha");
 
   if (loading) return <LoadingState message={MESSAGES.loading.activity} />;
-  if (error) return <ErrorState message={error.message} onRetry={error.status === 403 ? goToTrail : reload} />;
+  // Bloqueada (403) ou retirada da trilha no painel (404): tentar de novo não adianta, volta para a trilha.
+  if (error) return <ErrorState message={error.message} onRetry={error.status === 403 || error.status === 404 ? goToTrail : reload} />;
 
   const questions = attempt.activity.questions;
   const question = questions[questionIndex];
@@ -99,6 +100,8 @@ export function ActivityPage() {
     setActionError("");
     try {
       const answer = await TrailApi.answerQuestion(attempt.attemptId, question.key, optionId);
+      // Resposta repetida (a primeira chegou ao servidor, mas a resposta dele se perdeu): marca a opção que valeu.
+      if (answer.optionId && answer.optionId !== optionId) setSelectedOptionId(answer.optionId);
       // Pergunta pulada por falta de câmera: sem som de erro (não conta na nota).
       if (!answer.skipped) playAnswerFeedback(answer.correct, settings.soundsAndVibration);
       setFeedback(answer);

@@ -55,7 +55,7 @@ export async function googleSignIn(req, res) {
  * Fica fora do loadUser: lê só status e banimento, não o usuário inteiro. Usado pelo backend para validar sessões.
  */
 export async function getSession(req, res) {
-  await UserService.ensureActiveSession(req.params.userId);
+  await UserService.ensureActiveSession(req.params.userId, req.get("X-Session-Version"));
   res.json({ active: true });
 }
 
@@ -97,11 +97,11 @@ function readProfileChanges(changes) {
   };
 }
 
-/** PATCH /internal/v1/users/:userId — {changes, currentPassword?} -> {user}. */
+/** PATCH /internal/v1/users/:userId — {changes, currentPassword?} -> {user, sessionVersion} (sobe ao trocar a senha). */
 export async function updateProfile(req, res) {
   const changes = readProfileChanges(req.body?.changes);
   const user = await UserService.updateProfile(req.user, changes, req.body?.currentPassword);
-  res.json({ user });
+  res.json({ user, sessionVersion: req.user.sessionVersion ?? 0 });
 }
 
 /** DELETE /internal/v1/users/:userId — {currentPassword} -> {deleted: true}. */

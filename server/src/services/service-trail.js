@@ -152,8 +152,8 @@ export async function findUnlockedActivity(user, activityId) {
 
   const trail = await buildTrail(user);
   const trailActivity = trail.flatMap((module) => module.activities).find((a) => a.id === String(activity._id));
-  if (!trailActivity || trailActivity.status === "locked") {
-    throw forbidden(MESSAGES.attempt.activityLocked);
-  }
+  // Desativada no painel (ou o módulo dela): para o app, não existe mais (404), não está "bloqueada".
+  if (!trailActivity) throw notFound(MESSAGES.attempt.activityNotFound);
+  if (trailActivity.status === "locked") throw forbidden(MESSAGES.attempt.activityLocked);
   return { activity, alreadyCompleted: trailActivity.status === "completed" };
 }

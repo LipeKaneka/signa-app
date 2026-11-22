@@ -1,6 +1,7 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import request from "supertest";
+import { generateAccessToken, readUserIdFromToken } from "../src/utils/util-tokens.js";
 import { startTestApp, stopTestApp, registerTestUser, authorized } from "./helpers.js";
 
 let app;
@@ -165,4 +166,23 @@ test("login com Google: token que o Google não emitiu é recusado, sem token do
   const forged = await request(app).post("/api/v1/auth/google").send({ idToken: "eyJhbGciOiJSUzI1NiJ9.e30.assinatura", acceptedTerms: true });
   assert.equal(forged.status, 401);
   assert.equal(forged.body.token, undefined);
+});
+
+test("trocar a senha tira a conta dos outros aparelhos e dá um token novo a este", async () => {
+  const user = await registerTestUser(app);
+  // Outro aparelho logado na mesma conta (token emitido antes da troca; sem novo login, que cairia no limite de tentativas).
+  const otherDevice = generateAccessToken(readUserIdFromToken(user.token), 0);
+  assert.equal((await request(app).get("/api/v1/auth/session").set(authorized(otherDevice))).status, 200);
+
+  const newPassword = `${user.password}Nova9`;
+  const changed = await request(app).patch("/api/v1/profile").set(authorized(user.token)).send({ password: newPassword, currentPassword: user.password });
+  assert.equal(changed.status, 200);
+  assert.ok(changed.body.token, "token novo para este aparelho");
+
+  // Token de antes da troca: sai da conta (rotas com e sem conferência separada da sessão).
+  assert.equal((await request(app).get("/api/v1/auth/session").set(authorized(otherDevice))).status, 401);
+  assert.equal((await request(app).get("/api/v1/profile").set(authorized(user.token))).status, 401);
+  // Token novo: continua.
+  assert.equal((await request(app).get("/api/v1/profile").set(authorized(changed.body.token))).status, 200);
+  assert.equal((await request(app).get("/api/v1/auth/session").set(authorized(changed.body.token))).status, 200);
 });

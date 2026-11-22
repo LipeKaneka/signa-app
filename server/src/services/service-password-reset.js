@@ -98,9 +98,11 @@ export async function confirmPasswordReset(email, code, password) {
   const user = await checkCode(email, code);
   user.passwordHash = await hashPassword(password);
   user.passwordReset = null;
+  // Senha nova: tokens emitidos antes (inclusive o de quem pegou o aparelho) deixam de valer.
+  user.sessionVersion = (user.sessionVersion ?? 0) + 1;
   user.lastLogin = new Date();
   await user.save();
   // A senha já foi trocada; durante a manutenção, quem não está liberado só não entra ainda.
   await assertAppAccess(user);
-  return { id: String(user._id), user: { ...toPublicProfile(user, SESSION_PROFILE), level: await describeLevel(user.xp) } };
+  return { id: String(user._id), sessionVersion: user.sessionVersion, user: { ...toPublicProfile(user, SESSION_PROFILE), level: await describeLevel(user.xp) } };
 }

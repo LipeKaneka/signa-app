@@ -1,4 +1,5 @@
-import { readUserIdFromToken } from "../utils/util-tokens.js";
+import { readTokenClaims } from "../utils/util-tokens.js";
+import { runWithRequestContext } from "../utils/util-request-context.js";
 import { unauthorized } from "../utils/util-http-error.js";
 import { checkSession } from "../services/service-user.js";
 
@@ -11,9 +12,12 @@ const SESSION_CACHE_MS = 15 * 1000;
 const MAX_CHECKED_SESSIONS = 5000;
 const checkedSessions = new Map();
 
+/** Chave do cache: conta + versão da sessão (um token de antes da troca de senha não usa a conferência de um novo). */
+const sessionKey = (userId, sessionVersion = 0) => `${userId}:${sessionVersion}`;
+
 /** Guarda que a conta acabou de ser confirmada ativa (por uma conferência ou por uma rota de usuário do servidor). */
-function rememberActiveSession(userId) {
-  checkedSessions.set(userId, Date.now());
+function rememberActiveSession(key) {
+  checkedSessions.set(key, Date.now());
   if (checkedSessions.size <= MAX_CHECKED_SESSIONS) return;
   const now = Date.now();
   for (const [id, checkedAt] of checkedSessions) if (now - checkedAt >= SESSION_CACHE_MS) checkedSessions.delete(id);
@@ -36,14 +40,16 @@ function readBearerToken(req) {
  * @returns {Promise<void>}
  * @throws {HttpError} 401/403 vindos do servidor.
  */
-export async function ensureActiveSession(userId) {
-  const checkedAt = checkedSessions.get(userId);
+export async function ensureActiveSession(userId, sessionVersion = 0) {
+  const key = sessionKey(userId, sessionVersion);
+  const checkedAt = checkedSessions.get(key);
   if (checkedAt && Date.now() - checkedAt < SESSION_CACHE_MS) return;
   try {
-    await checkSession(userId);
-    rememberActiveSession(userId);
+    // A versão vai junto pelo contexto do pedido (X-Session-Version), e o servidor recusa token velho.
+    await runWithRequestContext({ sessionVersion }, () => checkSession(userId));
+    rememberActiveSession(key);
   } catch (error) {
-    checkedSessions.delete(userId);
+    checkedSessions.delete(key);
     throw error;
   }
 }
@@ -53,18 +59,18 @@ export async function ensureActiveSession(userId) {
  * @param {string} userId
  */
 export function forgetSession(userId) {
-  checkedSessions.delete(userId);
+  for (const key of checkedSessions.keys()) if (key.startsWith(`${userId}:`)) checkedSessions.delete(key);
 }
 
 /**
  * Lê o id do usuário do token JWT (conferido aqui, no backend).
  * @throws {HttpError} 401 sem token ou com token inválido/vencido.
  */
-function readAuthenticatedUserId(req) {
+function readAuthenticatedSession(req) {
   const token = readBearerToken(req);
-  const userId = token ? readUserIdFromToken(token) : null;
-  if (!userId) throw unauthorized();
-  return userId;
+  const claims = token ? readTokenClaims(token) : null;
+  if (!claims) throw unauthorized();
+  return claims;
 }
 
 /**
@@ -75,10 +81,11 @@ function readAuthenticatedUserId(req) {
  */
 export async function requireAuth(req, _res, next) {
   try {
-    const userId = readAuthenticatedUserId(req);
-    await ensureActiveSession(userId);
+    const { userId, sessionVersion } = readAuthenticatedSession(req);
+    await ensureActiveSession(userId, sessionVersion);
     req.userId = userId;
-    next();
+    req.sessionVersion = sessionVersion;
+    runWithRequestContext({ sessionVersion }, next);
   } catch (error) {
     next(error);
   }
@@ -92,13 +99,18 @@ export async function requireAuth(req, _res, next) {
  */
 export function requireToken(req, res, next) {
   try {
-    const userId = readAuthenticatedUserId(req);
+    const { userId, sessionVersion } = readAuthenticatedSession(req);
+    const key = sessionKey(userId, sessionVersion);
     req.userId = userId;
+    req.sessionVersion = sessionVersion;
     res.on("finish", () => {
-      if (res.statusCode < 400) rememberActiveSession(userId);
-      else if (res.statusCode === 401 || res.statusCode === 403) checkedSessions.delete(userId);
+      // Pedido que trocou a senha (sessionRevoked): o token dele acabou de deixar de valer, não pode voltar ao cache.
+      if (res.locals.sessionRevoked) checkedSessions.delete(key);
+      else if (res.statusCode < 400) rememberActiveSession(key);
+      else if (res.statusCode === 401 || res.statusCode === 403) checkedSessions.delete(key);
     });
-    next();
+    // As chamadas ao servidor deste pedido levam a versão da sessão (o servidor recusa token de antes da troca de senha).
+    runWithRequestContext({ sessionVersion }, next);
   } catch (error) {
     next(error);
   }

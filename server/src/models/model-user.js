@@ -65,6 +65,8 @@ const userSchema = new mongoose.Schema(
     completedActivities: { type: [completedActivitySchema], default: [] },
     completedActivitiesCount: { type: Number, default: 0, min: 0 },
     lastLogin: { type: Date, default: null },
+    // Sobe a cada troca de senha: tokens do app emitidos antes (outros aparelhos) deixam de valer.
+    sessionVersion: { type: Number, default: 0 },
     termsAcceptedAt: { type: Date, default: null },
     passwordReset: {
       type: {

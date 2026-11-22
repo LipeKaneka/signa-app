@@ -93,8 +93,24 @@ test("corrige no servidor, não aceita responder duas vezes e dá XP ao aprovar"
   assert.equal(first.body.correct, true);
   assert.equal(first.body.xpForQuestion, 10);
 
+  // Repetir (resposta perdida na rede) devolve o que valeu, sem contar de novo; outra opção não troca a resposta.
   const repeated = await request(app).post(`/api/v1/attempts/${started.body.attemptId}/answers`).set(authorized(user.token)).send(answer);
-  assert.equal(repeated.status, 409);
+  assert.equal(repeated.status, 200);
+  assert.equal(repeated.body.repeated, true);
+  assert.equal(repeated.body.correct, true);
+  const otherOption = question.options.find((option) => option.id !== answer.optionId).id;
+  const changed = await request(app).post(`/api/v1/attempts/${started.body.attemptId}/answers`).set(authorized(user.token)).send({ ...answer, optionId: otherOption });
+  assert.equal(changed.body.correct, true);
+  assert.equal(changed.body.optionId, answer.optionId);
+  const profile = await request(app).get("/api/v1/profile").set(authorized(user.token));
+  assert.equal(profile.body.user.totalCorrectAnswers, 1);
+
+  // "Concluir" repetido devolve o mesmo resultado, sem XP de novo.
+  const firstFinish = await request(app).post(`/api/v1/attempts/${started.body.attemptId}/finish`).set(authorized(user.token));
+  const secondFinish = await request(app).post(`/api/v1/attempts/${started.body.attemptId}/finish`).set(authorized(user.token));
+  assert.equal(secondFinish.status, 200);
+  assert.deepEqual(secondFinish.body.result, firstFinish.body.result);
+  assert.equal(secondFinish.body.user.xp, firstFinish.body.user.xp);
 
   const total = firstModule.activities[0].questionCount;
   const finished = await playActivity(user.token, activityId, total);

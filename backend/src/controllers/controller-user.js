@@ -103,8 +103,13 @@ function readProfileChanges(body) {
  */
 export async function updateProfile(req, res) {
   const changes = readProfileChanges(req.body);
-  const user = await UserService.updateProfile(req.userId, changes, req.body?.currentPassword);
-  res.json({ message: MESSAGES.success.profileUpdated, user });
+  const { user, token } = await UserService.updateProfile(req.userId, changes, req.body?.currentPassword);
+  // Senha trocada: a conferência guardada dos tokens antigos não pode deixá-los passar pelos próximos segundos.
+  if (token) {
+    forgetSession(req.userId);
+    res.locals.sessionRevoked = true;
+  }
+  res.json({ message: MESSAGES.success.profileUpdated, user, ...(token ? { token } : {}) });
 }
 
 /**

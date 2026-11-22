@@ -8,8 +8,11 @@ import { APP_UPDATE_SYNC_INTERVAL_MS, syncAppUpdateFromGithub } from "./service-
 
 /** Confere a cada minuto. */
 const TICK_MS = 60 * 1000;
-/** Evento que começou há mais que isso (ex.: servidor ligado no meio dele) não avisa. */
-const EVENT_START_WINDOW_MS = 6 * 60 * 60 * 1000;
+/**
+ * Evento que começou há mais que isso não avisa. 12 h: na hospedagem grátis o servidor dorme à noite (o "mantém
+ * acordado" vai das 8h às 20h); um evento que começa de madrugada ainda é avisado quando ele acorda de manhã.
+ */
+const EVENT_START_WINDOW_MS = 12 * 60 * 60 * 1000;
 /** Lembrete da ofensiva: a partir desta hora de Brasília, até o fim do dia. */
 const STREAK_REMINDER_HOUR = 19;
 

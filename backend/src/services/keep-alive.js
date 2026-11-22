@@ -9,7 +9,8 @@ import { callServer } from "../clients/server-client.js";
  * - Intervalo sorteado (7 a 13 min, nunca o mesmo), sempre abaixo dos 15 min de soneca.
  * - Só dentro da janela de horário (KEEP_ALIVE_HOURS, horário de Brasília); fora dela o serviço dorme normalmente
  *   e acorda quando alguém abre o app (wakeUpApi).
- * - Não cutuca se teve uso de verdade há pouco (o próprio uso já mantém acordado).
+ * - Não cutuca se teve uso de verdade no último minuto (o próprio uso já mantém acordado). Tem que ser curto:
+ *   pulando com uso de até X min atrás, a próxima vez vem até 13 min depois, e X + 13 precisa ficar abaixo de 15.
  * - Rota mais leve que existe (/health, sem banco), um pedido por vez, User-Agent honesto.
  * - Se falhar várias vezes seguidas, espera mais (até 30 min) em vez de insistir.
  * Liga sozinho em produção no Render (RENDER_EXTERNAL_URL) ou com KEEP_ALIVE_URL; KEEP_ALIVE=0 desliga.
@@ -19,7 +20,7 @@ const MIN_DELAY_MS = 7 * 60 * 1000;
 const MAX_DELAY_MS = 13 * 60 * 1000;
 const MAX_BACKOFF_MS = 30 * 60 * 1000;
 /** Uso de verdade mais recente que isso: o robô não precisa cutucar. */
-const RECENT_ACTIVITY_MS = 6 * 60 * 1000;
+const RECENT_ACTIVITY_MS = 60 * 1000;
 const REQUEST_TIMEOUT_MS = 90 * 1000;
 const TIME_ZONE = "America/Sao_Paulo";
 /** 8h às 20h = 12 h/dia: cabe nas 750 h do mês mesmo com backend E servidor na mesma conta (2 × 12 × 31 = 744 h). */

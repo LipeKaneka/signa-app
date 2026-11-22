@@ -45,7 +45,7 @@ export function stream(req, res) {
   // Usa o cache da sessão (o mesmo do requireAuth) e só fecha se a conta foi apagada (401) ou banida (403):
   // servidor fora do ar por um instante não derruba o tempo real de ninguém.
   const sessionCheck = setInterval(() => {
-    ensureActiveSession(req.userId).catch((error) => {
+    ensureActiveSession(req.userId, req.sessionVersion).catch((error) => {
       if (error.status !== 401 && error.status !== 403) return;
       res.write("event: closed\ndata: {}\n\n");
       res.end();

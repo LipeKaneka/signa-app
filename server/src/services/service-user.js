@@ -72,7 +72,7 @@ export async function createAccount({ nickname, email, password, acceptedTerms =
     termsAcceptedAt: acceptedTerms ? new Date() : null,
     lastLogin: new Date(),
   });
-  return { id: String(user._id), user: { ...toPublicProfile(user, SESSION_PROFILE), level: await describeLevel(user.xp) } };
+  return { id: String(user._id), sessionVersion: user.sessionVersion ?? 0, user: { ...toPublicProfile(user, SESSION_PROFILE), level: await describeLevel(user.xp) } };
 }
 
 /**
@@ -119,7 +119,7 @@ export async function signIn({ email, password }) {
 
   user.lastLogin = new Date();
   await user.save();
-  return { id: String(user._id), user: { ...toPublicProfile(user, SESSION_PROFILE), level: await describeLevel(user.xp) } };
+  return { id: String(user._id), sessionVersion: user.sessionVersion ?? 0, user: { ...toPublicProfile(user, SESSION_PROFILE), level: await describeLevel(user.xp) } };
 }
 
 /**
@@ -158,7 +158,7 @@ export async function signInWithGoogle({ idToken, acceptedTerms }) {
       lastLogin: new Date(),
     });
   }
-  return { id: String(user._id), user: { ...toPublicProfile(user, SESSION_PROFILE), level: await describeLevel(user.xp) }, created };
+  return { id: String(user._id), sessionVersion: user.sessionVersion ?? 0, user: { ...toPublicProfile(user, SESSION_PROFILE), level: await describeLevel(user.xp) }, created };
 }
 
 /**
@@ -168,6 +168,18 @@ export async function signInWithGoogle({ idToken, acceptedTerms }) {
  * @throws {HttpError} 401 se não existir (sessão inválida); 403 se estiver banido (com motivo e prazo).
  * Usado por: middleware loadUser (rotas /internal/v1/users/:userId/...).
  */
+/**
+ * Confere a versão da sessão que veio no token do app (cabeçalho X-Session-Version, mandado pelo backend).
+ * Sem o cabeçalho (chamada que não vem de um token do app), não confere.
+ * @param {{sessionVersion?: number}} user
+ * @param {string|undefined} tokenVersion
+ * @throws {HttpError} 401 se a senha foi trocada depois que o token foi emitido.
+ */
+export function assertSessionVersion(user, tokenVersion) {
+  if (tokenVersion === undefined || tokenVersion === null || tokenVersion === "") return;
+  if (Number(tokenVersion) !== (user.sessionVersion ?? 0)) throw unauthorized(MESSAGES.account.sessionInvalid);
+}
+
 export async function findActiveUserById(userId) {
   const user = await UserModel.findById(userId);
   if (!user) throw unauthorized(MESSAGES.account.sessionInvalid);
@@ -183,9 +195,10 @@ export async function findActiveUserById(userId) {
  * @throws {HttpError} 401 se não existir; 403 se estiver banido (com motivo e prazo).
  * Usado por: GET /internal/v1/users/:userId/session.
  */
-export async function ensureActiveSession(userId) {
-  const user = await UserModel.findById(userId).select("status ban email");
+export async function ensureActiveSession(userId, tokenVersion) {
+  const user = await UserModel.findById(userId).select("status ban email sessionVersion");
   if (!user) throw unauthorized(MESSAGES.account.sessionInvalid);
+  assertSessionVersion(user, tokenVersion);
   await ensureNotBanned(user);
   await assertAppAccess(user);
 }
@@ -240,6 +253,8 @@ export async function updateProfile(user, changes, currentPassword) {
   }
   if (changes.password !== undefined) {
     user.passwordHash = await hashPassword(changes.password);
+    // Os outros aparelhos saem da conta; o backend dá um token novo a este (sessionVersion na resposta).
+    user.sessionVersion = (user.sessionVersion ?? 0) + 1;
   }
   if (changes.nickname !== undefined) user.nickname = changes.nickname;
   if (changes.city !== undefined) user.city = changes.city;

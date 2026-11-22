@@ -12,6 +12,18 @@ const MAX_EVENTS = 30;
 const NO_OP = { track: () => {}, trackSignView: () => {} };
 const AppEventsContext = createContext(NO_OP);
 
+/** Envio pendente do provedor montado (null quando deslogado). */
+let flushPending = null;
+
+/**
+ * Envia agora as ações pendentes, ainda com a sessão. Chamado ao sair da conta ANTES de apagar o token: depois,
+ * o envio do desmontar saía sem sessão (401) e as ações se perdiam.
+ * Usado por: AuthContext (signOut).
+ */
+export function flushAppEvents() {
+  flushPending?.();
+}
+
 /** Monta a lista do envio: contagens em pedaços de até 50 e os sinais vistos; no máximo 30 itens. */
 function buildEvents(counts, signs) {
   const events = [];
@@ -77,8 +89,10 @@ export function AppEventsProvider({ children }) {
   useEffect(() => {
     const onHide = () => document.visibilityState === "hidden" && flush();
     document.addEventListener("visibilitychange", onHide);
+    flushPending = flush;
     return () => {
       document.removeEventListener("visibilitychange", onHide);
+      if (flushPending === flush) flushPending = null;
       flush();
     };
   }, [flush]);

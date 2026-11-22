@@ -1,4 +1,5 @@
 import { requestApi } from "./http-client.js";
+import { storeToken } from "../utils/session-storage.js";
 
 /**
  * POST /auth/register. @returns {Promise<{token, user}>} Usado por: AuthContext.register.
@@ -47,10 +48,13 @@ export function sendAppEvents(events) {
 
 /**
  * PATCH /profile. @param {{nickname?, city?, showInRanking?, email?, password?, currentPassword?}} changes
- * @returns {Promise<{user}>} Usado por: ProfilePage (editar nome/cidade).
+ * @returns {Promise<{user, token?}>} Usado por: ProfilePage (editar nome/cidade).
+ * Trocar a senha tira a conta dos outros aparelhos: o backend manda um token novo para este, guardado aqui.
  */
-export function updateProfile(changes) {
-  return requestApi("/profile", { method: "PATCH", body: changes });
+export async function updateProfile(changes) {
+  const response = await requestApi("/profile", { method: "PATCH", body: changes });
+  if (response.token) storeToken(response.token);
+  return response;
 }
 
 /**

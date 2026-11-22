@@ -137,10 +137,29 @@ export async function answerQuestion(user, attemptId, questionKey, optionId) {
   // Em cache (findActivityForGrading): a mesma atividade era lida do banco a cada resposta.
   const activity = await findActivityForGrading(String(attempt.activity));
   if (!activity) throw notFound(MESSAGES.attempt.activityNotFound);
-  const question = activity.questions.find((q) => q.key === questionKey);
-  if (!question) throw badRequest(MESSAGES.attempt.questionNotFound);
   if (attempt.questionKeys?.length && !attempt.questionKeys.includes(questionKey)) {
     throw badRequest(MESSAGES.attempt.questionNotInAttempt);
+  }
+  const question = activity.questions.find((q) => q.key === questionKey);
+  const rules = await getProgressRules();
+  const { multiplier } = await getXpMultiplier();
+
+  // Já respondida (a resposta se perdeu no caminho e o app mandou de novo): devolve o que valeu, sem contar de novo.
+  // Não dá vantagem: o gabarito já foi mandado na primeira vez, e a nota usa só a primeira resposta.
+  const previous = attempt.answers.find((answer) => answer.questionKey === questionKey);
+  if (previous) return describeAnswer(previous, question, rules, multiplier, { repeated: true });
+
+  // Pergunta saiu da atividade no painel durante a tentativa: conta como pulada (fora da nota) em vez de travar a
+  // pessoa nela com "pergunta não encontrada".
+  if (!question) {
+    if (!attempt.questionKeys?.includes(questionKey)) throw badRequest(MESSAGES.attempt.questionNotFound);
+    const removed = { questionKey, optionId, correct: false, skipped: true };
+    const saved = await AttemptModel.findOneAndUpdate(
+      { _id: attempt._id, status: "in_progress", "answers.questionKey": { $ne: questionKey } },
+      { $push: { answers: removed } },
+    );
+    if (!saved) throw conflict(MESSAGES.attempt.alreadyAnswered);
+    return describeAnswer(removed, null, rules, multiplier);
   }
   // Pergunta de câmera sem câmera no aparelho: registra como pulada (fora da nota), sem contar como erro.
   const skipped = question.type === "camera_sign" && optionId === CAMERA_UNAVAILABLE_OPTION;
@@ -151,18 +170,31 @@ export async function answerQuestion(user, attemptId, questionKey, optionId) {
     { _id: attempt._id, status: "in_progress", "answers.questionKey": { $ne: questionKey } },
     { $push: { answers: { questionKey, optionId, correct, skipped } } },
   );
-  if (!updated) throw conflict(MESSAGES.attempt.alreadyAnswered);
+  if (!updated) {
+    // Duas chamadas iguais ao mesmo tempo: a outra gravou primeiro; devolve a que valeu.
+    const winner = (await AttemptModel.findById(attempt._id).lean())?.answers.find((answer) => answer.questionKey === questionKey);
+    if (winner) return describeAnswer(winner, question, rules, multiplier, { repeated: true });
+    throw conflict(MESSAGES.attempt.alreadyAnswered);
+  }
 
   const newAchievements = correct && attempt.liveCorrectAnswers ? await countCorrectAnswerNow(user) : [];
-  const rules = await getProgressRules();
-  const { multiplier } = await getXpMultiplier();
+  return describeAnswer({ optionId, correct, skipped }, question, rules, multiplier, { newAchievements });
+}
+
+/**
+ * Resposta como o app recebe (folha verde/laranja). optionId é a opção que valeu (numa repetição, pode ser
+ * diferente da enviada agora).
+ */
+function describeAnswer(answer, question, rules, multiplier, { repeated = false, newAchievements = [] } = {}) {
   return {
-    correct,
-    skipped,
-    correctOptionId: question.correctOptionId,
-    explanation: question.explanation,
-    xpForQuestion: correct ? Math.round(rules.XP_PER_CORRECT_ANSWER * multiplier) : 0,
+    correct: answer.correct,
+    skipped: Boolean(answer.skipped),
+    optionId: answer.optionId,
+    correctOptionId: question?.correctOptionId ?? "",
+    explanation: question?.explanation ?? "",
+    xpForQuestion: answer.correct ? Math.round(rules.XP_PER_CORRECT_ANSWER * multiplier) : 0,
     newAchievements,
+    ...(repeated ? { repeated: true } : {}),
   };
 }
 
@@ -233,6 +265,12 @@ function saveBestScore(user, activityId, score) {
  * É o lugar natural para disparar novas regras de conquista, eventos e recompensas.
  */
 export async function finishAttempt(user, attemptId) {
+  // Já encerrada com resultado (a resposta do "concluir" se perdeu e o app pediu de novo): devolve o mesmo resultado,
+  // sem dar XP de novo. Antes respondia "já encerrada" e a pessoa nunca via a tela de resultado.
+  const finished = await AttemptModel.findOne({ _id: attemptId, user: user._id, status: "finished", "result.score": { $ne: null } }).lean();
+  if (finished) {
+    return { result: finished.result, user: { ...toPublicProfile(user, SESSION_PROFILE), level: await describeLevel(user.xp) } };
+  }
   const attempt = await findOpenAttempt(user, attemptId);
   const closed = await AttemptModel.findOneAndUpdate(
     { _id: attempt._id, status: "in_progress" },
@@ -257,12 +295,18 @@ export async function finishAttempt(user, attemptId) {
   const levelBefore = await describeLevel(user.xp);
   const xpEarned = passed ? computeXp(correctAnswers, totalQuestions, alreadyCompleted, rules, multiplier) : 0;
 
-  user.xp += xpEarned;
   // Tentativas novas já somaram cada acerto na hora da resposta (countCorrectAnswerNow).
   if (!closed.liveCorrectAnswers) user.totalCorrectAnswers += correctAnswers;
   registerActivityDay(user);
   if (passed) saveBestScore(user, closed.activity, score);
   await user.save();
+  // XP somado no banco ($inc), não "valor lido + ganho": dois pedidos ao mesmo tempo (dois aparelhos, conquista
+  // gravando junto) não apagam o XP um do outro.
+  if (xpEarned > 0) {
+    const fresh = await UserModel.findOneAndUpdate({ _id: user._id }, { $inc: { xp: xpEarned } }, { returnDocument: "after" }).select("xp").lean();
+    user.xp = fresh.xp;
+    user.unmarkModified("xp"); // o save das conquistas abaixo não regrava o XP
+  }
 
   const metricsAfter = await readUserAchievementMetrics(user);
   const overrides = readAchievementOverrides(user);
