@@ -36,3 +36,4 @@
 1.8.2|c73f56b|22/11/2026|Perfil sem bordas e app que fica acordado durante o dia
 1.8.3|9920e00|22/11/2026|Corrige o pop-up de atualização, o botão voltar e o login com Google no celular
 1.8.4|65f66d1|22/11/2026|Corrige atividade travada após queda de rede, troca de senha tira a conta dos outros aparelhos e outras correções
+1.8.5|15c36a1|22/11/2026|Nova barra de nível no perfil e atualização automática do app mais confiável
