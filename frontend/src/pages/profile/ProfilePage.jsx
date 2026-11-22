@@ -148,21 +148,23 @@ function LevelCard({ level, xp }) {
   const missing = isLast ? 0 : level.nextLevelXp - xp;
   return (
     <section className="level-card" aria-label={`Nível ${level.level}: ${level.title}`}>
-      <div className="level-card__badge" aria-hidden="true">{level.level}</div>
-      <div className="level-card__body">
-        <p className="level-card__title"><span>Nível {level.level}</span> {level.title}</p>
-        <div
-          className="level-card__track"
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(progress * 100)}
-          aria-label="Progresso até o próximo nível"
-        >
-          <div className="level-card__fill" style={{ width: `${progress * 100}%` }} />
-        </div>
-        <p className="level-card__hint">{isLast ? "Nível máximo alcançado!" : `Faltam ${formatCompact(missing)} XP para o nível ${level.level + 1}`}</p>
+      <div className="level-card__header">
+        <p className="level-card__title">Nível {level.level}</p>
+        <p className="level-card__xp">
+          {isLast ? `${formatCompact(xp)} XP` : `${formatCompact(xp)} / ${formatCompact(level.nextLevelXp)} XP`}
+        </p>
       </div>
+      <div
+        className="level-card__track"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(progress * 100)}
+        aria-label="Progresso até o próximo nível"
+      >
+        <div className="level-card__fill" style={{ width: `${progress * 100}%` }} />
+      </div>
+      <p className="level-card__hint">{isLast ? "Nível máximo alcançado!" : `Faltam ${formatCompact(missing)} XP para o nível ${level.level + 1}`}</p>
     </section>
   );
 }
