@@ -80,5 +80,19 @@ test("API do GitHub recusando (limite por IP): aplica pelo releases/HISTORICO.md
   assert.equal(await getSetting("app.update.versionName"), "2.0");
   assert.equal(await getSetting("app.update.downloadUrl"), "https://github.com/LipeKaneka/signa-app/releases/download/v2.0.0/Signa-2.0.0.apk");
   assert.equal(await getSetting("app.update.notes"), "Tudo novo");
+  assert.equal(await getSetting("app.update.minVersionCode"), 0); // não era obrigatória
+  apiBlocked = false;
+});
+
+test("release obrigatória (pela API ou pelo HISTORICO.md) sobe também a versão mínima", async () => {
+  release = { tag_name: "v2.1.0", body: "Correção importante\n\nversionCode: 22\nAtualização obrigatória", assets: [apk("Signa-2.1.0.apk")] };
+  assert.equal(await syncAppUpdateFromGithub(), 22);
+  assert.equal(await getSetting("app.update.minVersionCode"), 22);
+  assert.equal(await getSetting("app.update.notes"), "Correção importante");
+  apiBlocked = true;
+  history = "| Versão | Data | versionCode | Tag | O que mudou |\n|---|---|---|---|---|\n| **2.2.0** | 23/11/2026 | 23 | `v2.2.0` | Segurança (obrigatória) |";
+  assert.equal(await syncAppUpdateFromGithub(), 23);
+  assert.equal(await getSetting("app.update.minVersionCode"), 23);
+  assert.equal(await getSetting("app.update.notes"), "Segurança");
   apiBlocked = false;
 });

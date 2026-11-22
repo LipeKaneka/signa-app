@@ -1,5 +1,7 @@
 // Lança uma versão nova do APK com controle de versão local.
-// Uso (na pasta frontend):  npm run release -- 1.2 "Resumo do que mudou" [--publicar]
+// Uso (na pasta frontend):  npm run release -- 1.2 "Resumo do que mudou" [--publicar] [--obrigatoria]
+//  --obrigatoria: marca a versão como atualização obrigatória; o servidor, ao aplicar sozinho, sobe também a
+//  versão mínima (app.update.minVersionCode) e quem tem versão mais velha só usa o app depois de atualizar.
 //  1. aumenta o versionCode e troca o versionName em android/app/build.gradle;
 //  2. gera o APK (vite build --mode android → cap sync → gradle assembleDebug);
 //  3. guarda em ../releases/Signa-<versão>.apk e acrescenta a linha em ../releases/HISTORICO.md e versoes.txt;
@@ -12,10 +14,11 @@ import { join, resolve } from "node:path";
 
 const args = process.argv.slice(2);
 const publish = args.includes("--publicar");
-const [rawVersion, ...summaryWords] = args.filter((arg) => arg !== "--publicar");
+const required = args.includes("--obrigatoria");
+const [rawVersion, ...summaryWords] = args.filter((arg) => !arg.startsWith("--"));
 const summary = summaryWords.join(" ").trim();
 if (!/^\d+\.\d+(\.\d+)?$/.test(rawVersion ?? "") || !summary) {
-  console.error('Uso: npm run release -- <versão, ex.: 1.2> "Resumo do que mudou" [--publicar]');
+  console.error('Uso: npm run release -- <versão, ex.: 1.2> "Resumo do que mudou" [--publicar] [--obrigatoria]');
   process.exit(1);
 }
 const label = rawVersion.split(".").length === 2 ? `${rawVersion}.0` : rawVersion;
@@ -75,7 +78,7 @@ if (existsSync(historyFile)) {
   const history = readFileSync(historyFile, "utf8");
   // Aceita \n e \r\n (no Windows o git pode trazer o arquivo com \r\n).
   const header = /\|---\|---\|---\|---\|---\|\r?\n/;
-  const row = `| **${label}** | ${date} | ${versionCode} | \`v${label}\` | ${summary.replace(/\|/g, "/")} |\n`;
+  const row = `| **${label}** | ${date} | ${versionCode} | \`v${label}\` | ${summary.replace(/\|/g, "/")}${required ? " (obrigatória)" : ""} |\n`;
   if (!header.test(history)) console.warn("Aviso: tabela de releases/HISTORICO.md não encontrada; acrescente a linha à mão.");
   writeFileSync(historyFile, history.replace(header, (match) => match + row));
 }
@@ -85,7 +88,7 @@ const repoRoot = resolve(frontend, "..");
 const git = (command) => execSync(`git ${command}`, { cwd: repoRoot, encoding: "utf8" }).trim();
 const releaseBody = `${summary}
 
-versionCode: ${versionCode}`;
+versionCode: ${versionCode}${required ? "\nAtualização obrigatória" : ""}`;
 
 if (!publish) {
   console.log(`
@@ -161,5 +164,5 @@ console.log(`
 Release publicada: ${release.html_url}
 APK: ${asset.browser_download_url}
 
-Para avisar os usuários: no painel, Pop-ups → Atualizações → "Buscar no GitHub" → "Aplicar estes dados".
+O servidor aplica sozinho em até 10 min (Pop-ups → Atualizações → automático)${required ? ", já como obrigatória" : ""}.
 `);

@@ -8,6 +8,15 @@ const REPO_PATTERN = /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/;
 const NOTES_MAX_LENGTH = 600;
 /** Linha "versionCode: 5" (ou "versionCode 5", "versionCode=5") na descrição da release. */
 const VERSION_CODE_LINE = /^[\s>*_-]*version\s*code\s*[:=]?\s*\**\s*(\d{1,10})\**\s*$/im;
+/** Linha "Atualização obrigatória" na descrição da release (o script de release escreve com --obrigatoria). */
+const REQUIRED_LINE = /^[\s>*_-]*atualiza[çc][ãa]o\s+obrigat[óo]ria\**\s*$/im;
+/** "(obrigatória)" no fim do resumo da linha do releases/HISTORICO.md. */
+const REQUIRED_MARK = /\s*\(obrigat[óo]ria\)\s*$/i;
+
+/** A release pede atualização obrigatória? */
+export function isRequiredRelease(body) {
+  return REQUIRED_LINE.test(String(body ?? ""));
+}
 
 /** GET no GitHub com tempo-limite; GITHUB_TOKEN (opcional) aumenta o limite de consultas e lê repositório privado. */
 async function getFromGitHub(url, accept = "application/vnd.github+json") {
@@ -37,7 +46,7 @@ export function notesFromReleaseBody(body) {
   const text = String(body ?? "")
     .replace(/\r\n/g, "\n")
     .split("\n")
-    .filter((line) => !VERSION_CODE_LINE.test(line))
+    .filter((line) => !VERSION_CODE_LINE.test(line) && !REQUIRED_LINE.test(line))
     .map((line) => line.replace(/^#{1,6}\s*/, "").replace(/\*\*(.+?)\*\*/g, "$1").trimEnd())
     .join("\n")
     .replace(/\n{3,}/g, "\n\n")
@@ -112,6 +121,7 @@ export async function readLatestRelease(repo) {
       latestVersionCode,
       downloadUrl: apk?.browser_download_url ?? "",
       notes: notesFromReleaseBody(release.body),
+      required: isRequiredRelease(release.body),
     },
     warnings,
   };
@@ -124,7 +134,8 @@ export async function readLatestRelease(repo) {
  */
 export function latestFromHistory(markdown) {
   const row = /^\|\s*\**(\d+\.\d+\.\d+)\**\s*\|[^|]*\|\s*(\d+)\s*\|\s*`?(v[\w.-]+)`?[^|]*\|\s*([^|\n]*?)\s*\|\s*$/m.exec(String(markdown ?? ""));
-  return row ? { label: row[1], versionCode: Number(row[2]), tag: row[3], summary: row[4] } : null;
+  if (!row) return null;
+  return { label: row[1], versionCode: Number(row[2]), tag: row[3], summary: row[4].replace(REQUIRED_MARK, ""), required: REQUIRED_MARK.test(row[4]) };
 }
 
 /**
@@ -148,6 +159,6 @@ export async function readLatestFromHistory(repo) {
   if (!apk?.ok) return null;
   return {
     tag: latest.tag,
-    fields: { versionName: versionNameFromTag(latest.tag), latestVersionCode: latest.versionCode, downloadUrl, notes: latest.summary.slice(0, NOTES_MAX_LENGTH) },
+    fields: { versionName: versionNameFromTag(latest.tag), latestVersionCode: latest.versionCode, downloadUrl, notes: latest.summary.slice(0, NOTES_MAX_LENGTH), required: latest.required },
   };
 }

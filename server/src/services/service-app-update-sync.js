@@ -39,7 +39,9 @@ export async function syncAppUpdateFromGithub() {
     await updateSetting(SYSTEM_ACTOR, "app.update.downloadUrl", fields.downloadUrl);
     await updateSetting(SYSTEM_ACTOR, "app.update.notes", String(fields.notes ?? "").slice(0, 600));
     await updateSetting(SYSTEM_ACTOR, "app.update.latestVersionCode", fields.latestVersionCode);
-    console.log(`Atualização do app aplicada automaticamente: ${tag} (versionCode ${fields.latestVersionCode}).`);
+    // Release marcada como obrigatória: a versão mínima sobe junto e quem tem versão mais velha precisa atualizar.
+    if (fields.required) await updateSetting(SYSTEM_ACTOR, "app.update.minVersionCode", fields.latestVersionCode);
+    console.log(`Atualização do app aplicada automaticamente: ${tag} (versionCode ${fields.latestVersionCode}${fields.required ? ", obrigatória" : ""}).`);
     return fields.latestVersionCode;
   } catch (error) {
     console.error("Atualização automática pelo GitHub falhou:", error.message);

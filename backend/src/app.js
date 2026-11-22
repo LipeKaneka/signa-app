@@ -5,6 +5,7 @@ import { getEnvironment } from "./config/env.js";
 import { apiRouter } from "./routes/index.js";
 import { apiLimiter } from "./middlewares/rateLimit-middleware.js";
 import { notFoundHandler, errorHandler } from "./middlewares/error-middleware.js";
+import { noteActivity } from "./services/keep-alive.js";
 
 /**
  * Monta as regras de CORS: só as origens de FRONTEND_URL podem chamar a API pelo navegador.
@@ -38,7 +39,7 @@ export function createApp() {
   app.use(helmet());
   app.use(cors(buildCorsOptions(frontendOrigins)));
   app.use(express.json({ limit: "100kb" }));
-  app.use("/api/v1", apiLimiter, apiRouter);
+  app.use("/api/v1", noteActivity, apiLimiter, apiRouter);
   app.use(notFoundHandler);
   app.use(errorHandler);
 
