@@ -1,14 +1,17 @@
 import { Capacitor } from "@capacitor/core";
 
-let appPlugin = null;
+let appModule = null;
 
 /**
- * Plugin App do Capacitor, carregado só uma vez e só quando preciso (no navegador ele nem é baixado).
- * @returns {Promise<object>} App de "@capacitor/app".
+ * Módulo "@capacitor/app", carregado só uma vez e só quando preciso (no navegador ele nem é baixado).
+ * Devolve o MÓDULO ({App}), nunca o plugin direto: o plugin do Capacitor é um Proxy que responde a qualquer
+ * propriedade, inclusive "then". Uma Promise que resolve com ele acha que é "thenable", chama App.then() no Android
+ * ("not implemented") e falha — foi o que sumiu com o pop-up de atualização, o botão voltar e o fechar app na 1.8.x.
+ * @returns {Promise<{App: object}>}
  */
 export function loadAppPlugin() {
-  appPlugin ??= import("@capacitor/app").then(({ App }) => App);
-  return appPlugin;
+  appModule ??= import("@capacitor/app");
+  return appModule;
 }
 
 /**
@@ -18,7 +21,7 @@ export function loadAppPlugin() {
  */
 export async function exitApp() {
   if (!Capacitor.isNativePlatform()) return false;
-  const App = await loadAppPlugin();
+  const { App } = await loadAppPlugin();
   await App.exitApp();
   return true;
 }
@@ -35,7 +38,7 @@ export function listenToApp(eventName, handler) {
   let handle = null;
   let removed = false;
   loadAppPlugin()
-    .then((App) => App.addListener(eventName, (data) => handler(data, App)))
+    .then(({ App }) => App.addListener(eventName, (data) => handler(data, App)))
     .then((created) => {
       if (removed) created.remove();
       else handle = created;

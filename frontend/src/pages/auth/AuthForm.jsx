@@ -77,14 +77,19 @@ const BUILD_GOOGLE_WEB_CLIENT_ID = (import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID ??
 let googleReady = null;
 let googleReadyFor = "";
 
-/** Carrega o plugin do Google só quando o botão é tocado (e de novo se o ID mudar). */
+/**
+ * Carrega o plugin do Google só quando o botão é tocado (e de novo se o ID mudar).
+ * Devolve {SocialLogin}, nunca o plugin direto: plugin do Capacitor é um Proxy com "then", e a Promise o confundiria
+ * com outra Promise (chamaria SocialLogin.then() no Android). Veja loadAppPlugin em utils/native-app.js.
+ * @returns {Promise<{SocialLogin: object}>}
+ */
 function loadGoogleSignIn(webClientId) {
   if (googleReadyFor !== webClientId) googleReady = null;
   googleReadyFor = webClientId;
   googleReady ??= import("@capgo/capacitor-social-login")
     .then(async ({ SocialLogin }) => {
       await SocialLogin.initialize({ google: { webClientId, mode: "online" } });
-      return SocialLogin;
+      return { SocialLogin };
     })
     .catch((error) => {
       googleReady = null;
@@ -119,7 +124,7 @@ export function GoogleButton({ onUnavailable }) {
     setBusy(true);
     onUnavailable("");
     try {
-      const SocialLogin = await loadGoogleSignIn(webClientId);
+      const { SocialLogin } = await loadGoogleSignIn(webClientId);
       // Sem "scopes": e-mail e perfil já vêm por padrão, e no Android pedir scopes recusa o login (exige mexer na MainActivity).
       const response = await SocialLogin.login({ provider: "google", options: {} });
       const idToken = response?.result?.idToken;

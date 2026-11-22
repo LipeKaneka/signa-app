@@ -17,7 +17,7 @@ export function useAppVersion() {
     if (!Capacitor.isNativePlatform()) return undefined;
     let active = true;
     loadAppPlugin()
-      .then((App) => App.getInfo())
+      .then(({ App }) => App.getInfo())
       .then((info) => active && setVersion({ name: info.version, code: Number(info.build) || 0 }))
       .catch(() => {});
     return () => {

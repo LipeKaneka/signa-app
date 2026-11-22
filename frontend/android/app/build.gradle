@@ -8,7 +8,7 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // A cada APK novo, aumente o versionCode e avise no painel (Configurações → Atualização do app).
-        versionCode 21
+        versionCode 23
         versionName "1.8.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
