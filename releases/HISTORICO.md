@@ -8,6 +8,7 @@ recriar qualquer um, faça checkout da tag e gere o APK, ou rode `npm run releas
 
 | Versão | Data | versionCode | Tag | O que mudou |
 |---|---|---|---|---|
+| **1.8.4** | 22/11/2026 | 25 | `v1.8.4` | Corrige atividade travada após queda de rede, troca de senha tira a conta dos outros aparelhos e outras correções (obrigatória) |
 | **1.8.3** | 22/11/2026 | 24 | `v1.8.3` | Corrige o pop-up de atualização, o botão voltar e o login com Google no celular (obrigatória) |
 | **1.8.2** | 22/11/2026 | 21 | `v1.8.2` | Perfil sem bordas e app que fica acordado durante o dia (obrigatória) |
 | **1.8.1** | 21/11/2026 | 20 | `v1.8.1` | Configurações novas e animação da ofensiva mais leve, que só sai no toque |
