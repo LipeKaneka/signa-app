@@ -76,21 +76,27 @@ let lastAppUpdateSyncAt = 0;
  */
 export function startNotificationScheduler() {
   if (timer) return;
-  const tick = async () => {
+  // Cada tarefa isolada: a falha de uma (ex.: lembrete de ofensiva com erro no envio) não pode pular as outras.
+  // Antes, um erro em qualquer etapa anterior impedia a atualização automática do app de rodar.
+  const run = async (name, job) => {
     try {
-      const now = new Date();
-      await notifyStartedEvents(now);
-      await remindStreaks(now);
-      // Manutenção agendada que começou ou terminou: marca e manda os e-mails configurados.
-      await syncMaintenance(now);
-      // Release nova no GitHub: aplica sozinho a atualização do app (a cada 10 min; logo ao ligar também).
-      if (now - lastAppUpdateSyncAt >= APP_UPDATE_SYNC_INTERVAL_MS) {
-        lastAppUpdateSyncAt = now.getTime();
-        await syncAppUpdateFromGithub();
-      }
+      await job();
     } catch (error) {
-      console.error("Conferência de notificações falhou:", error.message);
+      console.error(`Conferência "${name}" falhou:`, error.message);
     }
+  };
+  const tick = async () => {
+    const now = new Date();
+    // Release nova no GitHub: aplica sozinho a atualização do app (a cada 10 min; logo ao ligar também). Vem
+    // primeiro: é a que mais importa que não fique parada.
+    if (now - lastAppUpdateSyncAt >= APP_UPDATE_SYNC_INTERVAL_MS) {
+      lastAppUpdateSyncAt = now.getTime();
+      await run("atualização do app", () => syncAppUpdateFromGithub());
+    }
+    await run("eventos", () => notifyStartedEvents(now));
+    await run("ofensiva", () => remindStreaks(now));
+    // Manutenção agendada que começou ou terminou: marca e manda os e-mails configurados.
+    await run("manutenção", () => syncMaintenance(now));
   };
   timer = setInterval(tick, TICK_MS);
   timer.unref?.();
